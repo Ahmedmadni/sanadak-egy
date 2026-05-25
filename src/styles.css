@@ -1,6 +1,8 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap");
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+
 
 @custom-variant dark (&:is(.dark *));
 
@@ -39,10 +41,9 @@
   --font-arabic: var(--font-arabic);
 }
 
-@font-face {
-  font-family: "Satoshi-fallback";
-  src: local("SF Pro Display"), local("Inter"), local("system-ui");
-}
+
+
+
 
 :root {
   --radius: 1.25rem;
@@ -82,8 +83,9 @@
   --graphite: oklch(0.22 0.02 240);
   --glass: oklch(1 0 0 / 0.55);
 
-  --font-display: "SF Pro Display", "Satoshi", "Inter", system-ui, sans-serif;
-  --font-arabic: "IBM Plex Sans Arabic", "Noto Kufi Arabic", "Cairo", system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", "SF Pro Display", "Inter", system-ui, sans-serif;
+  --font-arabic: "Cairo", "IBM Plex Sans Arabic", "Noto Kufi Arabic", system-ui, sans-serif;
+
 
   --gradient-brand: linear-gradient(135deg, oklch(0.66 0.14 165), oklch(0.62 0.11 195));
   --gradient-hero: radial-gradient(60% 50% at 50% 30%, oklch(0.66 0.14 165 / 0.18), transparent 70%),
@@ -140,7 +142,9 @@
     overflow-x: hidden;
   }
   .font-arabic { font-family: var(--font-arabic); }
+  html[dir="rtl"] body { font-family: var(--font-arabic); }
 }
+
 
 @layer utilities {
   .glass-panel {

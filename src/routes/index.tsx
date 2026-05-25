@@ -2,15 +2,20 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Nav } from "@/components/sanadak/Nav";
 import { Hero } from "@/components/sanadak/Hero";
 import { ServiceShowcase } from "@/components/sanadak/ServiceShowcase";
+import { MerchantSection } from "@/components/sanadak/MerchantSection";
 import { CTA } from "@/components/sanadak/CTA";
+import { CartSheet } from "@/components/sanadak/CartSheet";
+import { MerchantDialog } from "@/components/sanadak/MerchantDialog";
+import { SanadakProvider } from "@/lib/sanadak-context";
+import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Sanadak سندك — Your smart gateway to every service" },
-      { name: "description", content: "Sanadak is Saudi Arabia's premium super-app: food delivery, medical bookings, marketplace, live tracking, and a unified services hub." },
-      { property: "og:title", content: "Sanadak سندك — Smart super-app for KSA" },
-      { property: "og:description", content: "Food, health, shopping, and delivery — beautifully unified." },
+      { title: "سندك Sanadak — كل خدماتك في مكان واحد" },
+      { name: "description", content: "سندك هو السوبر-آب المصري الفاخر: توصيل طعام، حجوزات طبية، تسوق، تتبع مباشر، ومركز خدمات موحد." },
+      { property: "og:title", content: "سندك Sanadak — السوبر-آب المصري" },
+      { property: "og:description", content: "طعام، صحة، تسوق، وتوصيل — في تطبيق واحد أنيق." },
     ],
   }),
   component: Index,
@@ -18,11 +23,17 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <main className="relative">
-      <Nav />
-      <Hero />
-      <ServiceShowcase />
-      <CTA />
-    </main>
+    <SanadakProvider>
+      <main className="relative">
+        <Nav />
+        <Hero />
+        <ServiceShowcase />
+        <MerchantSection />
+        <CTA />
+        <CartSheet />
+        <MerchantDialog />
+        <Toaster richColors position="top-center" />
+      </main>
+    </SanadakProvider>
   );
 }
