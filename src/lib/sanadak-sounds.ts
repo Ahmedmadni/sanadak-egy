@@ -18,7 +18,7 @@ export function isSoundEnabled() {
   return enabled;
 }
 
-function tone({ freq = 440, dur = 0.12, type = "sine" as OscillatorType, gain = 0.06, freqEnd, delay = 0 }) {
+function tone({ freq = 440, dur = 0.12, type = "sine" as OscillatorType, gain = 0.06, freqEnd, delay = 0 }: { freq?: number; dur?: number; type?: OscillatorType; gain?: number; freqEnd?: number; delay?: number }) {
   if (!isSoundEnabled()) return;
   const c = ac(); if (!c) return;
   const t0 = c.currentTime + delay;
