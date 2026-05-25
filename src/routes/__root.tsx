@@ -72,14 +72,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Sanadak-سندك" },
+      { name: "description", content: "سندك كل ما تحتاجه في مكان واحد" },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Sanadak-سندك" },
+      { property: "og:description", content: "سندك كل ما تحتاجه في مكان واحد" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Sanadak-سندك" },
+      { name: "twitter:description", content: "سندك كل ما تحتاجه في مكان واحد" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/a7310264-8e35-4a19-917c-b676771153bb" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/a7310264-8e35-4a19-917c-b676771153bb" },
     ],
     links: [
       {
