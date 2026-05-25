@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Nav } from "@/components/sanadak/Nav";
 import { Hero } from "@/components/sanadak/Hero";
-import { ServiceShowcase } from "@/components/sanadak/ServiceShowcase";
+import { CategoriesShowcase } from "@/components/sanadak/CategoriesShowcase";
 import { MerchantSection } from "@/components/sanadak/MerchantSection";
 import { CTA } from "@/components/sanadak/CTA";
 import { CartSheet } from "@/components/sanadak/CartSheet";
@@ -27,7 +27,7 @@ function Index() {
       <main className="relative">
         <Nav />
         <Hero />
-        <ServiceShowcase />
+        <CategoriesShowcase />
         <MerchantSection />
         <CTA />
         <CartSheet />
