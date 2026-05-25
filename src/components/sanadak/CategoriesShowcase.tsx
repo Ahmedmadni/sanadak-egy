@@ -1,8 +1,8 @@
 import { motion } from "motion/react";
 import { useState } from "react";
 import {
-  UtensilsCrossed, Coffee, ShoppingBag, Gem, ShoppingCart as Cart, Pill,
-  Stethoscope, Star, Clock, MapPin, Plus, MessageCircle, Users, Calendar, Sparkles,
+  UtensilsCrossed, Coffee, ShoppingBag, ShoppingCart as Cart, Pill,
+  Stethoscope, Star, Clock, MapPin, Plus, MessageCircle, Users, Sparkles,
 } from "lucide-react";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
