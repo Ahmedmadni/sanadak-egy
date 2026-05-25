@@ -1,26 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Nav } from "@/components/sanadak/Nav";
+import { Hero } from "@/components/sanadak/Hero";
+import { ServiceShowcase } from "@/components/sanadak/ServiceShowcase";
+import { CTA } from "@/components/sanadak/CTA";
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Sanadak سندك — Your smart gateway to every service" },
+      { name: "description", content: "Sanadak is Saudi Arabia's premium super-app: food delivery, medical bookings, marketplace, live tracking, and a unified services hub." },
+      { property: "og:title", content: "Sanadak سندك — Smart super-app for KSA" },
+      { property: "og:description", content: "Food, health, shopping, and delivery — beautifully unified." },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
-}
-
 function Index() {
-  return <PlaceholderIndex />;
+  return (
+    <main className="relative">
+      <Nav />
+      <Hero />
+      <ServiceShowcase />
+      <CTA />
+    </main>
+  );
 }
