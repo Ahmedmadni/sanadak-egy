@@ -2,17 +2,36 @@ import { createContext, useContext, useEffect, useMemo, useState, ReactNode } fr
 
 type Lang = "ar" | "en";
 
-export type CartItem = { id: string; name: string; price: number; qty: number };
-export type Booking = { id: string; doctor: string; specialty: string; day: string; time: string };
+export type CartItem = {
+  id: string;
+  name: string;
+  price: number;
+  qty: number;
+  variant?: string;
+  store?: string;
+  category?: string;
+};
+export type Booking = {
+  id: string;
+  serial: string;
+  type: "medical" | "hall" | "cafe" | "restaurant";
+  title: string;
+  subtitle: string;
+  day?: string;
+  time?: string;
+  guests?: number;
+};
+
+export type Customer = { name: string; phone: string; address: string };
 
 type Ctx = {
   lang: Lang;
   setLang: (l: Lang) => void;
-  t: (k: keyof typeof dict["ar"]) => string;
+  t: (k: string) => string;
   dir: "rtl" | "ltr";
   cart: CartItem[];
   addToCart: (i: Omit<CartItem, "qty">) => void;
-  removeFromCart: (id: string) => void;
+  removeFromCart: (id: string, variant?: string) => void;
   clearCart: () => void;
   bookings: Booking[];
   addBooking: (b: Omit<Booking, "id">) => void;
@@ -21,14 +40,24 @@ type Ctx = {
   setCartOpen: (b: boolean) => void;
   merchantOpen: boolean;
   setMerchantOpen: (b: boolean) => void;
+  customer: Customer;
+  setCustomer: (c: Customer) => void;
+  sound: boolean;
+  setSound: (b: boolean) => void;
 };
 
-const dict = {
+const dict: Record<Lang, Record<string, string>> = {
   ar: {
     brand_tag: "منصة مصرية ذكية · متاحة الآن",
     nav_services: "الخدمات",
-    nav_food: "طعام",
-    nav_health: "صحة",
+    nav_categories: "الأقسام",
+    nav_food: "مطاعم",
+    nav_cafes: "كافيهات",
+    nav_shops: "محلات",
+    nav_halls: "قاعات أفراح",
+    nav_super: "سوبرماركت",
+    nav_pharmacy: "صيدليات",
+    nav_health: "طبي",
     nav_shopping: "تسوق",
     nav_track: "تتبع",
     nav_merchant: "أضف متجري",
@@ -36,7 +65,7 @@ const dict = {
     cta_explore: "اكتشف الخدمات",
     hero_h1_a: "كل خدماتك في",
     hero_h1_b: "مكان واحد",
-    hero_sub: "بوابتك الذكية لكل ما تحتاجه — طعام، صحة، تسوق، وتوصيل — في تطبيق فاخر واحد يجمع كل شيء.",
+    hero_sub: "بوابتك الذكية لكل ما تحتاجه — طعام، صحة، تسوق، أفراح، وتوصيل — في تطبيق فاخر واحد يجمع كل شيء، وحجوزات فورية عبر واتساب.",
     users: "أكثر من ٥٠٠ ألف مستخدم",
     rating: "٤.٩ · آب ستور",
     cities: "القاهرة · الإسكندرية · الجيزة",
@@ -44,16 +73,18 @@ const dict = {
     section_en: "منظومة متكاملة",
     headline_a: "تطبيق واحد.",
     headline_b: "كل الخدمات.",
-    headline_sub: "خمس تجارب مصممة بدقة، تعمل معاً كأنها واحدة — مدعومة بذكاءٍ يفهم احتياجك.",
+    headline_sub: "اختر نشاطك التجاري، اطلب أو احجز فوراً، ويصلك التأكيد على واتساب برقم تسلسلي مميز.",
     learn_more: "اعرف أكثر",
-    add_to_cart: "أضف إلى السلة",
-    book_now: "احجز الآن",
+    add_to_cart: "أضف للسلة",
+    book_now: "احجز عبر واتساب",
+    order_wa: "اطلب عبر واتساب",
+    reserve_wa: "احجز عبر واتساب",
     cart: "السلة",
     cart_empty: "السلة فارغة",
     bookings: "حجوزاتي",
     no_bookings: "لا توجد حجوزات بعد",
     total: "الإجمالي",
-    checkout: "إتمام الطلب",
+    checkout: "إتمام الطلب عبر واتساب",
     remove: "حذف",
     cancel: "إلغاء",
     merchant_title: "أضف متجرك إلى سندك",
@@ -65,7 +96,7 @@ const dict = {
     phone: "رقم الهاتف",
     category: "نوع النشاط",
     submit: "إرسال الطلب",
-    submitted: "تم استلام طلبك! سنتواصل معك خلال ٢٤ ساعة.",
+    submitted: "تم إرسال الطلب على واتساب",
     booked: "تم تأكيد حجزك",
     added: "تمت الإضافة إلى السلة",
     download_ios: "حمّل لـ iOS",
@@ -77,16 +108,17 @@ const dict = {
     terms: "الشروط",
     contact: "تواصل معنا",
     sar: "ج.م",
+    serial_label: "رقم الطلب",
+    name_placeholder: "اسمك بالكامل",
+    phone_placeholder: "رقم الواتساب",
+    address_placeholder: "عنوان التوصيل",
+    notes_placeholder: "ملاحظات إضافية (اختياري)",
     food_title: "طعام بمستوى المطاعم، يصل في دقائق",
-    food_desc: "قوائم منتقاة من ألمع المطابخ في مصر، مع وقت توصيل مباشر وتجربة دفع أنيقة.",
+    food_desc: "قوائم منتقاة من ألمع المطابخ في مصر، مع توصيل مباشر وحجز فوري عبر واتساب.",
     health_title: "احجز الطبيب المناسب في أقل من دقيقة",
-    health_desc: "تصفح الأخصائيين، شاهد المواعيد المتاحة، وأكّد حجزك فوراً. التأمين والملفات والتذكيرات في مكان واحد.",
+    health_desc: "تصفح الأخصائيين، شاهد المواعيد المتاحة، وأكّد حجزك فوراً عبر واتساب.",
     shop_title: "متجر يفهم ذوقك",
-    shop_desc: "علامات تجارية مميزة، حرفيون محليون، وعروض حصرية — في واجهة متجر منسقة بدقة.",
-    track_title: "تابع طلبك في كل خطوة",
-    track_desc: "نظام لوجستي ذكي بمسارات محدثة وأوقات وصول دقيقة، حتى لا تبقى في انتظار.",
-    hub_title: "سوبر-آب موحّد، مصمم ليختفي خلف بساطته",
-    hub_desc: "كل احتياجاتك في واجهة هادئة وذكية. سندك يقترح الخطوة التالية قبل أن تبحث عنها.",
+    shop_desc: "علامات تجارية مميزة، حرفيون محليون، وعروض حصرية — توصيل لكل أنحاء مصر.",
     confirm_booking: "تأكيد الموعد",
     insurance: "مغطى بالتأمين",
     flash_sale: "تخفيضات سريعة",
@@ -97,24 +129,61 @@ const dict = {
     delivered: "تم التسليم",
     delivering_to: "التوصيل إلى",
     cairo_area: "القاهرة، الزمالك",
-    ai_suggest: "اقتراحات ذكية",
-    based_on: "حسب نشاطك هذا الأسبوع",
-    suggestion: "احجز موعداً مع طبيب + أعد طلب القهوة",
-    apply: "تطبيق",
-    super_app: "مركز السوبر-آب",
-    marketplace: "السوق",
-    curated: "منتقى لك",
-    live_tracking: "تتبع مباشر",
-    courier: "المندوب · أحمد",
-    away: "كم متبقي",
-    order: "طلب رقم",
-    out_for_delivery: "في الطريق إليك",
+    delivery_fee: "رسوم التوصيل",
+    free_delivery: "توصيل مجاني للطلبات فوق",
+    pickup: "استلام من المتجر",
+    delivery: "توصيل للمنزل",
+    size: "المقاس",
+    qty: "الكمية",
+    select_size: "اختر المقاس",
+    select_variant: "اختر النوع",
+    guests: "عدد المدعوين",
+    date: "التاريخ",
+    time: "الوقت",
+    table_for: "حجز طاولة لـ",
+    persons: "أشخاص",
+    sec_categories_title: "أقسام سندك",
+    sec_categories_sub: "كل نشاط تجاري في قسمه الخاص — اختر، اطلب أو احجز، يصلك التأكيد على واتساب فوراً.",
+    cat_restaurants: "المطاعم",
+    cat_restaurants_desc: "أشهى الأطباق من مطاعم مصر، قوائم كاملة بالأصناف والأحجام والأسعار",
+    cat_cafes: "الكافيهات",
+    cat_cafes_desc: "قهوة مختصة، حلويات، ومشروبات باردة — احجز طاولتك أو اطلب توصيل",
+    cat_shops: "المحلات والأزياء",
+    cat_shops_desc: "ملابس، أحذية، إكسسوارات بمقاسات متعددة وعلامات مختارة",
+    cat_halls: "قاعات الأفراح",
+    cat_halls_desc: "احجز قاعتك المثالية — قاعات فاخرة في القاهرة والإسكندرية والجيزة",
+    cat_super: "السوبرماركت",
+    cat_super_desc: "خضار، فاكهة، لحوم، ومنتجات يومية — يوصلك في ساعة",
+    cat_pharmacy: "الصيدليات",
+    cat_pharmacy_desc: "أدوية، فيتامينات، ومستلزمات صحية — توصيل سريع ٢٤/٧",
+    menu: "القائمة",
+    book_table: "حجز طاولة",
+    book_hall: "حجز القاعة",
+    order_now: "اطلب الآن",
+    capacity: "السعة",
+    night: "الليلة",
+    starting_from: "يبدأ من",
+    open_now: "مفتوح الآن",
+    closes_at: "يُغلق",
+    min_order: "أقل طلب",
+    delivery_in: "التوصيل خلال",
+    minutes: "دقيقة",
+    customer_info: "بيانات التوصيل",
+    needs_info: "أكمل بيانات التوصيل لإتمام الطلب",
+    sound_on: "الصوت مفعل",
+    sound_off: "الصوت مكتوم",
   },
   en: {
     brand_tag: "Smart Egyptian platform · Now live",
     nav_services: "Services",
-    nav_food: "Food",
-    nav_health: "Health",
+    nav_categories: "Categories",
+    nav_food: "Restaurants",
+    nav_cafes: "Cafés",
+    nav_shops: "Shops",
+    nav_halls: "Wedding halls",
+    nav_super: "Supermarket",
+    nav_pharmacy: "Pharmacy",
+    nav_health: "Medical",
     nav_shopping: "Shopping",
     nav_track: "Track",
     nav_merchant: "Add my store",
@@ -122,7 +191,7 @@ const dict = {
     cta_explore: "Explore services",
     hero_h1_a: "All your services in",
     hero_h1_b: "one place",
-    hero_sub: "Your smart gateway to everything you need — food, health, shopping, and delivery — unified in one elegant super-app.",
+    hero_sub: "Your smart gateway to everything you need — food, health, shopping, weddings, and delivery — with instant WhatsApp confirmations.",
     users: "500K+ users",
     rating: "4.9 · App Store",
     cities: "Cairo · Alexandria · Giza",
@@ -130,16 +199,18 @@ const dict = {
     section_en: "Ecosystem",
     headline_a: "One app.",
     headline_b: "Every service.",
-    headline_sub: "Five experiences crafted with precision, working as one — powered by intelligence that understands your needs.",
+    headline_sub: "Pick a business, order or book instantly, and get confirmation on WhatsApp with a unique serial number.",
     learn_more: "Learn more",
     add_to_cart: "Add to cart",
-    book_now: "Book now",
+    book_now: "Book via WhatsApp",
+    order_wa: "Order via WhatsApp",
+    reserve_wa: "Reserve via WhatsApp",
     cart: "Cart",
     cart_empty: "Your cart is empty",
     bookings: "My bookings",
     no_bookings: "No bookings yet",
     total: "Total",
-    checkout: "Checkout",
+    checkout: "Checkout via WhatsApp",
     remove: "Remove",
     cancel: "Cancel",
     merchant_title: "Add your store to Sanadak",
@@ -151,7 +222,7 @@ const dict = {
     phone: "Phone number",
     category: "Business type",
     submit: "Submit request",
-    submitted: "Request received! We'll contact you within 24 hours.",
+    submitted: "Sent to WhatsApp",
     booked: "Booking confirmed",
     added: "Added to cart",
     download_ios: "Download for iOS",
@@ -163,16 +234,17 @@ const dict = {
     terms: "Terms",
     contact: "Contact",
     sar: "EGP",
+    serial_label: "Order #",
+    name_placeholder: "Full name",
+    phone_placeholder: "WhatsApp number",
+    address_placeholder: "Delivery address",
+    notes_placeholder: "Additional notes (optional)",
     food_title: "Restaurant-grade taste, delivered in minutes",
-    food_desc: "Curated menus from premium kitchens across Egypt, with live ETA and a checkout that feels native.",
+    food_desc: "Curated menus, live delivery, instant WhatsApp confirmations.",
     health_title: "Book the right doctor — in under a minute",
-    health_desc: "Browse specialists, view live availability, and confirm instantly. Insurance, records and reminders, all in one place.",
+    health_desc: "Browse specialists, view availability, confirm instantly via WhatsApp.",
     shop_title: "A marketplace that learns your taste",
-    shop_desc: "Premium brands, local artisans, and exclusive drops — assembled into a beautifully curated storefront.",
-    track_title: "Watch every order glide to your door",
-    track_desc: "Real-time logistics with intelligent routing and proactive ETAs, so you're never left guessing.",
-    hub_title: "A connected super-app, designed to disappear",
-    hub_desc: "All your essentials unified into one quiet, intelligent interface that suggests what's next.",
+    shop_desc: "Premium brands and local artisans, delivered across Egypt.",
     confirm_booking: "Confirm appointment",
     insurance: "Insurance covered",
     flash_sale: "Flash sale",
@@ -183,20 +255,51 @@ const dict = {
     delivered: "Delivered",
     delivering_to: "Delivering to",
     cairo_area: "Cairo, Zamalek",
-    ai_suggest: "AI suggestions",
-    based_on: "Based on your week",
-    suggestion: "Book a clinic visit + reorder coffee",
-    apply: "Apply",
-    super_app: "Super-app hub",
-    marketplace: "Marketplace",
-    curated: "Curated for you",
-    live_tracking: "Live tracking",
-    courier: "Courier · Ahmed",
-    away: "km away",
-    order: "Order #",
-    out_for_delivery: "Out for delivery",
+    delivery_fee: "Delivery fee",
+    free_delivery: "Free delivery for orders above",
+    pickup: "Pickup",
+    delivery: "Home delivery",
+    size: "Size",
+    qty: "Qty",
+    select_size: "Choose size",
+    select_variant: "Choose variant",
+    guests: "Guests",
+    date: "Date",
+    time: "Time",
+    table_for: "Table for",
+    persons: "people",
+    sec_categories_title: "Sanadak categories",
+    sec_categories_sub: "Each business in its own section — order or book, get instant WhatsApp confirmation.",
+    cat_restaurants: "Restaurants",
+    cat_restaurants_desc: "Top Egyptian restaurants with full menus, variants and prices",
+    cat_cafes: "Cafés",
+    cat_cafes_desc: "Specialty coffee, pastries, cold drinks — book or order",
+    cat_shops: "Shops & Fashion",
+    cat_shops_desc: "Clothing, shoes, accessories — multiple sizes and brands",
+    cat_halls: "Wedding halls",
+    cat_halls_desc: "Reserve your perfect venue — luxury halls in Cairo, Alexandria, Giza",
+    cat_super: "Supermarket",
+    cat_super_desc: "Groceries and daily essentials — delivered in an hour",
+    cat_pharmacy: "Pharmacy",
+    cat_pharmacy_desc: "Medicines, vitamins and care — fast 24/7 delivery",
+    menu: "Menu",
+    book_table: "Book a table",
+    book_hall: "Reserve hall",
+    order_now: "Order now",
+    capacity: "Capacity",
+    night: "night",
+    starting_from: "from",
+    open_now: "Open now",
+    closes_at: "Closes",
+    min_order: "Min. order",
+    delivery_in: "Delivery in",
+    minutes: "min",
+    customer_info: "Delivery details",
+    needs_info: "Please complete your delivery details to checkout",
+    sound_on: "Sound on",
+    sound_off: "Sound off",
   },
-} as const;
+};
 
 const SanadakCtx = createContext<Ctx | null>(null);
 
@@ -206,6 +309,8 @@ export function SanadakProvider({ children }: { children: ReactNode }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [merchantOpen, setMerchantOpen] = useState(false);
+  const [customer, setCustomerState] = useState<Customer>({ name: "", phone: "", address: "" });
+  const [sound, setSoundState] = useState(true);
 
   useEffect(() => {
     const s = localStorage.getItem("sanadak");
@@ -215,15 +320,18 @@ export function SanadakProvider({ children }: { children: ReactNode }) {
         if (p.lang) setLangState(p.lang);
         if (p.cart) setCart(p.cart);
         if (p.bookings) setBookings(p.bookings);
+        if (p.customer) setCustomerState(p.customer);
+        if (typeof p.sound === "boolean") setSoundState(p.sound);
       } catch {}
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("sanadak", JSON.stringify({ lang, cart, bookings }));
+    localStorage.setItem("sanadak", JSON.stringify({ lang, cart, bookings, customer, sound }));
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
-  }, [lang, cart, bookings]);
+    localStorage.setItem("sanadak_sound", sound ? "1" : "0");
+  }, [lang, cart, bookings, customer, sound]);
 
   const value = useMemo<Ctx>(() => ({
     lang,
@@ -233,18 +341,23 @@ export function SanadakProvider({ children }: { children: ReactNode }) {
     cart,
     addToCart: (i) =>
       setCart((c) => {
-        const ex = c.find((x) => x.id === i.id);
-        if (ex) return c.map((x) => (x.id === i.id ? { ...x, qty: x.qty + 1 } : x));
+        const key = (x: CartItem) => `${x.id}__${x.variant ?? ""}`;
+        const inKey = key(i as CartItem);
+        const ex = c.find((x) => key(x) === inKey);
+        if (ex) return c.map((x) => (key(x) === inKey ? { ...x, qty: x.qty + 1 } : x));
         return [...c, { ...i, qty: 1 }];
       }),
-    removeFromCart: (id) => setCart((c) => c.filter((x) => x.id !== id)),
+    removeFromCart: (id, variant) =>
+      setCart((c) => c.filter((x) => !(x.id === id && (variant === undefined || x.variant === variant)))),
     clearCart: () => setCart([]),
     bookings,
     addBooking: (b) => setBookings((bs) => [...bs, { ...b, id: crypto.randomUUID() }]),
     cancelBooking: (id) => setBookings((bs) => bs.filter((b) => b.id !== id)),
     cartOpen, setCartOpen,
     merchantOpen, setMerchantOpen,
-  }), [lang, cart, bookings, cartOpen, merchantOpen]);
+    customer, setCustomer: setCustomerState,
+    sound, setSound: setSoundState,
+  }), [lang, cart, bookings, cartOpen, merchantOpen, customer, sound]);
 
   return <SanadakCtx.Provider value={value}>{children}</SanadakCtx.Provider>;
 }
