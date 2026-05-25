@@ -91,7 +91,7 @@ const restos: Resto[] = [
 ];
 
 function RestoCard({ r }: { r: Resto }) {
-  const { lang, t, addToCart } = useSanadak();
+  const { lang, t } = useSanadak();
   const [open, setOpen] = useState(false);
   return (
     <motion.div whileHover={{ y: -4 }} className="glass-card rounded-3xl p-5 transition-all">
