@@ -142,7 +142,9 @@
     overflow-x: hidden;
   }
   .font-arabic { font-family: var(--font-arabic); }
+  html[dir="rtl"] body { font-family: var(--font-arabic); }
 }
+
 
 @layer utilities {
   .glass-panel {
