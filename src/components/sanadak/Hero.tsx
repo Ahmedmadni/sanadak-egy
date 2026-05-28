@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import { ArrowRight, Sparkles, MapPin, ShoppingBag, Stethoscope, UtensilsCrossed } from "lucide-react";
-import logo from "@/assets/sanadak-logo.png";
+import { Logo } from "./Logo";
 import { useSanadak } from "@/lib/sanadak-context";
 
 export function Hero() {
