@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Moon, Sun, Globe, ShoppingCart, Volume2, VolumeX, Menu, X, Bot } from "lucide-react";
+import { Moon, Sun, Globe, ShoppingCart, Volume2, VolumeX, Menu, X, Bot, LogIn, LogOut, ShieldCheck, User } from "lucide-react";
 import logo from "@/assets/sanadak-logo.png";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx, setSoundEnabled } from "@/lib/sanadak-sounds";
+import { useAuth } from "@/lib/use-auth";
+import { toast } from "sonner";
 
 export function Nav() {
   const [mobile, setMobile] = useState(false);
   const { lang, setLang, t, cart, bookings, setCartOpen, setMerchantOpen, setAssistantOpen, sound, setSound, theme, toggleTheme } = useSanadak();
+  const { user, isAdmin, signOut } = useAuth();
   setSoundEnabled(sound);
 
   const badge = cart.reduce((s, i) => s + i.qty, 0) + bookings.length;
@@ -39,6 +42,11 @@ export function Nav() {
           <button onClick={() => { setMerchantOpen(true); sfx.open(); }} className={`px-2.5 py-1.5 rounded-full text-[var(--emerald)] hover:bg-[var(--emerald)]/10 transition-colors ${lang === "ar" ? "font-arabic" : ""}`}>
             {t("nav_merchant")}
           </button>
+          {isAdmin && (
+            <Link to="/admin" onClick={() => sfx.tap()} className={`px-2.5 py-1.5 rounded-full text-[var(--ember)] hover:bg-[var(--ember)]/10 transition-colors inline-flex items-center gap-1 ${lang === "ar" ? "font-arabic" : ""}`}>
+              <ShieldCheck className="h-3.5 w-3.5" /> {lang === "ar" ? "إدارة" : "Admin"}
+            </Link>
+          )}
         </div>
         <div className="ms-auto flex items-center gap-1">
           <button onClick={() => { setAssistantOpen(true); sfx.open(); }} aria-label={t("open_assistant")} title={t("open_assistant")} className="hidden sm:grid h-9 w-9 place-items-center rounded-full hover:bg-foreground/5 text-[var(--emerald)]">
@@ -57,6 +65,15 @@ export function Nav() {
           <button aria-label="Theme" onClick={() => { toggleTheme(); sfx.tap(); }} className="h-9 w-9 grid place-items-center rounded-full hover:bg-foreground/5">
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
+          {user ? (
+            <button onClick={async () => { await signOut(); sfx.tap(); toast.success(lang === "ar" ? "تم تسجيل الخروج" : "Signed out"); }} aria-label="Logout" title={user.email ?? ""} className="h-9 px-2.5 rounded-full hover:bg-foreground/5 text-xs font-medium flex items-center gap-1">
+              <LogOut className="h-3.5 w-3.5" /><span className="hidden sm:inline">{lang === "ar" ? "خروج" : "Logout"}</span>
+            </button>
+          ) : (
+            <Link to="/auth" onClick={() => sfx.tap()} className="h-9 px-2.5 rounded-full bg-gradient-brand text-primary-foreground text-xs font-semibold flex items-center gap-1 shadow-glow">
+              <LogIn className="h-3.5 w-3.5" /><span className="hidden sm:inline">{lang === "ar" ? "دخول" : "Login"}</span>
+            </Link>
+          )}
           <button onClick={() => setMobile(!mobile)} className="lg:hidden h-9 w-9 grid place-items-center rounded-full hover:bg-foreground/5">
             {mobile ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
@@ -68,6 +85,16 @@ export function Nav() {
             <Link key={to} to={to} onClick={() => { setMobile(false); sfx.tap(); }} className={`px-3 py-2 rounded-lg hover:bg-foreground/5 ${lang === "ar" ? "font-arabic" : ""}`}>{t(k)}</Link>
           ))}
           <button onClick={() => { setMerchantOpen(true); setMobile(false); }} className={`text-start px-3 py-2 rounded-lg text-[var(--emerald)] hover:bg-[var(--emerald)]/10 ${lang === "ar" ? "font-arabic" : ""}`}>{t("nav_merchant")}</button>
+          {isAdmin && (
+            <Link to="/admin" onClick={() => setMobile(false)} className={`px-3 py-2 rounded-lg text-[var(--ember)] hover:bg-[var(--ember)]/10 inline-flex items-center gap-2 ${lang === "ar" ? "font-arabic" : ""}`}>
+              <ShieldCheck className="h-4 w-4" /> {lang === "ar" ? "إدارة المتاجر" : "Stores admin"}
+            </Link>
+          )}
+          {!user && (
+            <Link to="/auth" onClick={() => setMobile(false)} className={`px-3 py-2 rounded-lg text-foreground hover:bg-foreground/5 inline-flex items-center gap-2 ${lang === "ar" ? "font-arabic" : ""}`}>
+              <User className="h-4 w-4" /> {lang === "ar" ? "تسجيل الدخول" : "Sign in"}
+            </Link>
+          )}
         </div>
       )}
     </header>
