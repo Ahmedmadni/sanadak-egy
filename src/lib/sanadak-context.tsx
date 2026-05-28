@@ -314,8 +314,10 @@ export function SanadakProvider({ children }: { children: ReactNode }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [merchantOpen, setMerchantOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const [customer, setCustomerState] = useState<Customer>({ name: "", phone: "", address: "" });
   const [sound, setSoundState] = useState(true);
+  const [theme, setThemeState] = useState<"light" | "dark">("light");
 
   useEffect(() => {
     const s = localStorage.getItem("sanadak");
@@ -329,6 +331,12 @@ export function SanadakProvider({ children }: { children: ReactNode }) {
         if (typeof p.sound === "boolean") setSoundState(p.sound);
       } catch {}
     }
+    const savedTheme = localStorage.getItem("sanadak_theme");
+    if (savedTheme === "dark" || savedTheme === "light") {
+      setThemeState(savedTheme);
+    } else if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      setThemeState("dark");
+    }
   }, []);
 
   useEffect(() => {
@@ -338,11 +346,19 @@ export function SanadakProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("sanadak_sound", sound ? "1" : "0");
   }, [lang, cart, bookings, customer, sound]);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    localStorage.setItem("sanadak_theme", theme);
+  }, [theme]);
+
   const value = useMemo<Ctx>(() => ({
     lang,
     setLang: setLangState,
     t: (k) => dict[lang][k] ?? String(k),
     dir: lang === "ar" ? "rtl" : "ltr",
+    theme,
+    setTheme: setThemeState,
+    toggleTheme: () => setThemeState((p) => (p === "dark" ? "light" : "dark")),
     cart,
     addToCart: (i) =>
       setCart((c) => {
@@ -360,9 +376,10 @@ export function SanadakProvider({ children }: { children: ReactNode }) {
     cancelBooking: (id) => setBookings((bs) => bs.filter((b) => b.id !== id)),
     cartOpen, setCartOpen,
     merchantOpen, setMerchantOpen,
+    assistantOpen, setAssistantOpen,
     customer, setCustomer: setCustomerState,
     sound, setSound: setSoundState,
-  }), [lang, cart, bookings, cartOpen, merchantOpen, customer, sound]);
+  }), [lang, cart, bookings, cartOpen, merchantOpen, assistantOpen, customer, sound, theme]);
 
   return <SanadakCtx.Provider value={value}>{children}</SanadakCtx.Provider>;
 }
