@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Moon, Sun, Globe, ShoppingCart, Volume2, VolumeX, Menu, X, Bot, LogIn, LogOut, ShieldCheck, User } from "lucide-react";
-import logo from "@/assets/sanadak-logo.png";
+import { Logo } from "./Logo";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx, setSoundEnabled } from "@/lib/sanadak-sounds";
 import { useAuth } from "@/lib/use-auth";
