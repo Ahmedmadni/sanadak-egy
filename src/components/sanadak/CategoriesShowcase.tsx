@@ -141,15 +141,28 @@ function DishRow({ d, store, cat }: { d: Dish; store: string; cat: string }) {
   );
 }
 
-function RestaurantsSection() {
+export function RestaurantsSection({ query = "" }: { query?: string }) {
   const { t, lang } = useSanadak();
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? restos.filter((r) => [r.n, r.ne, r.area, r.areae].some((s) => s.toLowerCase().includes(q)) || r.menu.some((d) => (d.n + d.ne).toLowerCase().includes(q)))
+    : restos;
   return (
-    <section id="restaurants" className="relative py-24 px-4">
+    <section id="restaurants" className="relative py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <SectionHead idx="01" ar={t("cat_restaurants")} en="Restaurants" title={t("cat_restaurants")} desc={t("cat_restaurants_desc")} />
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">{restos.map((r) => <RestoCard key={r.id} r={r} />)}</div>
+        {filtered.length === 0 ? <EmptyState /> : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">{filtered.map((r) => <RestoCard key={r.id} r={r} />)}</div>
+        )}
       </div>
     </section>
+  );
+}
+
+function EmptyState() {
+  const { t, lang } = useSanadak();
+  return (
+    <div className={`glass-card rounded-3xl p-12 text-center text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{t("no_results")}</div>
   );
 }
 
