@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Moon, Sun, Globe, ShoppingCart, Volume2, VolumeX, Menu, X, Bot, LogIn, LogOut, ShieldCheck, User } from "lucide-react";
-import logo from "@/assets/sanadak-logo.png";
+import { Logo } from "./Logo";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx, setSoundEnabled } from "@/lib/sanadak-sounds";
 import { useAuth } from "@/lib/use-auth";
@@ -28,10 +28,9 @@ export function Nav() {
   return (
     <header className="fixed top-4 inset-x-0 z-50 flex justify-center px-3">
       <nav className="glass-panel rounded-full px-3 py-2 flex items-center gap-2 w-full max-w-5xl">
-        <Link to="/" className="flex items-center gap-2 ps-2 pe-2">
-          <img src={logo} alt="Sanadak" className="h-7 w-7 rounded-md object-contain" />
-          <span className="font-semibold tracking-tight text-sm">Sanadak</span>
-          <span className="font-arabic text-sm text-muted-foreground hidden sm:inline">سندك</span>
+        <Link to="/" className="flex items-center gap-2 ps-1 pe-2">
+          <Logo variant="horizontal" className="h-8 w-auto object-contain hidden sm:block" />
+          <Logo variant="icon" className="h-8 w-8 object-contain sm:hidden" />
         </Link>
         <div className="hidden lg:flex items-center gap-0.5 text-xs text-muted-foreground mx-auto">
           {links.map(([to, k]) => (
