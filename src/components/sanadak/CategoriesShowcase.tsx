@@ -370,13 +370,17 @@ function HallCard({ h }: { h: Hall }) {
   );
 }
 
-function HallsSection() {
+export function HallsSection({ query = "" }: { query?: string }) {
   const { t } = useSanadak();
+  const q = query.trim().toLowerCase();
+  const filtered = q ? halls.filter((h) => [h.n, h.ne, h.area, h.areae].some((s) => s.toLowerCase().includes(q))) : halls;
   return (
-    <section id="halls" className="relative py-24 px-4">
+    <section id="halls" className="relative py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <SectionHead idx="04" ar={t("cat_halls")} en="Wedding halls" title={t("cat_halls")} desc={t("cat_halls_desc")} />
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">{halls.map((h) => <HallCard key={h.id} h={h} />)}</div>
+        {filtered.length === 0 ? <EmptyState /> : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">{filtered.map((h) => <HallCard key={h.id} h={h} />)}</div>
+        )}
       </div>
     </section>
   );
