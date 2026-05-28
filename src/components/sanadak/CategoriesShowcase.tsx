@@ -464,12 +464,15 @@ const meds = [
   { id: "mask", n: "كمامات طبية (٥٠)", ne: "Medical masks (50)", p: 95, color: "from-emerald-400 to-teal-600" },
 ];
 
-function PharmacySection() {
+export function PharmacySection({ query = "" }: { query?: string }) {
   const { t, lang, addToCart } = useSanadak();
+  const q = query.trim().toLowerCase();
+  const filtered = q ? meds.filter((m) => (m.n + m.ne).toLowerCase().includes(q)) : meds;
   return (
-    <section id="pharmacy" className="relative py-24 px-4">
+    <section id="pharmacy" className="relative py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <SectionHead idx="06" ar={t("cat_pharmacy")} en="Pharmacy" title={t("cat_pharmacy")} desc={t("cat_pharmacy_desc")} />
+        {filtered.length === 0 ? <EmptyState /> : (
         <div className="glass-card rounded-3xl p-6">
           <div className="flex items-center gap-3 mb-5">
             <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 text-white grid place-items-center"><Pill className="h-5 w-5" /></div>
@@ -479,7 +482,7 @@ function PharmacySection() {
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {meds.map((m) => (
+            {filtered.map((m) => (
               <div key={m.id} className="rounded-2xl border border-foreground/5 bg-background/40 overflow-hidden">
                 <div className={`h-24 bg-gradient-to-br ${m.color}`} />
                 <div className="p-3">
@@ -493,6 +496,7 @@ function PharmacySection() {
             ))}
           </div>
         </div>
+        )}
       </div>
     </section>
   );
