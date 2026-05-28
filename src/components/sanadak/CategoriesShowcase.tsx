@@ -405,8 +405,6 @@ const grocery: { cat: string; cate: string; items: GroceryItem[] }[] = [
   ]},
 ];
 
-function SuperSection() {
-  const { t, lang, addToCart } = useSanadak();
 export function SuperSection({ query = "" }: { query?: string }) {
   const { t, lang, addToCart } = useSanadak();
   const q = query.trim().toLowerCase();
