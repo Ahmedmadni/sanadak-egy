@@ -14,7 +14,7 @@ export function CTA() {
         <div className="absolute inset-0 bg-gradient-hero opacity-80" />
         <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-gradient-aurora opacity-25 blur-3xl rounded-full animate-spin-slow" />
         <div className="relative">
-          <img src={logo} alt="" className="h-14 w-14 mx-auto rounded-2xl shadow-glow" />
+          <Logo variant="icon" className="h-14 w-14 mx-auto rounded-2xl shadow-glow" />
           <h2 className={`text-4xl md:text-6xl font-bold mt-6 leading-tight ${lang === "ar" ? "font-arabic" : ""}`}>
             {t("cta_final_a")} <span className="text-gradient-brand">{lang === "ar" ? "سندك" : "Sanadak"}</span>
           </h2>
