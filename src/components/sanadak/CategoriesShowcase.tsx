@@ -407,10 +407,19 @@ const grocery: { cat: string; cate: string; items: GroceryItem[] }[] = [
 
 function SuperSection() {
   const { t, lang, addToCart } = useSanadak();
+export function SuperSection({ query = "" }: { query?: string }) {
+  const { t, lang, addToCart } = useSanadak();
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? grocery
+        .map((g) => ({ ...g, items: g.items.filter((it) => (it.n + it.ne + g.cat + g.cate).toLowerCase().includes(q)) }))
+        .filter((g) => g.items.length > 0)
+    : grocery;
   return (
-    <section id="super" className="relative py-24 px-4">
+    <section id="super" className="relative py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <SectionHead idx="05" ar={t("cat_super")} en="Supermarket" title={t("cat_super")} desc={t("cat_super_desc")} />
+        {filtered.length === 0 ? <EmptyState /> : (
         <div className="glass-card rounded-3xl p-6 space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
@@ -422,7 +431,7 @@ function SuperSection() {
             </div>
             <div className={`text-xs glass-panel rounded-full px-3 py-1 ${lang === "ar" ? "font-arabic" : ""}`}>{t("free_delivery")} 500 {t("sar")}</div>
           </div>
-          {grocery.map((g) => (
+          {filtered.map((g) => (
             <div key={g.cat}>
               <div className={`text-sm font-semibold mb-3 ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? g.cat : g.cate}</div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -442,6 +451,7 @@ function SuperSection() {
             </div>
           ))}
         </div>
+        )}
       </div>
     </section>
   );
