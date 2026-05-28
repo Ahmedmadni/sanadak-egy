@@ -1,13 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Nav } from "@/components/sanadak/Nav";
 import { Hero } from "@/components/sanadak/Hero";
-import { CategoriesShowcase } from "@/components/sanadak/CategoriesShowcase";
+import { HomeCategories } from "@/components/sanadak/HomeCategories";
 import { MerchantSection } from "@/components/sanadak/MerchantSection";
 import { CTA } from "@/components/sanadak/CTA";
-import { CartSheet } from "@/components/sanadak/CartSheet";
-import { MerchantDialog } from "@/components/sanadak/MerchantDialog";
-import { SanadakProvider } from "@/lib/sanadak-context";
-import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -23,17 +18,11 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <SanadakProvider>
-      <main className="relative">
-        <Nav />
-        <Hero />
-        <CategoriesShowcase />
-        <MerchantSection />
-        <CTA />
-        <CartSheet />
-        <MerchantDialog />
-        <Toaster richColors position="top-center" />
-      </main>
-    </SanadakProvider>
+    <>
+      <Hero />
+      <HomeCategories />
+      <MerchantSection />
+      <CTA />
+    </>
   );
 }

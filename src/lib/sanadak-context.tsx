@@ -29,6 +29,9 @@ type Ctx = {
   setLang: (l: Lang) => void;
   t: (k: string) => string;
   dir: "rtl" | "ltr";
+  theme: "light" | "dark";
+  setTheme: (t: "light" | "dark") => void;
+  toggleTheme: () => void;
   cart: CartItem[];
   addToCart: (i: Omit<CartItem, "qty">) => void;
   removeFromCart: (id: string, variant?: string) => void;
@@ -40,6 +43,8 @@ type Ctx = {
   setCartOpen: (b: boolean) => void;
   merchantOpen: boolean;
   setMerchantOpen: (b: boolean) => void;
+  assistantOpen: boolean;
+  setAssistantOpen: (b: boolean) => void;
   customer: Customer;
   setCustomer: (c: Customer) => void;
   sound: boolean;
@@ -172,6 +177,21 @@ const dict: Record<Lang, Record<string, string>> = {
     needs_info: "أكمل بيانات التوصيل لإتمام الطلب",
     sound_on: "الصوت مفعل",
     sound_off: "الصوت مكتوم",
+    search_placeholder: "ابحث في هذا القسم...",
+    back_home: "الرئيسية",
+    no_results: "لا توجد نتائج مطابقة",
+    explore_all: "استكشف كل الأقسام",
+    visit_section: "ادخل القسم",
+    open_assistant: "مساعد سندك الذكي",
+    assistant_title: "مساعد سندك",
+    assistant_welcome: "أهلاً بك! أنا مساعد سندك. اسألني عن أي خدمة وأرشدك للقسم المناسب فوراً.",
+    assistant_placeholder: "اكتب طلبك... مثال: عايز أحجز دكتور أطفال",
+    assistant_send: "إرسال",
+    assistant_open_section: "افتح القسم",
+    quick_suggestions: "اقتراحات سريعة",
+    filter: "فلترة",
+    cinematic_intro: "عروض سينمائية لكل قسم — اختر واستكشف",
+
   },
   en: {
     brand_tag: "Smart Egyptian platform · Now live",
@@ -298,6 +318,20 @@ const dict: Record<Lang, Record<string, string>> = {
     needs_info: "Please complete your delivery details to checkout",
     sound_on: "Sound on",
     sound_off: "Sound off",
+    search_placeholder: "Search this section...",
+    back_home: "Home",
+    no_results: "No matching results",
+    explore_all: "Explore all categories",
+    visit_section: "Enter section",
+    open_assistant: "Sanadak AI Assistant",
+    assistant_title: "Sanadak Assistant",
+    assistant_welcome: "Hi! I'm Sanadak's assistant. Ask me about any service and I'll guide you to the right section instantly.",
+    assistant_placeholder: "Type what you need... e.g. book a pediatrician",
+    assistant_send: "Send",
+    assistant_open_section: "Open section",
+    quick_suggestions: "Quick suggestions",
+    filter: "Filter",
+    cinematic_intro: "Cinematic previews for every section — pick and explore",
   },
 };
 
@@ -309,8 +343,10 @@ export function SanadakProvider({ children }: { children: ReactNode }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [merchantOpen, setMerchantOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const [customer, setCustomerState] = useState<Customer>({ name: "", phone: "", address: "" });
   const [sound, setSoundState] = useState(true);
+  const [theme, setThemeState] = useState<"light" | "dark">("light");
 
   useEffect(() => {
     const s = localStorage.getItem("sanadak");
@@ -324,6 +360,12 @@ export function SanadakProvider({ children }: { children: ReactNode }) {
         if (typeof p.sound === "boolean") setSoundState(p.sound);
       } catch {}
     }
+    const savedTheme = localStorage.getItem("sanadak_theme");
+    if (savedTheme === "dark" || savedTheme === "light") {
+      setThemeState(savedTheme);
+    } else if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      setThemeState("dark");
+    }
   }, []);
 
   useEffect(() => {
@@ -333,11 +375,19 @@ export function SanadakProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("sanadak_sound", sound ? "1" : "0");
   }, [lang, cart, bookings, customer, sound]);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    localStorage.setItem("sanadak_theme", theme);
+  }, [theme]);
+
   const value = useMemo<Ctx>(() => ({
     lang,
     setLang: setLangState,
     t: (k) => dict[lang][k] ?? String(k),
     dir: lang === "ar" ? "rtl" : "ltr",
+    theme,
+    setTheme: setThemeState,
+    toggleTheme: () => setThemeState((p) => (p === "dark" ? "light" : "dark")),
     cart,
     addToCart: (i) =>
       setCart((c) => {
@@ -355,9 +405,10 @@ export function SanadakProvider({ children }: { children: ReactNode }) {
     cancelBooking: (id) => setBookings((bs) => bs.filter((b) => b.id !== id)),
     cartOpen, setCartOpen,
     merchantOpen, setMerchantOpen,
+    assistantOpen, setAssistantOpen,
     customer, setCustomer: setCustomerState,
     sound, setSound: setSoundState,
-  }), [lang, cart, bookings, cartOpen, merchantOpen, customer, sound]);
+  }), [lang, cart, bookings, cartOpen, merchantOpen, assistantOpen, customer, sound, theme]);
 
   return <SanadakCtx.Provider value={value}>{children}</SanadakCtx.Provider>;
 }

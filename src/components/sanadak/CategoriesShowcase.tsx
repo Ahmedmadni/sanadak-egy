@@ -141,15 +141,28 @@ function DishRow({ d, store, cat }: { d: Dish; store: string; cat: string }) {
   );
 }
 
-function RestaurantsSection() {
+export function RestaurantsSection({ query = "" }: { query?: string }) {
   const { t, lang } = useSanadak();
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? restos.filter((r) => [r.n, r.ne, r.area, r.areae].some((s) => s.toLowerCase().includes(q)) || r.menu.some((d) => (d.n + d.ne).toLowerCase().includes(q)))
+    : restos;
   return (
-    <section id="restaurants" className="relative py-24 px-4">
+    <section id="restaurants" className="relative py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <SectionHead idx="01" ar={t("cat_restaurants")} en="Restaurants" title={t("cat_restaurants")} desc={t("cat_restaurants_desc")} />
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">{restos.map((r) => <RestoCard key={r.id} r={r} />)}</div>
+        {filtered.length === 0 ? <EmptyState /> : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">{filtered.map((r) => <RestoCard key={r.id} r={r} />)}</div>
+        )}
       </div>
     </section>
+  );
+}
+
+function EmptyState() {
+  const { t, lang } = useSanadak();
+  return (
+    <div className={`glass-card rounded-3xl p-12 text-center text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{t("no_results")}</div>
   );
 }
 
@@ -215,13 +228,17 @@ function CafeCard({ c }: { c: Cafe }) {
   );
 }
 
-function CafesSection() {
+export function CafesSection({ query = "" }: { query?: string }) {
   const { t } = useSanadak();
+  const q = query.trim().toLowerCase();
+  const filtered = q ? cafes.filter((c) => [c.n, c.ne, c.area, c.areae].some((s) => s.toLowerCase().includes(q))) : cafes;
   return (
-    <section id="cafes" className="relative py-24 px-4">
+    <section id="cafes" className="relative py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <SectionHead idx="02" ar={t("cat_cafes")} en="Cafés" title={t("cat_cafes")} desc={t("cat_cafes_desc")} />
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">{cafes.map((c) => <CafeCard key={c.id} c={c} />)}</div>
+        {filtered.length === 0 ? <EmptyState /> : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">{filtered.map((c) => <CafeCard key={c.id} c={c} />)}</div>
+        )}
       </div>
     </section>
   );
@@ -267,25 +284,33 @@ function ShopItem({ it, store }: { it: Item; store: string }) {
   );
 }
 
-function ShopsSection() {
+export function ShopsSection({ query = "" }: { query?: string }) {
   const { t, lang } = useSanadak();
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? shopStores
+        .map((s) => ({ ...s, items: s.items.filter((it) => (it.n + it.ne).toLowerCase().includes(q) || (s.n + s.ne).toLowerCase().includes(q)) }))
+        .filter((s) => s.items.length > 0)
+    : shopStores;
   return (
-    <section id="shops" className="relative py-24 px-4">
+    <section id="shops" className="relative py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <SectionHead idx="03" ar={t("cat_shops")} en="Shops & Fashion" title={t("cat_shops")} desc={t("cat_shops_desc")} />
-        <div className="space-y-8">
-          {shopStores.map((s) => (
-            <motion.div key={s.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="glass-card rounded-3xl p-5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white grid place-items-center"><ShoppingBag className="h-4 w-4" /></div>
-                <div className={`font-semibold ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? s.n : s.ne}</div>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {s.items.map((it) => <ShopItem key={it.id} it={it} store={lang === "ar" ? s.n : s.ne} />)}
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        {filtered.length === 0 ? <EmptyState /> : (
+          <div className="space-y-8">
+            {filtered.map((s) => (
+              <motion.div key={s.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="glass-card rounded-3xl p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white grid place-items-center"><ShoppingBag className="h-4 w-4" /></div>
+                  <div className={`font-semibold ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? s.n : s.ne}</div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {s.items.map((it) => <ShopItem key={it.id} it={it} store={lang === "ar" ? s.n : s.ne} />)}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -345,13 +370,17 @@ function HallCard({ h }: { h: Hall }) {
   );
 }
 
-function HallsSection() {
+export function HallsSection({ query = "" }: { query?: string }) {
   const { t } = useSanadak();
+  const q = query.trim().toLowerCase();
+  const filtered = q ? halls.filter((h) => [h.n, h.ne, h.area, h.areae].some((s) => s.toLowerCase().includes(q))) : halls;
   return (
-    <section id="halls" className="relative py-24 px-4">
+    <section id="halls" className="relative py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <SectionHead idx="04" ar={t("cat_halls")} en="Wedding halls" title={t("cat_halls")} desc={t("cat_halls_desc")} />
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">{halls.map((h) => <HallCard key={h.id} h={h} />)}</div>
+        {filtered.length === 0 ? <EmptyState /> : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">{filtered.map((h) => <HallCard key={h.id} h={h} />)}</div>
+        )}
       </div>
     </section>
   );
@@ -376,12 +405,19 @@ const grocery: { cat: string; cate: string; items: GroceryItem[] }[] = [
   ]},
 ];
 
-function SuperSection() {
+export function SuperSection({ query = "" }: { query?: string }) {
   const { t, lang, addToCart } = useSanadak();
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? grocery
+        .map((g) => ({ ...g, items: g.items.filter((it) => (it.n + it.ne + g.cat + g.cate).toLowerCase().includes(q)) }))
+        .filter((g) => g.items.length > 0)
+    : grocery;
   return (
-    <section id="super" className="relative py-24 px-4">
+    <section id="super" className="relative py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <SectionHead idx="05" ar={t("cat_super")} en="Supermarket" title={t("cat_super")} desc={t("cat_super_desc")} />
+        {filtered.length === 0 ? <EmptyState /> : (
         <div className="glass-card rounded-3xl p-6 space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
@@ -393,7 +429,7 @@ function SuperSection() {
             </div>
             <div className={`text-xs glass-panel rounded-full px-3 py-1 ${lang === "ar" ? "font-arabic" : ""}`}>{t("free_delivery")} 500 {t("sar")}</div>
           </div>
-          {grocery.map((g) => (
+          {filtered.map((g) => (
             <div key={g.cat}>
               <div className={`text-sm font-semibold mb-3 ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? g.cat : g.cate}</div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -413,6 +449,7 @@ function SuperSection() {
             </div>
           ))}
         </div>
+        )}
       </div>
     </section>
   );
@@ -427,12 +464,15 @@ const meds = [
   { id: "mask", n: "كمامات طبية (٥٠)", ne: "Medical masks (50)", p: 95, color: "from-emerald-400 to-teal-600" },
 ];
 
-function PharmacySection() {
+export function PharmacySection({ query = "" }: { query?: string }) {
   const { t, lang, addToCart } = useSanadak();
+  const q = query.trim().toLowerCase();
+  const filtered = q ? meds.filter((m) => (m.n + m.ne).toLowerCase().includes(q)) : meds;
   return (
-    <section id="pharmacy" className="relative py-24 px-4">
+    <section id="pharmacy" className="relative py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <SectionHead idx="06" ar={t("cat_pharmacy")} en="Pharmacy" title={t("cat_pharmacy")} desc={t("cat_pharmacy_desc")} />
+        {filtered.length === 0 ? <EmptyState /> : (
         <div className="glass-card rounded-3xl p-6">
           <div className="flex items-center gap-3 mb-5">
             <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 text-white grid place-items-center"><Pill className="h-5 w-5" /></div>
@@ -442,7 +482,7 @@ function PharmacySection() {
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {meds.map((m) => (
+            {filtered.map((m) => (
               <div key={m.id} className="rounded-2xl border border-foreground/5 bg-background/40 overflow-hidden">
                 <div className={`h-24 bg-gradient-to-br ${m.color}`} />
                 <div className="p-3">
@@ -456,6 +496,7 @@ function PharmacySection() {
             ))}
           </div>
         </div>
+        )}
       </div>
     </section>
   );
@@ -513,41 +554,18 @@ function DoctorCard({ d }: { d: typeof doctors[number] }) {
   );
 }
 
-function MedicalSection() {
+export function MedicalSection({ query = "" }: { query?: string }) {
   const { t } = useSanadak();
+  const q = query.trim().toLowerCase();
+  const filtered = q ? doctors.filter((d) => (d.n + d.ne + d.s + d.se).toLowerCase().includes(q)) : doctors;
   return (
-    <section id="medical" className="relative py-24 px-4">
+    <section id="medical" className="relative py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <SectionHead idx="07" ar={t("nav_health")} en="Medical bookings" title={t("health_title")} desc={t("health_desc")} />
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">{doctors.map((d) => <DoctorCard key={d.id} d={d} />)}</div>
+        {filtered.length === 0 ? <EmptyState /> : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">{filtered.map((d) => <DoctorCard key={d.id} d={d} />)}</div>
+        )}
       </div>
     </section>
-  );
-}
-
-/* ---------- Wrapper ---------- */
-
-export function CategoriesShowcase() {
-  const { t, lang } = useSanadak();
-  return (
-    <div id="categories" className="relative">
-      <div className="text-center max-w-2xl mx-auto pt-20 px-4">
-        <div className="inline-flex items-center gap-2 glass-panel rounded-full px-3 py-1 text-xs">
-          <Sparkles className="h-3.5 w-3.5 text-[var(--emerald)]" />
-          <span className={lang === "ar" ? "font-arabic" : ""}>{t("sec_categories_title")}</span>
-        </div>
-        <h2 className={`mt-5 text-4xl md:text-6xl font-bold tracking-tight ${lang === "ar" ? "font-arabic" : ""}`}>
-          {t("headline_a")} <span className="text-gradient-brand">{t("headline_b")}</span>
-        </h2>
-        <p className={`mt-3 text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{t("sec_categories_sub")}</p>
-      </div>
-      <RestaurantsSection />
-      <CafesSection />
-      <ShopsSection />
-      <HallsSection />
-      <SuperSection />
-      <PharmacySection />
-      <MedicalSection />
-    </div>
   );
 }
