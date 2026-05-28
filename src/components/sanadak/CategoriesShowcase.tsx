@@ -284,25 +284,33 @@ function ShopItem({ it, store }: { it: Item; store: string }) {
   );
 }
 
-function ShopsSection() {
+export function ShopsSection({ query = "" }: { query?: string }) {
   const { t, lang } = useSanadak();
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? shopStores
+        .map((s) => ({ ...s, items: s.items.filter((it) => (it.n + it.ne).toLowerCase().includes(q) || (s.n + s.ne).toLowerCase().includes(q)) }))
+        .filter((s) => s.items.length > 0)
+    : shopStores;
   return (
-    <section id="shops" className="relative py-24 px-4">
+    <section id="shops" className="relative py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <SectionHead idx="03" ar={t("cat_shops")} en="Shops & Fashion" title={t("cat_shops")} desc={t("cat_shops_desc")} />
-        <div className="space-y-8">
-          {shopStores.map((s) => (
-            <motion.div key={s.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="glass-card rounded-3xl p-5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white grid place-items-center"><ShoppingBag className="h-4 w-4" /></div>
-                <div className={`font-semibold ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? s.n : s.ne}</div>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {s.items.map((it) => <ShopItem key={it.id} it={it} store={lang === "ar" ? s.n : s.ne} />)}
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        {filtered.length === 0 ? <EmptyState /> : (
+          <div className="space-y-8">
+            {filtered.map((s) => (
+              <motion.div key={s.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="glass-card rounded-3xl p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white grid place-items-center"><ShoppingBag className="h-4 w-4" /></div>
+                  <div className={`font-semibold ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? s.n : s.ne}</div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {s.items.map((it) => <ShopItem key={it.id} it={it} store={lang === "ar" ? s.n : s.ne} />)}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
