@@ -228,13 +228,17 @@ function CafeCard({ c }: { c: Cafe }) {
   );
 }
 
-function CafesSection() {
+export function CafesSection({ query = "" }: { query?: string }) {
   const { t } = useSanadak();
+  const q = query.trim().toLowerCase();
+  const filtered = q ? cafes.filter((c) => [c.n, c.ne, c.area, c.areae].some((s) => s.toLowerCase().includes(q))) : cafes;
   return (
-    <section id="cafes" className="relative py-24 px-4">
+    <section id="cafes" className="relative py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <SectionHead idx="02" ar={t("cat_cafes")} en="Cafés" title={t("cat_cafes")} desc={t("cat_cafes_desc")} />
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">{cafes.map((c) => <CafeCard key={c.id} c={c} />)}</div>
+        {filtered.length === 0 ? <EmptyState /> : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">{filtered.map((c) => <CafeCard key={c.id} c={c} />)}</div>
+        )}
       </div>
     </section>
   );
