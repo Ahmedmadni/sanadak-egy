@@ -67,7 +67,7 @@ export function Hero() {
         >
           <div className="absolute inset-0 bg-gradient-brand rounded-full blur-3xl opacity-40 scale-110" />
           <div className="relative glass-card rounded-3xl p-6 shadow-glow">
-            <img src={logo} alt="Sanadak سندك" className="h-24 w-24 md:h-28 md:w-28 object-contain" />
+            <Logo variant="icon" className="h-24 w-24 md:h-28 md:w-28 object-contain" />
           </div>
         </motion.div>
       </div>
