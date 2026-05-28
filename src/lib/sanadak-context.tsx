@@ -29,6 +29,9 @@ type Ctx = {
   setLang: (l: Lang) => void;
   t: (k: string) => string;
   dir: "rtl" | "ltr";
+  theme: "light" | "dark";
+  setTheme: (t: "light" | "dark") => void;
+  toggleTheme: () => void;
   cart: CartItem[];
   addToCart: (i: Omit<CartItem, "qty">) => void;
   removeFromCart: (id: string, variant?: string) => void;
@@ -40,6 +43,8 @@ type Ctx = {
   setCartOpen: (b: boolean) => void;
   merchantOpen: boolean;
   setMerchantOpen: (b: boolean) => void;
+  assistantOpen: boolean;
+  setAssistantOpen: (b: boolean) => void;
   customer: Customer;
   setCustomer: (c: Customer) => void;
   sound: boolean;
