@@ -34,7 +34,7 @@ export function CTA() {
 
       <footer className={`max-w-6xl mx-auto mt-20 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>
         <div className="flex items-center gap-2">
-          <img src={logo} alt="" className="h-5 w-5 rounded" />
+          <Logo variant="icon" className="h-5 w-5 rounded" />
           <span>{t("footer_rights")}</span>
         </div>
         <div className="flex items-center gap-5">
