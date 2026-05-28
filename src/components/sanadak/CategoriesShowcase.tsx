@@ -554,41 +554,18 @@ function DoctorCard({ d }: { d: typeof doctors[number] }) {
   );
 }
 
-function MedicalSection() {
+export function MedicalSection({ query = "" }: { query?: string }) {
   const { t } = useSanadak();
+  const q = query.trim().toLowerCase();
+  const filtered = q ? doctors.filter((d) => (d.n + d.ne + d.s + d.se).toLowerCase().includes(q)) : doctors;
   return (
-    <section id="medical" className="relative py-24 px-4">
+    <section id="medical" className="relative py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <SectionHead idx="07" ar={t("nav_health")} en="Medical bookings" title={t("health_title")} desc={t("health_desc")} />
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">{doctors.map((d) => <DoctorCard key={d.id} d={d} />)}</div>
+        {filtered.length === 0 ? <EmptyState /> : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">{filtered.map((d) => <DoctorCard key={d.id} d={d} />)}</div>
+        )}
       </div>
     </section>
-  );
-}
-
-/* ---------- Wrapper ---------- */
-
-export function CategoriesShowcase() {
-  const { t, lang } = useSanadak();
-  return (
-    <div id="categories" className="relative">
-      <div className="text-center max-w-2xl mx-auto pt-20 px-4">
-        <div className="inline-flex items-center gap-2 glass-panel rounded-full px-3 py-1 text-xs">
-          <Sparkles className="h-3.5 w-3.5 text-[var(--emerald)]" />
-          <span className={lang === "ar" ? "font-arabic" : ""}>{t("sec_categories_title")}</span>
-        </div>
-        <h2 className={`mt-5 text-4xl md:text-6xl font-bold tracking-tight ${lang === "ar" ? "font-arabic" : ""}`}>
-          {t("headline_a")} <span className="text-gradient-brand">{t("headline_b")}</span>
-        </h2>
-        <p className={`mt-3 text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{t("sec_categories_sub")}</p>
-      </div>
-      <RestaurantsSection />
-      <CafesSection />
-      <ShopsSection />
-      <HallsSection />
-      <SuperSection />
-      <PharmacySection />
-      <MedicalSection />
-    </div>
   );
 }
