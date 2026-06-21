@@ -29,13 +29,41 @@ function AuthPage() {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      if (s?.user) navigate({ to: "/" });
+      if (s?.user) {
+        setTimeout(async () => {
+          const { data } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", s.user.id)
+            .eq("role", "admin")
+            .maybeSingle();
+          if (data) {
+            sfx.success();
+            toast.success(lang === "ar" ? "أهلاً بعودتك!" : "Welcome back!");
+            navigate({ to: "/admin" });
+          } else {
+            sfx.success();
+            toast.success(lang === "ar" ? "أهلاً بعودتك!" : "Welcome back!");
+            navigate({ to: "/" });
+          }
+        }, 0);
+      }
     });
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session?.user) navigate({ to: "/" });
+      if (data.session?.user) {
+        setTimeout(async () => {
+          const { data: r } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", data.session!.user.id)
+            .eq("role", "admin")
+            .maybeSingle();
+          navigate({ to: r ? "/admin" : "/" });
+        }, 0);
+      }
     });
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, lang]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,8 +84,7 @@ function AuthPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        sfx.success();
-        toast.success(lang === "ar" ? "أهلاً بعودتك!" : "Welcome back!");
+        // onAuthStateChange will handle navigation + toast
       }
     } catch (err) {
       toast.error((err as Error).message);
