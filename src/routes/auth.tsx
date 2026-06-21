@@ -84,8 +84,7 @@ function AuthPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        sfx.success();
-        toast.success(lang === "ar" ? "أهلاً بعودتك!" : "Welcome back!");
+        // onAuthStateChange will handle navigation + toast
       }
     } catch (err) {
       toast.error((err as Error).message);
