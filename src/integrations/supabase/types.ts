@@ -35,6 +35,54 @@ export type Database = {
         }
         Relationships: []
       }
+      store_requests: {
+        Row: {
+          area: string | null
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          notes: string | null
+          owner_name: string | null
+          phone: string | null
+          status: string
+          store_name: string
+          submitted_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          area?: string | null
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          notes?: string | null
+          owner_name?: string | null
+          phone?: string | null
+          status?: string
+          store_name: string
+          submitted_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          area?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          notes?: string | null
+          owner_name?: string | null
+          phone?: string | null
+          status?: string
+          store_name?: string
+          submitted_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       stores: {
         Row: {
           area: string | null
