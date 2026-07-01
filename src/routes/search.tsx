@@ -82,9 +82,10 @@ function SearchPage() {
           {rows.map((r, i) => {
             const cfg = categoryConfig(r.category);
             return (
-              <motion.div
-                key={r.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
-                className="glass-card rounded-2xl p-4"
+              <motion.a
+                key={r.id} href={`/store/${r.slug}`}
+                initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
+                className="glass-card rounded-2xl p-4 block hover:scale-[1.01] transition-transform"
               >
                 <div className="flex items-start gap-3">
                   <div className="h-12 w-12 rounded-xl bg-gradient-brand grid place-items-center text-primary-foreground shrink-0 overflow-hidden">
@@ -102,7 +103,7 @@ function SearchPage() {
                   </div>
                 </div>
                 {r.description && <p className={`mt-3 text-sm text-foreground/80 line-clamp-2 ${lang === "ar" ? "font-arabic" : ""}`}>{r.description}</p>}
-              </motion.div>
+              </motion.a>
             );
           })}
         </div>

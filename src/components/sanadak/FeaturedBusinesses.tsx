@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Link } from "@tanstack/react-router";
 import { Store, MapPin, BadgeCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
 
-type Tenant = { id: string; name: string; category: string; area: string | null; image_url: string | null; verified_at: string | null };
+type Tenant = { id: string; slug: string; name: string; category: string; area: string | null; image_url: string | null; verified_at: string | null };
 
 export function FeaturedBusinesses() {
   const { lang } = useSanadak();
@@ -16,7 +15,7 @@ export function FeaturedBusinesses() {
     (async () => {
       const { data } = await supabase
         .from("tenants" as any)
-        .select("id, name, category, area, image_url, verified_at")
+        .select("id, slug, name, category, area, image_url, verified_at")
         .order("verified_at", { ascending: false, nullsFirst: false })
         .limit(8);
       setRows((data as any) ?? []);
@@ -35,10 +34,9 @@ export function FeaturedBusinesses() {
       </div>
       <div className="flex gap-3 overflow-x-auto pb-2 justify-center flex-wrap">
         {rows.map((r) => (
-          <Link
+          <a
             key={r.id}
-            to="/search"
-            search={{ q: r.name }}
+            href={`/store/${r.slug}`}
             onClick={() => sfx.tap()}
             className="glass-card rounded-2xl px-4 py-3 flex items-center gap-3 shrink-0 hover:scale-[1.02] transition-transform"
           >
@@ -52,7 +50,7 @@ export function FeaturedBusinesses() {
               </div>
               {r.area && <div className="text-[11px] text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> {r.area}</div>}
             </div>
-          </Link>
+          </a>
         ))}
       </div>
     </motion.div>
