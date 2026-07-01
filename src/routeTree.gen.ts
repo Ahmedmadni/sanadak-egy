@@ -11,11 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SuperRouteImport } from './routes/super'
 import { Route as ShopsRouteImport } from './routes/shops'
+import { Route as SearchRouteImport } from './routes/search'
 import { Route as RestaurantsRouteImport } from './routes/restaurants'
 import { Route as PharmacyRouteImport } from './routes/pharmacy'
 import { Route as MedicalRouteImport } from './routes/medical'
 import { Route as HallsRouteImport } from './routes/halls'
 import { Route as CafesRouteImport } from './routes/cafes'
+import { Route as BusinessRouteImport } from './routes/business'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -28,6 +30,11 @@ const SuperRoute = SuperRouteImport.update({
 const ShopsRoute = ShopsRouteImport.update({
   id: '/shops',
   path: '/shops',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RestaurantsRoute = RestaurantsRouteImport.update({
@@ -55,6 +62,11 @@ const CafesRoute = CafesRouteImport.update({
   path: '/cafes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BusinessRoute = BusinessRouteImport.update({
+  id: '/business',
+  path: '/business',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -75,11 +87,13 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/business': typeof BusinessRoute
   '/cafes': typeof CafesRoute
   '/halls': typeof HallsRoute
   '/medical': typeof MedicalRoute
   '/pharmacy': typeof PharmacyRoute
   '/restaurants': typeof RestaurantsRoute
+  '/search': typeof SearchRoute
   '/shops': typeof ShopsRoute
   '/super': typeof SuperRoute
 }
@@ -87,11 +101,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/business': typeof BusinessRoute
   '/cafes': typeof CafesRoute
   '/halls': typeof HallsRoute
   '/medical': typeof MedicalRoute
   '/pharmacy': typeof PharmacyRoute
   '/restaurants': typeof RestaurantsRoute
+  '/search': typeof SearchRoute
   '/shops': typeof ShopsRoute
   '/super': typeof SuperRoute
 }
@@ -100,11 +116,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/business': typeof BusinessRoute
   '/cafes': typeof CafesRoute
   '/halls': typeof HallsRoute
   '/medical': typeof MedicalRoute
   '/pharmacy': typeof PharmacyRoute
   '/restaurants': typeof RestaurantsRoute
+  '/search': typeof SearchRoute
   '/shops': typeof ShopsRoute
   '/super': typeof SuperRoute
 }
@@ -114,11 +132,13 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/business'
     | '/cafes'
     | '/halls'
     | '/medical'
     | '/pharmacy'
     | '/restaurants'
+    | '/search'
     | '/shops'
     | '/super'
   fileRoutesByTo: FileRoutesByTo
@@ -126,11 +146,13 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/business'
     | '/cafes'
     | '/halls'
     | '/medical'
     | '/pharmacy'
     | '/restaurants'
+    | '/search'
     | '/shops'
     | '/super'
   id:
@@ -138,11 +160,13 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/business'
     | '/cafes'
     | '/halls'
     | '/medical'
     | '/pharmacy'
     | '/restaurants'
+    | '/search'
     | '/shops'
     | '/super'
   fileRoutesById: FileRoutesById
@@ -151,11 +175,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  BusinessRoute: typeof BusinessRoute
   CafesRoute: typeof CafesRoute
   HallsRoute: typeof HallsRoute
   MedicalRoute: typeof MedicalRoute
   PharmacyRoute: typeof PharmacyRoute
   RestaurantsRoute: typeof RestaurantsRoute
+  SearchRoute: typeof SearchRoute
   ShopsRoute: typeof ShopsRoute
   SuperRoute: typeof SuperRoute
 }
@@ -174,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/shops'
       fullPath: '/shops'
       preLoaderRoute: typeof ShopsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/restaurants': {
@@ -211,6 +244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CafesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/business': {
+      id: '/business'
+      path: '/business'
+      fullPath: '/business'
+      preLoaderRoute: typeof BusinessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -239,14 +279,26 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  BusinessRoute: BusinessRoute,
   CafesRoute: CafesRoute,
   HallsRoute: HallsRoute,
   MedicalRoute: MedicalRoute,
   PharmacyRoute: PharmacyRoute,
   RestaurantsRoute: RestaurantsRoute,
+  SearchRoute: SearchRoute,
   ShopsRoute: ShopsRoute,
   SuperRoute: SuperRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

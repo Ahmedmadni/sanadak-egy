@@ -42,7 +42,7 @@ type TenantRow = {
 };
 type PlanRow = {
   id: string; code: string; name_ar: string; name_en: string; price_monthly: number;
-  currency: string; ai_quota_monthly: number; sort_order: number; is_active: boolean;
+  currency: string; ai_quota_monthly: number; commission_rate?: number; sort_order: number; is_active: boolean;
 };
 type SubRow = {
   id: string; tenant_id: string; plan_id: string; status: string;
@@ -61,12 +61,12 @@ type AuditRow = {
 const CATEGORIES: [string, string][] = [
   ["restaurants", "مطاعم"], ["cafes", "كافيهات"], ["shops", "محلات"],
   ["halls", "قاعات أفراح"], ["super", "سوبرماركت"],
-  ["pharmacy", "صيدليات"], ["medical", "طبي"],
+  ["pharmacy", "صيدليات"], ["medical", "طبي"], ["salon", "صالونات"],
 ];
 
 type SectionId =
   | "overview" | "tenants" | "requests" | "stores" | "users"
-  | "plans" | "subscriptions" | "ai" | "tickets" | "audit";
+  | "plans" | "subscriptions" | "payments" | "ai" | "tickets" | "audit";
 
 /* ===================== Root ===================== */
 function AdminPage() {
@@ -112,6 +112,7 @@ function AdminPage() {
     { id: "users", ar: "المستخدمون", en: "Users", icon: <Users className="h-4 w-4" /> },
     { id: "plans", ar: "الباقات", en: "Plans", icon: <Package className="h-4 w-4" /> },
     { id: "subscriptions", ar: "الاشتراكات", en: "Subscriptions", icon: <CreditCard className="h-4 w-4" /> },
+    { id: "payments", ar: "المدفوعات والعمولات", en: "Payments & commission", icon: <TrendingUp className="h-4 w-4" /> },
     { id: "ai", ar: "استهلاك الذكاء", en: "AI usage", icon: <Sparkles className="h-4 w-4" /> },
     { id: "tickets", ar: "تذاكر الدعم", en: "Support", icon: <LifeBuoy className="h-4 w-4" /> },
     { id: "audit", ar: "سجل النشاط", en: "Audit log", icon: <ScrollText className="h-4 w-4" /> },
@@ -160,6 +161,7 @@ function AdminPage() {
           {section === "users" && <UsersPanel currentUserId={user.id} />}
           {section === "plans" && <PlansPanel />}
           {section === "subscriptions" && <SubscriptionsPanel />}
+          {section === "payments" && <PaymentsPanel />}
           {section === "ai" && <AiUsagePanel />}
           {section === "tickets" && <TicketsPanel />}
           {section === "audit" && <AuditPanel />}
@@ -542,11 +544,14 @@ function StoresPanel({ ownerId }: { ownerId: string }) {
 }
 
 /* ===================== Users ===================== */
+const ASSIGNABLE_ROLES = ["admin", "platform_admin", "moderator", "business_owner", "store_manager", "employee"] as const;
+
 function UsersPanel({ currentUserId }: { currentUserId: string }) {
   const { lang } = useSanadak();
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [roles, setRoles] = useState<RoleRow[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  const [pickerFor, setPickerFor] = useState<string | null>(null);
 
   const load = async () => {
     const [{ data: p, error: pe }, { data: r, error: re }] = await Promise.all([
@@ -558,28 +563,36 @@ function UsersPanel({ currentUserId }: { currentUserId: string }) {
   };
   useEffect(() => { load(); }, []);
 
-  const isAdminUser = (uid: string) => roles.some((x) => x.user_id === uid && x.role === "admin");
-  const grant = async (uid: string) => {
+  const rolesOf = (uid: string) => roles.filter((x) => x.user_id === uid).map((x) => x.role);
+  const isAdminUser = (uid: string) => rolesOf(uid).includes("admin");
+
+  const grant = async (uid: string, role: string) => {
     setBusy(uid);
-    const { error } = await supabase.from("user_roles").insert({ user_id: uid, role: "admin" as any });
+    const { error } = await supabase.from("user_roles").insert({ user_id: uid, role: role as any });
     if (error) toast.error(error.message); else { sfx.success(); load(); }
     setBusy(null);
+    setPickerFor(null);
   };
-  const revoke = async (uid: string) => {
-    if (uid === currentUserId && !confirm(lang === "ar" ? "سحب صلاحياتك أنت؟" : "Revoke your own admin?")) return;
+  const revoke = async (uid: string, role: string) => {
+    if (uid === currentUserId && role === "admin" && !confirm(lang === "ar" ? "سحب صلاحياتك أنت؟" : "Revoke your own admin?")) return;
     setBusy(uid);
-    const { error } = await supabase.from("user_roles").delete().eq("user_id", uid).eq("role", "admin" as any);
+    const { error } = await supabase.from("user_roles").delete().eq("user_id", uid).eq("role", role as any);
     if (error) toast.error(error.message); else { sfx.tap(); load(); }
     setBusy(null);
   };
 
+  const roleLabel = (r: string) => ({
+    admin: "Admin", platform_admin: "Platform admin", moderator: "Moderator",
+    business_owner: "Business owner", store_manager: "Store manager", employee: "Employee",
+  }[r] ?? r);
+
   return (
     <div>
-      <PanelHeader title={lang === "ar" ? "المستخدمون والصلاحيات" : "Users & roles"} subtitle={lang === "ar" ? "إدارة صلاحية الإشراف." : "Manage admin access."} />
+      <PanelHeader title={lang === "ar" ? "المستخدمون والصلاحيات" : "Users & roles"} subtitle={lang === "ar" ? "إدارة أدوار المنصة (RBAC)." : "Manage platform roles (RBAC)."} />
       <div className="grid gap-3">
         {profiles.length === 0 && <EmptyState text={lang === "ar" ? "لا يوجد مستخدمون." : "No users."} />}
         {profiles.map((p) => {
-          const admin = isAdminUser(p.id);
+          const userRoles = rolesOf(p.id);
           const isMe = p.id === currentUserId;
           return (
             <motion.div key={p.id} layout className="glass-card rounded-2xl p-4 flex flex-wrap items-center gap-4">
@@ -592,25 +605,36 @@ function UsersPanel({ currentUserId }: { currentUserId: string }) {
                   {isMe && <span className="ms-2 text-[11px] text-muted-foreground">({lang === "ar" ? "أنت" : "you"})</span>}
                 </div>
                 <div className="text-xs text-muted-foreground truncate" dir="ltr">{p.id}{p.phone ? ` · ${p.phone}` : ""}</div>
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {userRoles.length === 0 && <span className="text-[11px] text-muted-foreground">{lang === "ar" ? "بدون دور" : "No role"}</span>}
+                  {userRoles.map((r) => (
+                    <span key={r} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${r === "admin" ? "bg-[var(--emerald)]/15 text-[var(--emerald)]" : "bg-foreground/10 text-foreground/70"}`}>
+                      <ShieldCheck className="h-3 w-3" /> {roleLabel(r)}
+                      <button disabled={busy === p.id} onClick={() => revoke(p.id, r)} className="hover:text-destructive"><X className="h-3 w-3" /></button>
+                    </span>
+                  ))}
+                </div>
               </div>
-              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${admin ? "bg-[var(--emerald)]/15 text-[var(--emerald)]" : "bg-foreground/10 text-foreground/70"}`}>
-                <ShieldCheck className="h-3 w-3" /> {admin ? "Admin" : "User"}
-              </span>
-              {admin ? (
-                <button disabled={busy === p.id} onClick={() => revoke(p.id)} className="h-9 px-3 rounded-full bg-destructive/15 text-destructive text-sm inline-flex items-center gap-1 disabled:opacity-50">
-                  <ShieldOff className="h-4 w-4" /> {lang === "ar" ? "سحب" : "Revoke"}
+              <div className="relative">
+                <button disabled={busy === p.id} onClick={() => setPickerFor(pickerFor === p.id ? null : p.id)} className="h-9 px-3 rounded-full bg-[var(--emerald)] text-white text-sm inline-flex items-center gap-1 disabled:opacity-50">
+                  <ShieldPlus className="h-4 w-4" /> {lang === "ar" ? "منح دور" : "Grant role"}
                 </button>
-              ) : (
-                <button disabled={busy === p.id} onClick={() => grant(p.id)} className="h-9 px-3 rounded-full bg-[var(--emerald)] text-white text-sm inline-flex items-center gap-1 disabled:opacity-50">
-                  <ShieldPlus className="h-4 w-4" /> {lang === "ar" ? "منح" : "Grant"}
-                </button>
-              )}
+                {pickerFor === p.id && (
+                  <div className="absolute z-20 top-full mt-1 end-0 glass-card rounded-xl p-1 min-w-[180px]">
+                    {ASSIGNABLE_ROLES.filter((r) => !userRoles.includes(r)).map((r) => (
+                      <button key={r} onClick={() => grant(p.id, r)} className="w-full text-start px-3 py-2 rounded-lg text-sm hover:bg-foreground/5">
+                        {roleLabel(r)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </motion.div>
           );
         })}
         <p className={`text-xs text-muted-foreground mt-2 ${lang === "ar" ? "font-arabic" : ""}`}>
           <ExternalLink className="inline h-3 w-3 mr-1" />
-          {lang === "ar" ? "تظهر فقط الحسابات التي أكملت الملف الشخصي." : "Only profiles with completed records are shown."}
+          {lang === "ar" ? "تظهر فقط الحسابات التي أكملت الملف الشخصي. أدوار المتاجر (owner/manager/employee) تُدار من صفحة كل تاجر." : "Only completed profiles are shown. Per-store roles (owner/manager/employee) are managed on each tenant."}
         </p>
       </div>
     </div>
@@ -639,6 +663,7 @@ function PlansPanel() {
       price_monthly: Number(editing.price_monthly ?? 0),
       currency: editing.currency ?? "EGP",
       ai_quota_monthly: Number(editing.ai_quota_monthly ?? 0),
+      commission_rate: Number((editing as any).commission_rate ?? 0),
       sort_order: Number(editing.sort_order ?? 0),
       is_active: editing.is_active ?? true,
     };
@@ -678,6 +703,7 @@ function PlansPanel() {
             </div>
             <div className="mt-3 text-3xl font-bold text-gradient-brand">{p.price_monthly} <span className="text-sm font-normal text-muted-foreground">{p.currency}/mo</span></div>
             <div className="mt-2 text-xs text-muted-foreground"><Sparkles className="inline h-3 w-3 mr-1" />{p.ai_quota_monthly} AI ops</div>
+            <div className="mt-1 text-xs text-muted-foreground">{lang === "ar" ? "عمولة المنصة" : "Platform commission"}: {(p as any).commission_rate ?? 0}%</div>
             <div className="mt-4 flex gap-2">
               <button onClick={() => setEditing(p)} className="h-9 px-3 rounded-full glass-panel text-xs inline-flex items-center gap-1"><Pencil className="h-3 w-3" /> {lang === "ar" ? "تعديل" : "Edit"}</button>
               <button onClick={() => del(p.id)} className="h-9 w-9 grid place-items-center rounded-full hover:bg-destructive/10 text-destructive"><Trash2 className="h-4 w-4" /></button>
@@ -701,6 +727,7 @@ function PlansPanel() {
               <input required value={editing.name_en ?? ""} onChange={(e) => setEditing({ ...editing, name_en: e.target.value })} placeholder="Name (EN)" dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
               <input value={editing.currency ?? "EGP"} onChange={(e) => setEditing({ ...editing, currency: e.target.value })} placeholder="currency" dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
               <input type="number" value={editing.ai_quota_monthly ?? 0} onChange={(e) => setEditing({ ...editing, ai_quota_monthly: Number(e.target.value) })} placeholder="AI quota/mo" dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+              <input type="number" step="0.1" value={(editing as any).commission_rate ?? 0} onChange={(e) => setEditing({ ...editing, commission_rate: Number(e.target.value) } as any)} placeholder={lang === "ar" ? "عمولة المنصة %" : "Commission %"} dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
               <input type="number" value={editing.sort_order ?? 0} onChange={(e) => setEditing({ ...editing, sort_order: Number(e.target.value) })} placeholder="sort" dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
               <label className="h-11 inline-flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={editing.is_active ?? true} onChange={(e) => setEditing({ ...editing, is_active: e.target.checked })} />
@@ -751,6 +778,85 @@ function SubscriptionsPanel() {
                   <td className="p-3 uppercase text-xs">{s.plans?.code} · {s.plans?.price_monthly} {s.plans?.currency}</td>
                   <td className="p-3"><StatusPill status={s.status} map={tenantStatusMap} /></td>
                   <td className="p-3 text-xs text-muted-foreground" dir="ltr">{s.current_period_end ? new Date(s.current_period_end).toLocaleDateString() : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ===================== Payments & commission ===================== */
+function PaymentsPanel() {
+  const { lang } = useSanadak();
+  const [rows, setRows] = useState<{ tenant_id: string; tenant_name: string; total: number; commission: number; count: number; payment_status: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const [{ data: orders }, { data: tenants }, { data: subs }, { data: plans }] = await Promise.all([
+        supabase.from("orders" as any).select("tenant_id, total, payment_status"),
+        supabase.from("tenants" as any).select("id, name"),
+        supabase.from("subscriptions" as any).select("tenant_id, plan_id"),
+        supabase.from("plans" as any).select("id, commission_rate"),
+      ]);
+      const tenantName = new Map(((tenants as any[]) ?? []).map((t) => [t.id, t.name]));
+      const planByTenant = new Map(((subs as any[]) ?? []).map((s) => [s.tenant_id, s.plan_id]));
+      const commissionByPlan = new Map(((plans as any[]) ?? []).map((p) => [p.id, Number(p.commission_rate ?? 0)]));
+
+      const grouped = new Map<string, { total: number; commission: number; count: number; paid: number }>();
+      ((orders as any[]) ?? []).forEach((o) => {
+        const g = grouped.get(o.tenant_id) ?? { total: 0, commission: 0, count: 0, paid: 0 };
+        const rate = commissionByPlan.get(planByTenant.get(o.tenant_id)) ?? 0;
+        g.total += Number(o.total ?? 0);
+        g.commission += Number(o.total ?? 0) * (rate / 100);
+        g.count += 1;
+        if (o.payment_status === "paid") g.paid += 1;
+        grouped.set(o.tenant_id, g);
+      });
+
+      setRows(Array.from(grouped.entries()).map(([tenant_id, g]) => ({
+        tenant_id, tenant_name: tenantName.get(tenant_id) ?? "—",
+        total: g.total, commission: g.commission, count: g.count,
+        payment_status: g.count ? `${g.paid}/${g.count} ${lang === "ar" ? "مدفوع" : "paid"}` : "—",
+      })).sort((a, b) => b.total - a.total));
+      setLoading(false);
+    })();
+  }, [lang]);
+
+  const totals = rows.reduce((acc, r) => ({ total: acc.total + r.total, commission: acc.commission + r.commission }), { total: 0, commission: 0 });
+
+  return (
+    <div>
+      <PanelHeader title={lang === "ar" ? "المدفوعات والعمولات" : "Payments & commission"} subtitle={lang === "ar" ? "إجمالي المبيعات وعمولة المنصة لكل متجر (محسوبة من نسبة الباقة)." : "Sales and platform commission per tenant (from plan rate)."} />
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+        <div className="glass-card rounded-2xl p-4"><div className="text-xs text-muted-foreground">{lang === "ar" ? "إجمالي المبيعات" : "Total sales"}</div><div className="text-2xl font-bold text-gradient-brand">{totals.total.toFixed(2)}</div></div>
+        <div className="glass-card rounded-2xl p-4"><div className="text-xs text-muted-foreground">{lang === "ar" ? "عمولة المنصة" : "Platform commission"}</div><div className="text-2xl font-bold text-gradient-brand">{totals.commission.toFixed(2)}</div></div>
+        <div className="glass-card rounded-2xl p-4"><div className="text-xs text-muted-foreground">{lang === "ar" ? "متاجر ببيانات دفع" : "Tenants with orders"}</div><div className="text-2xl font-bold text-gradient-brand">{rows.length}</div></div>
+      </div>
+      {!loading && rows.length === 0 ? <EmptyState text={lang === "ar" ? "لا توجد طلبات مدفوعة بعد." : "No paid orders yet."} /> : (
+        <div className="glass-card rounded-2xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-foreground/5 text-xs text-muted-foreground">
+              <tr>
+                <th className="text-start p-3">{lang === "ar" ? "المتجر" : "Tenant"}</th>
+                <th className="text-start p-3">{lang === "ar" ? "الطلبات" : "Orders"}</th>
+                <th className="text-start p-3">{lang === "ar" ? "المبيعات" : "Sales"}</th>
+                <th className="text-start p-3">{lang === "ar" ? "العمولة" : "Commission"}</th>
+                <th className="text-start p-3">{lang === "ar" ? "حالة الدفع" : "Payment"}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.tenant_id} className="border-t border-foreground/5">
+                  <td className="p-3">{r.tenant_name}</td>
+                  <td className="p-3">{r.count}</td>
+                  <td className="p-3">{r.total.toFixed(2)}</td>
+                  <td className="p-3">{r.commission.toFixed(2)}</td>
+                  <td className="p-3 text-xs text-muted-foreground">{r.payment_status}</td>
                 </tr>
               ))}
             </tbody>
