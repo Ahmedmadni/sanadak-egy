@@ -21,7 +21,7 @@ export function OverviewPanel({ tenant }: { tenant: TenantWithRole }) {
       ]);
       setCounts({ catalog: c.count ?? 0, orders: o.count ?? 0, bookings: b.count ?? 0, reviews: r.count ?? 0 });
       setSub((s.data as any) ?? null);
-      await supabase.rpc("check_subscription_expiry" as any, { _tenant: tenant.id });
+      await (supabase.rpc as any)("check_subscription_expiry", { _tenant: tenant.id });
     })();
   }, [tenant.id]);
 
