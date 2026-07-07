@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
 import { PanelHeader, EmptyState } from "../ui";
+import { ImageUpload } from "../ImageUpload";
 import { categoryConfig, type CatalogItemRow, type TenantWithRole, type PlanRow } from "../types";
 
 export function CatalogPanel({ tenant }: { tenant: TenantWithRole }) {
@@ -127,7 +128,9 @@ export function CatalogPanel({ tenant }: { tenant: TenantWithRole }) {
               {cfg.usesVariants && (
                 <input value={editing.variantsText ?? ""} onChange={(e) => setEditing({ ...editing, variantsText: e.target.value })} placeholder={lang === "ar" ? "الأحجام/الأنواع (مفصولة بفاصلة)" : "Variants, comma separated"} className="col-span-2 h-11 rounded-xl border border-input bg-background px-4 text-sm" />
               )}
-              <input value={editing.image_url ?? ""} onChange={(e) => setEditing({ ...editing, image_url: e.target.value })} placeholder={lang === "ar" ? "رابط الصورة" : "Image URL"} dir="ltr" className="col-span-2 h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+              <div className="col-span-2">
+                <ImageUpload tenantId={tenant.id} value={editing.image_url ?? null} onChange={(url) => setEditing({ ...editing, image_url: url })} />
+              </div>
               <textarea value={editing.description ?? ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} placeholder={lang === "ar" ? "الوصف" : "Description"} rows={3} className="col-span-2 rounded-xl border border-input bg-background px-4 py-2 text-sm" />
               <label className="col-span-2 flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={editing.is_active ?? true} onChange={(e) => setEditing({ ...editing, is_active: e.target.checked })} />

@@ -25,7 +25,7 @@ function BusinessPage() {
 
   useEffect(() => {
     if (loading) return;
-    if (!user) navigate({ to: "/auth" });
+    if (!user) navigate({ to: "/auth", search: { redirect: "/business" } });
   }, [user, loading, navigate]);
 
   useEffect(() => {

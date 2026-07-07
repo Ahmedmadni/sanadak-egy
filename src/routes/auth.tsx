@@ -2,13 +2,17 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { LogIn, UserPlus, Mail, Lock, User as UserIcon, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
 
+const authSearchSchema = z.object({ redirect: z.string().optional() });
+
 export const Route = createFileRoute("/auth")({
+  validateSearch: authSearchSchema,
   head: () => ({
     meta: [
       { title: "تسجيل الدخول · سندك" },
@@ -21,6 +25,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { lang, t } = useSanadak();
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,6 +33,7 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const destination = (isAdmin: boolean) => (redirect ? redirect : isAdmin ? "/admin" : "/");
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       if (s?.user) {
         setTimeout(async () => {
@@ -37,15 +43,9 @@ function AuthPage() {
             .eq("user_id", s.user.id)
             .eq("role", "admin")
             .maybeSingle();
-          if (data) {
-            sfx.success();
-            toast.success(lang === "ar" ? "أهلاً بعودتك!" : "Welcome back!");
-            navigate({ to: "/admin" });
-          } else {
-            sfx.success();
-            toast.success(lang === "ar" ? "أهلاً بعودتك!" : "Welcome back!");
-            navigate({ to: "/" });
-          }
+          sfx.success();
+          toast.success(lang === "ar" ? "أهلاً بعودتك!" : "Welcome back!");
+          navigate({ to: destination(!!data) as any });
         }, 0);
       }
     });
@@ -58,12 +58,12 @@ function AuthPage() {
             .eq("user_id", data.session!.user.id)
             .eq("role", "admin")
             .maybeSingle();
-          navigate({ to: r ? "/admin" : "/" });
+          navigate({ to: destination(!!r) as any });
         }, 0);
       }
     });
     return () => subscription.unsubscribe();
-  }, [navigate, lang]);
+  }, [navigate, lang, redirect]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
