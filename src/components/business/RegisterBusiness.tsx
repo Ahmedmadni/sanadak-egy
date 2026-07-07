@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
-import { CATEGORY_CONFIG, type PlanRow } from "./types";
+import { allCategoryEntries, type PlanRow } from "./types";
 import { DocumentUpload } from "./DocumentUpload";
 
 function slugify(name: string, seed: string) {
@@ -38,7 +38,7 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
   const markUploaded = (kind: string) => setUploaded((s) => new Set(s).add(kind));
   const allRequiredUploaded = REQUIRED_KINDS.every((k) => uploaded.has(k));
 
-  const categories = Object.entries(CATEGORY_CONFIG);
+  const categories = allCategoryEntries();
 
   useEffect(() => {
     (async () => {

@@ -58,6 +58,8 @@ export type CatalogItemRow = {
   variants: unknown[];
   stock: number | null;
   duration_minutes: number | null;
+  barcode: string | null;
+  unit_label: string | null;
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -169,59 +171,76 @@ export type CategoryConfig = {
   usesVariants: boolean;
   usesStock: boolean;
   usesDuration: boolean;
+  usesBarcode: boolean;
 };
 
+// Built-in defaults — always available even before activity_types loads
+// (and used as the fallback shape for any DB row missing a column).
 export const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   restaurants: {
     labelAr: "مطعم", labelEn: "Restaurant", catalogKind: "menu_item",
     catalogLabelAr: "قائمة الطعام", catalogLabelEn: "Menu",
     staffLabelAr: "الفريق", staffLabelEn: "Staff",
-    hasOrders: true, hasBookings: true, usesVariants: true, usesStock: false, usesDuration: false,
+    hasOrders: true, hasBookings: true, usesVariants: true, usesStock: false, usesDuration: false, usesBarcode: false,
   },
   cafes: {
     labelAr: "كافيه", labelEn: "Café", catalogKind: "menu_item",
     catalogLabelAr: "قائمة المشروبات", catalogLabelEn: "Menu",
     staffLabelAr: "الفريق", staffLabelEn: "Staff",
-    hasOrders: true, hasBookings: true, usesVariants: true, usesStock: false, usesDuration: false,
+    hasOrders: true, hasBookings: true, usesVariants: true, usesStock: false, usesDuration: false, usesBarcode: false,
   },
   shops: {
     labelAr: "متجر", labelEn: "Shop", catalogKind: "product",
     catalogLabelAr: "المنتجات", catalogLabelEn: "Products",
     staffLabelAr: "الفريق", staffLabelEn: "Staff",
-    hasOrders: true, hasBookings: false, usesVariants: true, usesStock: true, usesDuration: false,
+    hasOrders: true, hasBookings: false, usesVariants: true, usesStock: true, usesDuration: false, usesBarcode: true,
   },
   super: {
     labelAr: "سوبرماركت", labelEn: "Supermarket", catalogKind: "product",
     catalogLabelAr: "المنتجات", catalogLabelEn: "Products",
     staffLabelAr: "الفريق", staffLabelEn: "Staff",
-    hasOrders: true, hasBookings: false, usesVariants: false, usesStock: true, usesDuration: false,
+    hasOrders: true, hasBookings: false, usesVariants: false, usesStock: true, usesDuration: false, usesBarcode: true,
   },
   pharmacy: {
     labelAr: "صيدلية", labelEn: "Pharmacy", catalogKind: "product",
     catalogLabelAr: "المنتجات", catalogLabelEn: "Products",
     staffLabelAr: "الفريق", staffLabelEn: "Staff",
-    hasOrders: true, hasBookings: false, usesVariants: false, usesStock: true, usesDuration: false,
+    hasOrders: true, hasBookings: false, usesVariants: false, usesStock: true, usesDuration: false, usesBarcode: true,
   },
   halls: {
     labelAr: "قاعة أفراح", labelEn: "Wedding hall", catalogKind: "package",
     catalogLabelAr: "الباقات والأسعار", catalogLabelEn: "Packages & pricing",
     staffLabelAr: "الفريق", staffLabelEn: "Staff",
-    hasOrders: false, hasBookings: true, usesVariants: false, usesStock: false, usesDuration: true,
+    hasOrders: false, hasBookings: true, usesVariants: false, usesStock: false, usesDuration: true, usesBarcode: false,
   },
   medical: {
     labelAr: "عيادة / مستشفى", labelEn: "Clinic / Hospital", catalogKind: "service",
     catalogLabelAr: "الخدمات والكشوفات", catalogLabelEn: "Services",
     staffLabelAr: "الأطباء", staffLabelEn: "Doctors",
-    hasOrders: false, hasBookings: true, usesVariants: false, usesStock: false, usesDuration: true,
+    hasOrders: false, hasBookings: true, usesVariants: false, usesStock: false, usesDuration: true, usesBarcode: false,
   },
   salon: {
     labelAr: "صالون", labelEn: "Salon", catalogKind: "service",
     catalogLabelAr: "الخدمات", catalogLabelEn: "Services",
     staffLabelAr: "فريق العمل", staffLabelEn: "Staff",
-    hasOrders: false, hasBookings: true, usesVariants: false, usesStock: false, usesDuration: true,
+    hasOrders: false, hasBookings: true, usesVariants: false, usesStock: false, usesDuration: true, usesBarcode: false,
   },
 };
 
+// Populated once at app boot from public.activity_types (see use-activity-types.ts),
+// so an admin-added category becomes usable without a code deploy. Falls back to
+// the built-in defaults above for anything not yet loaded or not overridden.
+let runtimeConfig: Record<string, CategoryConfig> | null = null;
+
+export function hydrateCategoryConfig(rows: Record<string, CategoryConfig>) {
+  runtimeConfig = { ...CATEGORY_CONFIG, ...rows };
+}
+
 export function categoryConfig(category: string): CategoryConfig {
-  return CATEGORY_CONFIG[category] ?? CATEGORY_CONFIG.shops;
+  const source = runtimeConfig ?? CATEGORY_CONFIG;
+  return source[category] ?? CATEGORY_CONFIG.shops;
+}
+
+export function allCategoryEntries(): [string, CategoryConfig][] {
+  return Object.entries(runtimeConfig ?? CATEGORY_CONFIG);
 }
