@@ -6,7 +6,7 @@ import {
   Plus, Trash2, Pencil, Store, ShieldCheck, ArrowLeft, X, Save,
   Inbox, Users, Check, Clock, ShieldOff, ShieldPlus, ExternalLink,
   LayoutDashboard, Building2, Package, CreditCard, Sparkles, LifeBuoy,
-  ScrollText, BadgeCheck, Ban, Menu, TrendingUp, Bot,
+  ScrollText, BadgeCheck, Ban, Menu, TrendingUp, Bot, FileText, Wallet,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
@@ -38,6 +38,7 @@ type RoleRow = { user_id: string; role: string };
 type TenantRow = {
   id: string; slug: string; name: string; category: string; area: string | null;
   phone: string | null; email: string | null; image_url: string | null; status: string;
+  description: string | null;
   verified_at: string | null; plan_id: string | null; owner_id: string | null; created_at: string;
 };
 type PlanRow = {
@@ -65,7 +66,7 @@ const CATEGORIES: [string, string][] = [
 ];
 
 type SectionId =
-  | "overview" | "tenants" | "requests" | "stores" | "users"
+  | "overview" | "tenants" | "requests" | "legacy_requests" | "stores" | "users"
   | "plans" | "subscriptions" | "payments" | "ai" | "tickets" | "audit";
 
 /* ===================== Root ===================== */
@@ -107,7 +108,8 @@ function AdminPage() {
   const items: { id: SectionId; ar: string; en: string; icon: React.ReactNode }[] = [
     { id: "overview", ar: "نظرة عامة", en: "Overview", icon: <LayoutDashboard className="h-4 w-4" /> },
     { id: "tenants", ar: "المتاجر (Tenants)", en: "Tenants", icon: <Building2 className="h-4 w-4" /> },
-    { id: "requests", ar: "طلبات الانضمام", en: "Requests", icon: <Inbox className="h-4 w-4" /> },
+    { id: "requests", ar: "طلبات الانضمام", en: "Onboarding", icon: <Inbox className="h-4 w-4" /> },
+    { id: "legacy_requests", ar: "طلبات قديمة (أرشيف)", en: "Legacy requests", icon: <ExternalLink className="h-4 w-4" /> },
     { id: "stores", ar: "المتاجر القديمة", en: "Legacy stores", icon: <Store className="h-4 w-4" /> },
     { id: "users", ar: "المستخدمون", en: "Users", icon: <Users className="h-4 w-4" /> },
     { id: "plans", ar: "الباقات", en: "Plans", icon: <Package className="h-4 w-4" /> },
@@ -156,7 +158,8 @@ function AdminPage() {
         <section className="min-w-0">
           {section === "overview" && <OverviewPanel onJump={setSection} />}
           {section === "tenants" && <TenantsPanel />}
-          {section === "requests" && <RequestsPanel />}
+          {section === "requests" && <OnboardingPanel adminId={user.id} />}
+          {section === "legacy_requests" && <RequestsPanel />}
           {section === "stores" && <StoresPanel ownerId={user.id} />}
           {section === "users" && <UsersPanel currentUserId={user.id} />}
           {section === "plans" && <PlansPanel />}
@@ -197,6 +200,7 @@ const tenantStatusMap: Record<string, string> = {
   pending: "bg-[var(--ember)]/15 text-[var(--ember)]",
   hidden: "bg-foreground/10 text-foreground/60",
   suspended: "bg-destructive/15 text-destructive",
+  rejected: "bg-destructive/15 text-destructive",
 };
 function slugify(s: string) {
   return s.toString().trim().toLowerCase()
@@ -300,8 +304,11 @@ function TenantsPanel() {
         title={lang === "ar" ? "المتاجر (Tenants)" : "Tenants"}
         subtitle={lang === "ar" ? "اعتماد، إخفاء، وتعليق المتاجر على المنصة." : "Verify, hide, and suspend platform tenants."}
       />
+      <p className={`text-xs text-muted-foreground mb-3 ${lang === "ar" ? "font-arabic" : ""}`}>
+        {lang === "ar" ? "الطلبات الجديدة (pending) تُعتمد من تبويب \"طلبات الانضمام\" بعد التحقق من السداد — هذه الصفحة لإدارة عمر المتجر بعد الاعتماد." : "New (pending) requests are approved from the Onboarding tab after payment verification — this page manages a tenant's lifecycle after approval."}
+      </p>
       <div className="mb-3 flex flex-wrap gap-2">
-        {(["all", "active", "pending", "hidden", "suspended"] as const).map((s) => (
+        {(["all", "active", "pending", "hidden", "suspended", "rejected"] as const).map((s) => (
           <button key={s} onClick={() => setFilter(s)}
             className={`h-9 px-3 rounded-full text-xs ${filter === s ? "bg-gradient-brand text-primary-foreground" : "glass-panel"}`}>
             {s}
@@ -328,10 +335,10 @@ function TenantsPanel() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  {t.status !== "active" && (
+                  {t.status !== "active" && t.status !== "pending" && (
                     <button disabled={busy === t.id} onClick={() => setStatus(t.id, "active")}
                       className="h-9 px-3 rounded-full bg-[var(--emerald)] text-white text-xs inline-flex items-center gap-1 disabled:opacity-50">
-                      <Check className="h-3 w-3" /> {lang === "ar" ? "اعتماد" : "Activate"}
+                      <Check className="h-3 w-3" /> {lang === "ar" ? "إعادة تفعيل" : "Reactivate"}
                     </button>
                   )}
                   {t.status !== "hidden" && (
@@ -356,7 +363,184 @@ function TenantsPanel() {
   );
 }
 
-/* ===================== Requests ===================== */
+/* ===================== Onboarding (unified pending tenants) ===================== */
+const DOC_LABELS: Record<string, [string, string]> = {
+  commercial_register: ["السجل التجاري", "Commercial register"],
+  owner_id: ["بطاقة الرقم القومي", "Owner ID"],
+  activity_license: ["ترخيص النشاط", "Activity license"],
+  payment_receipt: ["إيصال السداد", "Payment receipt"],
+};
+
+function OnboardingPanel({ adminId }: { adminId: string }) {
+  const { lang } = useSanadak();
+  const [rows, setRows] = useState<TenantRow[]>([]);
+  const [docs, setDocs] = useState<Record<string, any[]>>({});
+  const [subs, setSubs] = useState<Record<string, any>>({});
+  const [plansById, setPlansById] = useState<Record<string, PlanRow>>({});
+  const [rejecting, setRejecting] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const load = async () => {
+    const { data: tenants, error } = await supabase.from("tenants" as any).select("*").eq("status", "pending").order("created_at", { ascending: true });
+    if (error) { toast.error(error.message); return; }
+    const list = (tenants as unknown as TenantRow[]) ?? [];
+    setRows(list);
+    if (list.length === 0) return;
+    const ids = list.map((t) => t.id);
+    const [{ data: d }, { data: s }, { data: p }] = await Promise.all([
+      supabase.from("tenant_documents" as any).select("*").in("tenant_id", ids).order("created_at", { ascending: false }),
+      supabase.from("subscriptions" as any).select("*").in("tenant_id", ids).order("current_period_end", { ascending: false }),
+      supabase.from("plans" as any).select("*"),
+    ]);
+    const docsByTenant: Record<string, any[]> = {};
+    ((d as any[]) ?? []).forEach((doc) => { (docsByTenant[doc.tenant_id] ??= []).push(doc); });
+    setDocs(docsByTenant);
+    const subByTenant: Record<string, any> = {};
+    ((s as any[]) ?? []).forEach((sub) => { if (!subByTenant[sub.tenant_id]) subByTenant[sub.tenant_id] = sub; });
+    setSubs(subByTenant);
+    const planMap: Record<string, PlanRow> = {};
+    ((p as any[]) ?? []).forEach((pl) => { planMap[pl.id] = pl; });
+    setPlansById(planMap);
+  };
+  useEffect(() => { load(); }, []);
+
+  const viewDocument = async (path: string) => {
+    const { data, error } = await supabase.storage.from("tenant-documents").createSignedUrl(path, 600);
+    if (error) { toast.error(error.message); return; }
+    window.open(data.signedUrl, "_blank");
+  };
+
+  const verifyPayment = async (tenantId: string) => {
+    const sub = subs[tenantId];
+    if (!sub) return;
+    setBusy(tenantId);
+    const { error } = await supabase.from("subscriptions" as any)
+      .update({ payment_verified_at: new Date().toISOString(), payment_verified_by: adminId })
+      .eq("id", sub.id);
+    if (error) toast.error(error.message); else { sfx.success(); load(); }
+    setBusy(null);
+  };
+
+  const approve = async (t: TenantRow) => {
+    setBusy(t.id);
+    const { error } = await supabase.from("tenants" as any).update({ status: "active", verified_at: new Date().toISOString() }).eq("id", t.id);
+    if (error) { toast.error(error.message); setBusy(null); return; }
+    if (t.owner_id) {
+      await supabase.from("notifications" as any).insert({
+        user_id: t.owner_id, tenant_id: t.id, kind: "tenant_approved",
+        title: lang === "ar" ? "تم اعتماد نشاطك" : "Your business was approved",
+        body: lang === "ar" ? `تم اعتماد "${t.name}" وأصبح ظاهراً للعملاء الآن.` : `"${t.name}" is now live and visible to customers.`,
+      });
+    }
+    sfx.success();
+    toast.success(lang === "ar" ? "تم الاعتماد" : "Approved");
+    load();
+    setBusy(null);
+  };
+
+  const reject = async (t: TenantRow) => {
+    setBusy(t.id);
+    const { error } = await supabase.from("tenants" as any).update({ status: "rejected" }).eq("id", t.id);
+    if (error) { toast.error(error.message); setBusy(null); return; }
+    if (t.owner_id) {
+      await supabase.from("notifications" as any).insert({
+        user_id: t.owner_id, tenant_id: t.id, kind: "tenant_rejected",
+        title: lang === "ar" ? "تم رفض طلب الانضمام" : "Your request was rejected",
+        body: reason || (lang === "ar" ? "يرجى مراجعة بياناتك ومستنداتك وإعادة المحاولة." : "Please review your information and documents and try again."),
+      });
+    }
+    sfx.tap();
+    toast.success(lang === "ar" ? "تم الرفض" : "Rejected");
+    setRejecting(null); setReason("");
+    load();
+    setBusy(null);
+  };
+
+  return (
+    <div>
+      <PanelHeader
+        title={lang === "ar" ? "طلبات الانضمام" : "Onboarding"}
+        subtitle={lang === "ar" ? "راجع البيانات والمستندات، تحقق من السداد، ثم اعتمد." : "Review info, documents and payment, then approve."}
+      />
+      {rows.length === 0 && <EmptyState text={lang === "ar" ? "لا توجد طلبات بانتظار المراجعة." : "No requests awaiting review."} />}
+      <div className="grid gap-4">
+        {rows.map((t) => {
+          const sub = subs[t.id];
+          const plan = sub ? plansById[sub.plan_id] : undefined;
+          const tenantDocs = docs[t.id] ?? [];
+          const paymentVerified = !!sub?.payment_verified_at;
+          return (
+            <motion.div key={t.id} layout className="glass-card rounded-2xl p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className={`font-semibold text-lg ${lang === "ar" ? "font-arabic" : ""}`}>{t.name}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{t.category}{t.area ? ` · ${t.area}` : ""}{t.phone ? ` · ${t.phone}` : ""}</div>
+                  {t.description && <p className={`text-sm text-foreground/80 mt-2 max-w-lg ${lang === "ar" ? "font-arabic" : ""}`}>{t.description}</p>}
+                </div>
+                <StatusPill status="pending" map={tenantStatusMap} />
+              </div>
+
+              <div className="mt-4 grid md:grid-cols-2 gap-4">
+                <div>
+                  <div className={`text-xs font-semibold text-muted-foreground mb-2 ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? "الباقة والسداد" : "Plan & payment"}</div>
+                  <div className="glass-panel rounded-xl p-3 text-sm space-y-1.5">
+                    <div>{lang === "ar" ? "الباقة المطلوبة" : "Requested plan"}: <strong>{plan ? (lang === "ar" ? plan.name_ar : plan.name_en) : "—"}</strong> {plan && `(${plan.price_monthly} ${plan.currency}/mo)`}</div>
+                    <div>{lang === "ar" ? "وسيلة الدفع" : "Payment method"}: <strong>{sub?.payment_method ?? "—"}</strong></div>
+                    <div>{lang === "ar" ? "المرجع" : "Reference"}: <span dir="ltr">{sub?.payment_reference ?? "—"}</span></div>
+                    <button
+                      disabled={busy === t.id || paymentVerified || !sub}
+                      onClick={() => verifyPayment(t.id)}
+                      className={`mt-1 h-9 px-3 rounded-full text-xs font-medium inline-flex items-center gap-1.5 disabled:opacity-60 ${paymentVerified ? "bg-[var(--emerald)]/15 text-[var(--emerald)]" : "bg-[var(--ember)] text-white"}`}
+                    >
+                      <Wallet className="h-3.5 w-3.5" /> {paymentVerified ? (lang === "ar" ? "تم التحقق من السداد" : "Payment verified") : (lang === "ar" ? "تأكيد التحقق من السداد" : "Verify payment")}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <div className={`text-xs font-semibold text-muted-foreground mb-2 ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? "المستندات" : "Documents"}</div>
+                  <div className="grid gap-1.5">
+                    {tenantDocs.length === 0 && <div className="text-xs text-muted-foreground">{lang === "ar" ? "لم تُرفع مستندات بعد." : "No documents uploaded yet."}</div>}
+                    {tenantDocs.map((doc) => (
+                      <button key={doc.id} onClick={() => viewDocument(doc.file_path)} className="glass-panel rounded-lg px-3 py-2 text-xs flex items-center justify-between gap-2 hover:bg-foreground/5">
+                        <span className="inline-flex items-center gap-1.5"><FileText className="h-3.5 w-3.5" /> {lang === "ar" ? (DOC_LABELS[doc.kind]?.[0] ?? doc.kind) : (DOC_LABELS[doc.kind]?.[1] ?? doc.kind)}</span>
+                        <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <button
+                  disabled={busy === t.id || !paymentVerified}
+                  onClick={() => approve(t)}
+                  title={!paymentVerified ? (lang === "ar" ? "يجب تأكيد السداد أولاً" : "Verify payment first") : undefined}
+                  className="h-9 px-4 rounded-full bg-[var(--emerald)] text-white text-sm inline-flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <Check className="h-4 w-4" /> {lang === "ar" ? "اعتماد" : "Approve"}
+                </button>
+                {rejecting === t.id ? (
+                  <div className="flex items-center gap-2">
+                    <input autoFocus value={reason} onChange={(e) => setReason(e.target.value)} placeholder={lang === "ar" ? "سبب الرفض" : "Rejection reason"} className="h-9 rounded-full border border-input bg-background px-3 text-xs w-56" />
+                    <button disabled={busy === t.id} onClick={() => reject(t)} className="h-9 px-3 rounded-full bg-destructive/15 text-destructive text-xs">{lang === "ar" ? "تأكيد الرفض" : "Confirm"}</button>
+                    <button onClick={() => { setRejecting(null); setReason(""); }} className="h-9 w-9 grid place-items-center rounded-full hover:bg-foreground/5"><X className="h-3.5 w-3.5" /></button>
+                  </div>
+                ) : (
+                  <button onClick={() => setRejecting(t.id)} className="h-9 px-4 rounded-full bg-destructive/15 text-destructive text-sm inline-flex items-center gap-1.5">
+                    <X className="h-4 w-4" /> {lang === "ar" ? "رفض" : "Reject"}
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ===================== Legacy WhatsApp requests ===================== */
 function RequestsPanel() {
   const { lang } = useSanadak();
   const [rows, setRows] = useState<RequestRow[]>([]);

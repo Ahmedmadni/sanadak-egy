@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
 import { PanelHeader } from "../ui";
+import { ImageUpload } from "../ImageUpload";
 import { CATEGORY_CONFIG, type TenantWithRole } from "../types";
 
 export function ProfilePanel({ tenant, onUpdated }: { tenant: TenantWithRole; onUpdated: () => void }) {
@@ -57,10 +58,24 @@ export function ProfilePanel({ tenant, onUpdated }: { tenant: TenantWithRole; on
           placeholder={lang === "ar" ? "الهاتف" : "Phone"} dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm disabled:opacity-60" />
         <input disabled={!canEdit} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
           placeholder="Email" dir="ltr" className="col-span-2 h-11 rounded-xl border border-input bg-background px-4 text-sm disabled:opacity-60" />
-        <input disabled={!canEdit} value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-          placeholder={lang === "ar" ? "رابط الشعار" : "Logo URL"} dir="ltr" className="col-span-2 h-11 rounded-xl border border-input bg-background px-4 text-sm disabled:opacity-60" />
-        <input disabled={!canEdit} value={form.cover_url} onChange={(e) => setForm({ ...form, cover_url: e.target.value })}
-          placeholder={lang === "ar" ? "رابط صورة الغلاف" : "Cover image URL"} dir="ltr" className="col-span-2 h-11 rounded-xl border border-input bg-background px-4 text-sm disabled:opacity-60" />
+        <div className="col-span-2 grid grid-cols-2 gap-4">
+          <div>
+            <div className={`text-xs text-muted-foreground mb-2 ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? "الشعار" : "Logo"}</div>
+            {canEdit ? (
+              <ImageUpload tenantId={tenant.id} value={form.image_url || null} onChange={(url) => setForm({ ...form, image_url: url })} />
+            ) : (
+              form.image_url && <img src={form.image_url} className="h-24 w-24 rounded-2xl object-cover" />
+            )}
+          </div>
+          <div>
+            <div className={`text-xs text-muted-foreground mb-2 ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? "صورة الغلاف" : "Cover image"}</div>
+            {canEdit ? (
+              <ImageUpload tenantId={tenant.id} value={form.cover_url || null} onChange={(url) => setForm({ ...form, cover_url: url })} shape="wide" />
+            ) : (
+              form.cover_url && <img src={form.cover_url} className="w-full h-32 rounded-2xl object-cover" />
+            )}
+          </div>
+        </div>
         <textarea disabled={!canEdit} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
           placeholder={lang === "ar" ? "الوصف" : "Description"} rows={4} className="col-span-2 rounded-xl border border-input bg-background px-4 py-2 text-sm disabled:opacity-60" />
         {canEdit && (
