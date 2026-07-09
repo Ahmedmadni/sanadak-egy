@@ -10,6 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { SanadakProvider } from "@/lib/sanadak-context";
+import { useLoadActivityTypes } from "@/lib/use-activity-types";
 import { Nav } from "@/components/sanadak/Nav";
 import { CartSheet } from "@/components/sanadak/CartSheet";
 import { MerchantDialog } from "@/components/sanadak/MerchantDialog";
@@ -94,6 +95,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useLoadActivityTypes();
   return (
     <QueryClientProvider client={queryClient}>
       <SanadakProvider>

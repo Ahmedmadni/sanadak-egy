@@ -6,7 +6,7 @@ import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
 import { PanelHeader } from "../ui";
 import { ImageUpload } from "../ImageUpload";
-import { CATEGORY_CONFIG, type TenantWithRole } from "../types";
+import { allCategoryEntries, type TenantWithRole } from "../types";
 
 export function ProfilePanel({ tenant, onUpdated }: { tenant: TenantWithRole; onUpdated: () => void }) {
   const { lang } = useSanadak();
@@ -48,7 +48,7 @@ export function ProfilePanel({ tenant, onUpdated }: { tenant: TenantWithRole; on
           placeholder={lang === "ar" ? "اسم النشاط" : "Business name"} className="col-span-2 h-11 rounded-xl border border-input bg-background px-4 text-sm disabled:opacity-60" />
         <select disabled={!canEdit} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
           className="col-span-2 h-11 rounded-xl border border-input bg-background px-3 text-sm disabled:opacity-60">
-          {Object.entries(CATEGORY_CONFIG).map(([value, cfg]) => (
+          {allCategoryEntries().map(([value, cfg]) => (
             <option key={value} value={value}>{lang === "ar" ? cfg.labelAr : cfg.labelEn}</option>
           ))}
         </select>

@@ -67,7 +67,7 @@ const CATEGORIES: [string, string][] = [
 
 type SectionId =
   | "overview" | "tenants" | "requests" | "legacy_requests" | "stores" | "users"
-  | "plans" | "subscriptions" | "payments" | "ai" | "tickets" | "audit";
+  | "plans" | "activity_types" | "subscriptions" | "payments" | "ai" | "tickets" | "audit";
 
 /* ===================== Root ===================== */
 function AdminPage() {
@@ -113,6 +113,7 @@ function AdminPage() {
     { id: "stores", ar: "المتاجر القديمة", en: "Legacy stores", icon: <Store className="h-4 w-4" /> },
     { id: "users", ar: "المستخدمون", en: "Users", icon: <Users className="h-4 w-4" /> },
     { id: "plans", ar: "الباقات", en: "Plans", icon: <Package className="h-4 w-4" /> },
+    { id: "activity_types", ar: "أنواع الأنشطة", en: "Activity types", icon: <LayoutDashboard className="h-4 w-4" /> },
     { id: "subscriptions", ar: "الاشتراكات", en: "Subscriptions", icon: <CreditCard className="h-4 w-4" /> },
     { id: "payments", ar: "المدفوعات والعمولات", en: "Payments & commission", icon: <TrendingUp className="h-4 w-4" /> },
     { id: "ai", ar: "استهلاك الذكاء", en: "AI usage", icon: <Sparkles className="h-4 w-4" /> },
@@ -163,6 +164,7 @@ function AdminPage() {
           {section === "stores" && <StoresPanel ownerId={user.id} />}
           {section === "users" && <UsersPanel currentUserId={user.id} />}
           {section === "plans" && <PlansPanel />}
+          {section === "activity_types" && <ActivityTypesPanel />}
           {section === "subscriptions" && <SubscriptionsPanel />}
           {section === "payments" && <PaymentsPanel />}
           {section === "ai" && <AiUsagePanel />}
@@ -917,6 +919,136 @@ function PlansPanel() {
                 <input type="checkbox" checked={editing.is_active ?? true} onChange={(e) => setEditing({ ...editing, is_active: e.target.checked })} />
                 {lang === "ar" ? "مفعّلة" : "Active"}
               </label>
+            </div>
+            <button disabled={busy} type="submit" className="mt-5 w-full h-12 rounded-full bg-gradient-brand text-primary-foreground font-medium shadow-glow flex items-center justify-center gap-2 disabled:opacity-50">
+              <Save className="h-4 w-4" /> {lang === "ar" ? "حفظ" : "Save"}
+            </button>
+          </motion.form>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ===================== Activity types ===================== */
+type ActivityTypeRow = {
+  code: string; label_ar: string; label_en: string; catalog_kind: string;
+  catalog_label_ar: string; catalog_label_en: string; staff_label_ar: string; staff_label_en: string;
+  has_orders: boolean; has_bookings: boolean; uses_variants: boolean; uses_stock: boolean;
+  uses_duration: boolean; uses_barcode: boolean; is_active: boolean; sort_order: number;
+};
+
+function ActivityTypesPanel() {
+  const { lang } = useSanadak();
+  const [rows, setRows] = useState<ActivityTypeRow[]>([]);
+  const [editing, setEditing] = useState<Partial<ActivityTypeRow> | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    const { data, error } = await supabase.from("activity_types" as any).select("*").order("sort_order");
+    if (error) toast.error(error.message); else setRows((data as unknown as ActivityTypeRow[]) ?? []);
+  };
+  useEffect(() => { load(); }, []);
+
+  const flags: { key: keyof ActivityTypeRow; ar: string; en: string }[] = [
+    { key: "has_orders", ar: "طلبات", en: "Orders" },
+    { key: "has_bookings", ar: "حجوزات", en: "Bookings" },
+    { key: "uses_variants", ar: "أحجام/أنواع", en: "Variants" },
+    { key: "uses_stock", ar: "مخزون", en: "Stock" },
+    { key: "uses_duration", ar: "مدة", en: "Duration" },
+    { key: "uses_barcode", ar: "باركود ووحدة", en: "Barcode/unit" },
+  ];
+
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editing) return;
+    setBusy(true);
+    const payload: any = {
+      code: editing.code, label_ar: editing.label_ar, label_en: editing.label_en,
+      catalog_kind: editing.catalog_kind ?? "product",
+      catalog_label_ar: editing.catalog_label_ar, catalog_label_en: editing.catalog_label_en,
+      staff_label_ar: editing.staff_label_ar || "الفريق", staff_label_en: editing.staff_label_en || "Staff",
+      has_orders: editing.has_orders ?? true, has_bookings: editing.has_bookings ?? false,
+      uses_variants: editing.uses_variants ?? false, uses_stock: editing.uses_stock ?? false,
+      uses_duration: editing.uses_duration ?? false, uses_barcode: editing.uses_barcode ?? false,
+      is_active: editing.is_active ?? true, sort_order: Number(editing.sort_order ?? rows.length + 1),
+    };
+    const { error } = await supabase.from("activity_types" as any).upsert(payload, { onConflict: "code" });
+    if (error) toast.error(error.message); else { sfx.success(); setEditing(null); load(); }
+    setBusy(false);
+  };
+
+  const toggleActive = async (r: ActivityTypeRow) => {
+    const { error } = await supabase.from("activity_types" as any).update({ is_active: !r.is_active }).eq("code", r.code);
+    if (error) toast.error(error.message); else { sfx.tap(); load(); }
+  };
+
+  return (
+    <div>
+      <PanelHeader
+        title={lang === "ar" ? "أنواع الأنشطة" : "Activity types"}
+        subtitle={lang === "ar" ? "أضف نوع نشاط جديد (مثل: مغسلة سيارات، مركز تدريب) بدون الحاجة لتعديل الكود." : "Add a new activity type (e.g. car wash, training center) without a code change."}
+        action={
+          <button onClick={() => setEditing({ has_orders: true, is_active: true, sort_order: rows.length + 1 })} className="bg-gradient-brand text-primary-foreground h-10 px-4 rounded-full inline-flex items-center gap-2 text-sm font-medium shadow-glow">
+            <Plus className="h-4 w-4" /> {lang === "ar" ? "نوع جديد" : "New type"}
+          </button>
+        }
+      />
+      {rows.length === 0 && <EmptyState text={lang === "ar" ? "لا توجد أنواع بعد." : "No activity types yet."} />}
+      <div className="grid gap-3">
+        {rows.map((r) => (
+          <motion.div key={r.code} layout className="glass-card rounded-2xl p-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`font-semibold ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? r.label_ar : r.label_en}</span>
+                  <span className="text-xs text-muted-foreground font-mono">{r.code}</span>
+                  {!r.is_active && <StatusPill status="inactive" />}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-1.5">
+                  {flags.filter((f) => r[f.key]).map((f) => (
+                    <span key={f.key as string} className="bg-foreground/5 rounded-full px-2 py-0.5">{lang === "ar" ? f.ar : f.en}</span>
+                  ))}
+                </div>
+              </div>
+              <button onClick={() => toggleActive(r)} className="h-9 px-3 rounded-full glass-panel text-xs inline-flex items-center gap-1">
+                {r.is_active ? <Ban className="h-3 w-3" /> : <Check className="h-3 w-3" />} {r.is_active ? (lang === "ar" ? "تعطيل" : "Disable") : (lang === "ar" ? "تفعيل" : "Enable")}
+              </button>
+              <button onClick={() => setEditing(r)} className="h-9 px-3 rounded-full glass-panel text-xs inline-flex items-center gap-1"><Pencil className="h-3 w-3" /> {lang === "ar" ? "تعديل" : "Edit"}</button>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {editing && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm grid place-items-center p-4" onClick={() => setEditing(null)}>
+          <motion.form initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} onSubmit={save} onClick={(e) => e.stopPropagation()} className="glass-card rounded-3xl p-6 w-full max-w-lg shadow-float max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className={`text-xl font-bold ${lang === "ar" ? "font-arabic" : ""}`}>{editing.code ? (lang === "ar" ? "تعديل النوع" : "Edit type") : (lang === "ar" ? "نوع جديد" : "New type")}</h2>
+              <button type="button" onClick={() => setEditing(null)} className="h-8 w-8 grid place-items-center rounded-full hover:bg-foreground/5"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input required disabled={!!rows.find((r) => r.code === editing.code)} value={editing.code ?? ""} onChange={(e) => setEditing({ ...editing, code: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_") })} placeholder="code (e.g. car_wash)" dir="ltr" className="col-span-2 h-11 rounded-xl border border-input bg-background px-4 text-sm disabled:opacity-60" />
+              <input required value={editing.label_ar ?? ""} onChange={(e) => setEditing({ ...editing, label_ar: e.target.value })} placeholder={lang === "ar" ? "الاسم بالعربية" : "Label (AR)"} className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+              <input required value={editing.label_en ?? ""} onChange={(e) => setEditing({ ...editing, label_en: e.target.value })} placeholder="Label (EN)" dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+              <select value={editing.catalog_kind ?? "product"} onChange={(e) => setEditing({ ...editing, catalog_kind: e.target.value })} className="col-span-2 h-11 rounded-xl border border-input bg-background px-3 text-sm">
+                <option value="product">product</option>
+                <option value="service">service</option>
+                <option value="package">package</option>
+                <option value="menu_item">menu_item</option>
+              </select>
+              <input required value={editing.catalog_label_ar ?? ""} onChange={(e) => setEditing({ ...editing, catalog_label_ar: e.target.value })} placeholder={lang === "ar" ? "اسم قائمة العناصر (عربي)" : "Catalog label (AR)"} className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+              <input required value={editing.catalog_label_en ?? ""} onChange={(e) => setEditing({ ...editing, catalog_label_en: e.target.value })} placeholder="Catalog label (EN)" dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+              <input value={editing.staff_label_ar ?? ""} onChange={(e) => setEditing({ ...editing, staff_label_ar: e.target.value })} placeholder={lang === "ar" ? "اسم فريق العمل (عربي)" : "Staff label (AR)"} className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+              <input value={editing.staff_label_en ?? ""} onChange={(e) => setEditing({ ...editing, staff_label_en: e.target.value })} placeholder="Staff label (EN)" dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+              <div className="col-span-2 grid grid-cols-2 gap-2">
+                {flags.map((f) => (
+                  <label key={f.key as string} className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={!!editing[f.key]} onChange={(e) => setEditing({ ...editing, [f.key]: e.target.checked })} />
+                    {lang === "ar" ? f.ar : f.en}
+                  </label>
+                ))}
+              </div>
             </div>
             <button disabled={busy} type="submit" className="mt-5 w-full h-12 rounded-full bg-gradient-brand text-primary-foreground font-medium shadow-glow flex items-center justify-center gap-2 disabled:opacity-50">
               <Save className="h-4 w-4" /> {lang === "ar" ? "حفظ" : "Save"}

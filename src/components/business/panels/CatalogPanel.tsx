@@ -54,6 +54,8 @@ export function CatalogPanel({ tenant }: { tenant: TenantWithRole }) {
         stock: cfg.usesStock ? (editing.stock ?? null) : null,
         duration_minutes: cfg.usesDuration ? (editing.duration_minutes ?? null) : null,
         variants: cfg.usesVariants ? variants : [],
+        barcode: cfg.usesBarcode ? (editing.barcode || null) : null,
+        unit_label: cfg.usesBarcode ? (editing.unit_label || null) : null,
         is_active: editing.is_active ?? true,
       };
       if (editing.id) {
@@ -96,7 +98,10 @@ export function CatalogPanel({ tenant }: { tenant: TenantWithRole }) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className={`font-semibold truncate ${lang === "ar" ? "font-arabic" : ""}`}>{it.name}</div>
-                <div className="text-xs text-muted-foreground">{it.price} {it.currency}{it.duration_minutes ? ` · ${it.duration_minutes}m` : ""}{it.stock !== null ? ` · stock ${it.stock}` : ""}</div>
+                <div className="text-xs text-muted-foreground">
+                  {it.price} {it.currency}{it.unit_label ? `/${it.unit_label}` : ""}{it.duration_minutes ? ` · ${it.duration_minutes}m` : ""}{it.stock !== null ? ` · stock ${it.stock}` : ""}
+                </div>
+                {it.barcode && <div className="text-[11px] text-muted-foreground font-mono mt-0.5" dir="ltr">#{it.barcode}</div>}
               </div>
             </div>
             {canManage && (
@@ -127,6 +132,12 @@ export function CatalogPanel({ tenant }: { tenant: TenantWithRole }) {
               )}
               {cfg.usesVariants && (
                 <input value={editing.variantsText ?? ""} onChange={(e) => setEditing({ ...editing, variantsText: e.target.value })} placeholder={lang === "ar" ? "الأحجام/الأنواع (مفصولة بفاصلة)" : "Variants, comma separated"} className="col-span-2 h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+              )}
+              {cfg.usesBarcode && (
+                <>
+                  <input value={editing.barcode ?? ""} onChange={(e) => setEditing({ ...editing, barcode: e.target.value })} placeholder={lang === "ar" ? "الباركود" : "Barcode"} dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+                  <input value={editing.unit_label ?? ""} onChange={(e) => setEditing({ ...editing, unit_label: e.target.value })} placeholder={lang === "ar" ? "وحدة القياس (قطعة، كيلو...)" : "Unit (piece, kg...)"} className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+                </>
               )}
               <div className="col-span-2">
                 <ImageUpload tenantId={tenant.id} value={editing.image_url ?? null} onChange={(url) => setEditing({ ...editing, image_url: url })} />
