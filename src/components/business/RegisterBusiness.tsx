@@ -7,6 +7,7 @@ import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
 import { allCategoryEntries, type PlanRow } from "./types";
 import { DocumentUpload } from "./DocumentUpload";
+import { PayOnlineButton } from "./PayOnlineButton";
 
 function slugify(name: string, seed: string) {
   const base = name.toLowerCase().trim().replace(/[^a-z0-9؀-ۿ]+/g, "-").replace(/^-+|-+$/g, "");
@@ -34,9 +35,24 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
   const [paymentMethod, setPaymentMethod] = useState<"bank_transfer" | "vodafone_cash">("vodafone_cash");
   const [reference, setReference] = useState("");
   const [uploaded, setUploaded] = useState<Set<string>>(new Set());
-  const REQUIRED_KINDS = ["commercial_register", "owner_id", "payment_receipt"];
+  const [paidOnline, setPaidOnline] = useState(false);
+  const REQUIRED_KINDS = ["commercial_register", "owner_id"];
   const markUploaded = (kind: string) => setUploaded((s) => new Set(s).add(kind));
-  const allRequiredUploaded = REQUIRED_KINDS.every((k) => uploaded.has(k));
+  const allRequiredUploaded = REQUIRED_KINDS.every((k) => uploaded.has(k)) && (uploaded.has("payment_receipt") || paidOnline);
+
+  // Covers returning from the Paymob checkout tab/redirect: re-check whether
+  // the subscription got marked paid by the webhook while the user was away.
+  useEffect(() => {
+    if (!tenantId || step !== 2) return;
+    const checkPaid = async () => {
+      const { data } = await supabase.from("subscriptions" as any).select("payment_verified_at").eq("tenant_id", tenantId)
+        .order("current_period_end", { ascending: false }).limit(1).maybeSingle();
+      if ((data as any)?.payment_verified_at) setPaidOnline(true);
+    };
+    checkPaid();
+    window.addEventListener("focus", checkPaid);
+    return () => window.removeEventListener("focus", checkPaid);
+  }, [tenantId, step]);
 
   const categories = allCategoryEntries();
 
@@ -180,7 +196,17 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
             </div>
 
             <div className={`text-sm font-semibold mt-6 mb-3 ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? "سداد الاشتراك" : "Subscription payment"}</div>
-            <div className="grid grid-cols-2 gap-2 mb-3">
+            {paidOnline ? (
+              <div className="glass-panel rounded-xl p-3 flex items-center gap-2 text-sm text-[var(--emerald)]">
+                <CheckCircle2 className="h-4 w-4" /> {lang === "ar" ? "تم الدفع إلكترونياً بنجاح." : "Paid online successfully."}
+              </div>
+            ) : (
+              <>
+                <PayOnlineButton tenantId={tenantId} />
+                <div className={`my-3 text-center text-xs text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>— {lang === "ar" ? "أو ادفع يدوياً وارفع الإيصال" : "or pay manually and upload a receipt"} —</div>
+              </>
+            )}
+            <div className={`grid grid-cols-2 gap-2 mb-3 ${paidOnline ? "opacity-50 pointer-events-none" : ""}`}>
               <button type="button" onClick={() => setPaymentMethod("vodafone_cash")}
                 className={`h-11 rounded-xl border text-sm inline-flex items-center justify-center gap-2 ${paymentMethod === "vodafone_cash" ? "border-[var(--emerald)] bg-[var(--emerald)]/5" : "border-input"}`}>
                 <Smartphone className="h-4 w-4" /> {lang === "ar" ? "فودافون كاش" : "Vodafone Cash"}
@@ -190,15 +216,19 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
                 <Landmark className="h-4 w-4" /> {lang === "ar" ? "تحويل بنكي" : "Bank transfer"}
               </button>
             </div>
-            <p className={`text-xs text-muted-foreground glass-panel rounded-xl p-3 ${lang === "ar" ? "font-arabic" : ""}`}>
-              {lang === "ar" ? PAYMENT_INSTRUCTIONS[paymentMethod].ar : PAYMENT_INSTRUCTIONS[paymentMethod].en}
-            </p>
-            <div className="mt-3 grid gap-2">
-              <input value={reference} onChange={(e) => setReference(e.target.value)}
-                placeholder={lang === "ar" ? "رقم العملية / المرجع (اختياري، اكتبه قبل رفع الإيصال)" : "Transaction / reference number (optional, fill before uploading)"}
-                dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
-              <DocumentUpload tenantId={tenantId} kind="payment_receipt" required referenceNote={reference} onUploaded={() => markUploaded("payment_receipt")} label={lang === "ar" ? "إيصال السداد" : "Payment receipt"} />
-            </div>
+            {!paidOnline && (
+              <>
+                <p className={`text-xs text-muted-foreground glass-panel rounded-xl p-3 ${lang === "ar" ? "font-arabic" : ""}`}>
+                  {lang === "ar" ? PAYMENT_INSTRUCTIONS[paymentMethod].ar : PAYMENT_INSTRUCTIONS[paymentMethod].en}
+                </p>
+                <div className="mt-3 grid gap-2">
+                  <input value={reference} onChange={(e) => setReference(e.target.value)}
+                    placeholder={lang === "ar" ? "رقم العملية / المرجع (اختياري، اكتبه قبل رفع الإيصال)" : "Transaction / reference number (optional, fill before uploading)"}
+                    dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+                  <DocumentUpload tenantId={tenantId} kind="payment_receipt" required referenceNote={reference} onUploaded={() => markUploaded("payment_receipt")} label={lang === "ar" ? "إيصال السداد" : "Payment receipt"} />
+                </div>
+              </>
+            )}
 
             <button disabled={!allRequiredUploaded || busy} onClick={submitReceipt}
               className="mt-6 w-full h-12 rounded-full bg-gradient-brand text-primary-foreground font-medium shadow-glow flex items-center justify-center gap-2 disabled:opacity-50">

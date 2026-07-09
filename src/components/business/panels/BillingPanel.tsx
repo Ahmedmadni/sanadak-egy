@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
 import { PanelHeader } from "../ui";
+import { PayOnlineButton } from "../PayOnlineButton";
 import type { PlanRow, SubscriptionRow, TenantWithRole } from "../types";
 
 export function BillingPanel({ tenant }: { tenant: TenantWithRole }) {
@@ -56,6 +57,7 @@ export function BillingPanel({ tenant }: { tenant: TenantWithRole }) {
             {sub ? `${sub.status} · ${lang === "ar" ? "ينتهي في" : "renews"} ${new Date(sub.current_period_end).toLocaleDateString(lang === "ar" ? "ar-EG" : "en-US")}` : (lang === "ar" ? "لا يوجد اشتراك مسجل" : "No subscription on record")}
           </div>
         </div>
+        {canManage && <PayOnlineButton tenantId={tenant.id} />}
       </div>
 
       <div className="grid md:grid-cols-3 gap-4">
