@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
   Sparkles, ImageOff, Wand2, ArrowUpCircle, Camera, PaintBucket,
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
 import { PanelHeader } from "../ui";
+import { ImageUpload } from "../ImageUpload";
 import type { PlanRow, TenantWithRole } from "../types";
 
 type Feature = {
@@ -16,15 +17,16 @@ type Feature = {
   icon: any;
   labelAr: string; labelEn: string;
   descAr: string; descEn: string;
-  kind: "text" | "image";
+  kind: "text" | "image" | "image_soon";
+  requiresImage?: boolean;
 };
 
 const FEATURES: Feature[] = [
-  { id: "bg_remove", icon: ImageOff, labelAr: "إزالة الخلفية", labelEn: "Background removal", descAr: "إزالة خلفية صور المنتجات تلقائياً", descEn: "Auto-remove product photo backgrounds", kind: "image" },
-  { id: "enhance", icon: Wand2, labelAr: "تحسين الصور", labelEn: "Image enhancement", descAr: "تحسين وضوح وألوان صور المنتجات", descEn: "Sharpen and color-correct product photos", kind: "image" },
-  { id: "upscale", icon: ArrowUpCircle, labelAr: "تكبير الصور", labelEn: "Image upscaling", descAr: "رفع دقة الصور دون فقد الجودة", descEn: "Upscale images without losing quality", kind: "image" },
+  { id: "bg_remove", icon: ImageOff, labelAr: "إزالة الخلفية", labelEn: "Background removal", descAr: "إزالة خلفية صور المنتجات تلقائياً", descEn: "Auto-remove product photo backgrounds", kind: "image", requiresImage: true },
+  { id: "enhance", icon: Wand2, labelAr: "تحسين الصور", labelEn: "Image enhancement", descAr: "تحسين وضوح وألوان صور المنتجات", descEn: "Sharpen and color-correct product photos", kind: "image", requiresImage: true },
+  { id: "upscale", icon: ArrowUpCircle, labelAr: "تكبير الصور", labelEn: "Image upscaling", descAr: "رفع دقة الصور دون فقد الجودة", descEn: "Upscale images without losing quality", kind: "image_soon" },
   { id: "product_photo", icon: Camera, labelAr: "تصوير منتج بالذكاء الاصطناعي", labelEn: "AI product photography", descAr: "توليد صور منتج احترافية", descEn: "Generate studio-quality product shots", kind: "image" },
-  { id: "bg_generate", icon: PaintBucket, labelAr: "توليد خلفيات", labelEn: "AI background generation", descAr: "خلفيات إبداعية مطابقة لهوية متجرك", descEn: "Creative backgrounds matching your brand", kind: "image" },
+  { id: "bg_generate", icon: PaintBucket, labelAr: "توليد خلفيات", labelEn: "AI background generation", descAr: "خلفيات إبداعية مطابقة لهوية متجرك", descEn: "Creative backgrounds matching your brand", kind: "image", requiresImage: true },
   { id: "description", icon: FileText, labelAr: "توليد وصف المنتج", labelEn: "Product description generator", descAr: "وصف تسويقي جاهز لمنتجك", descEn: "Ready-to-use marketing copy for your item", kind: "text" },
   { id: "seo", icon: SearchIcon, labelAr: "محتوى SEO", labelEn: "SEO content generator", descAr: "عناوين ووصف محسّن لمحركات البحث", descEn: "Search-optimized titles & meta copy", kind: "text" },
   { id: "marketing", icon: Megaphone, labelAr: "محتوى تسويقي", labelEn: "Marketing content generator", descAr: "نصوص إعلانية جاهزة للنشر", descEn: "Ready-to-publish ad copy", kind: "text" },
@@ -56,7 +58,9 @@ export function AiStudioPanel({ tenant }: { tenant: TenantWithRole }) {
   const [plan, setPlan] = useState<PlanRow | null>(null);
   const [usedThisMonth, setUsedThisMonth] = useState(0);
   const [prompts, setPrompts] = useState<Record<string, string>>({});
-  const [results, setResults] = useState<Record<string, string>>({});
+  const [sourceImages, setSourceImages] = useState<Record<string, string | null>>({});
+  const [textResults, setTextResults] = useState<Record<string, string>>({});
+  const [imageResults, setImageResults] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = async () => {
@@ -80,16 +84,29 @@ export function AiStudioPanel({ tenant }: { tenant: TenantWithRole }) {
       toast.error(lang === "ar" ? "استنفدت رصيد الذكاء الاصطناعي هذا الشهر." : "You've used all your AI quota this month.");
       return;
     }
-    if (feature.kind === "image") {
-      toast.info(lang === "ar" ? "قريباً — يتطلب ربط مزود توليد صور بالذكاء الاصطناعي." : "Coming soon — requires connecting an image-AI provider.");
+    if (feature.kind === "image_soon") {
+      toast.info(lang === "ar" ? "قريباً." : "Coming soon.");
+      return;
+    }
+    if (feature.kind === "image" && feature.requiresImage && !sourceImages[feature.id]) {
+      toast.error(lang === "ar" ? "ارفع صورة أولاً" : "Upload an image first");
       return;
     }
     setBusy(feature.id);
     try {
-      const text = generateCopy(feature.id, tenant.name, tenant.category, prompts[feature.id] ?? "", lang);
-      await new Promise((r) => setTimeout(r, 400));
-      setResults((r) => ({ ...r, [feature.id]: text }));
-      await supabase.from("ai_usage" as any).insert({ tenant_id: tenant.id, feature: feature.id, tokens: text.length });
+      if (feature.kind === "text") {
+        const text = generateCopy(feature.id, tenant.name, tenant.category, prompts[feature.id] ?? "", lang);
+        await new Promise((r) => setTimeout(r, 400));
+        setTextResults((r) => ({ ...r, [feature.id]: text }));
+        await supabase.from("ai_usage" as any).insert({ tenant_id: tenant.id, feature: feature.id, tokens: text.length });
+      } else {
+        const { data, error } = await supabase.functions.invoke("ai-image", {
+          body: { tenant_id: tenant.id, mode: feature.id, image_url: sourceImages[feature.id] || null, prompt: prompts[feature.id] || "" },
+        });
+        if (error) throw error;
+        if (!data?.image_url) throw new Error(data?.error || (lang === "ar" ? "تعذّر توليد الصورة" : "Could not generate the image"));
+        setImageResults((r) => ({ ...r, [feature.id]: data.image_url }));
+      }
       sfx.success();
       load();
     } catch (err) {
@@ -146,17 +163,34 @@ export function AiStudioPanel({ tenant }: { tenant: TenantWithRole }) {
                   className="mt-3 w-full h-10 rounded-xl border border-input bg-background px-3 text-sm"
                 />
               )}
+              {f.kind === "image" && (
+                <div className="mt-3 flex items-start gap-3">
+                  <ImageUpload tenantId={tenant.id} value={sourceImages[f.id] ?? null} onChange={(url) => setSourceImages((s) => ({ ...s, [f.id]: url }))} />
+                  <input
+                    value={prompts[f.id] ?? ""}
+                    onChange={(e) => setPrompts((p) => ({ ...p, [f.id]: e.target.value }))}
+                    placeholder={lang === "ar" ? "توجيه إضافي (اختياري)" : "Extra guidance (optional)"}
+                    className="flex-1 h-10 rounded-xl border border-input bg-background px-3 text-sm"
+                  />
+                </div>
+              )}
               <button
-                disabled={busy === f.id || (f.kind === "text" && remaining <= 0)}
+                disabled={busy === f.id || (f.kind !== "image_soon" && remaining <= 0)}
                 onClick={() => run(f)}
                 className="mt-3 w-full h-9 rounded-full bg-gradient-brand text-primary-foreground text-sm font-medium shadow-glow flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                <Sparkles className="h-3.5 w-3.5" /> {f.kind === "image" ? (lang === "ar" ? "قريباً" : "Coming soon") : (lang === "ar" ? "توليد" : "Generate")}
+                <Sparkles className="h-3.5 w-3.5" /> {f.kind === "image_soon" ? (lang === "ar" ? "قريباً" : "Coming soon") : (lang === "ar" ? "توليد" : "Generate")}
               </button>
-              {results[f.id] && (
+              {textResults[f.id] && (
                 <div className="mt-3 glass-panel rounded-xl p-3 text-xs whitespace-pre-wrap relative">
-                  {results[f.id]}
-                  <button onClick={() => copy(results[f.id])} className="absolute top-2 end-2 h-6 w-6 grid place-items-center rounded-full hover:bg-foreground/10"><Copy className="h-3 w-3" /></button>
+                  {textResults[f.id]}
+                  <button onClick={() => copy(textResults[f.id])} className="absolute top-2 end-2 h-6 w-6 grid place-items-center rounded-full hover:bg-foreground/10"><Copy className="h-3 w-3" /></button>
+                </div>
+              )}
+              {imageResults[f.id] && (
+                <div className="mt-3 relative rounded-xl overflow-hidden">
+                  <img src={imageResults[f.id]} alt="" className="w-full rounded-xl" />
+                  <button onClick={() => copy(imageResults[f.id])} className="absolute top-2 end-2 h-7 w-7 grid place-items-center rounded-full bg-black/50 text-white hover:bg-black/70"><Copy className="h-3.5 w-3.5" /></button>
                 </div>
               )}
             </motion.div>
