@@ -59,6 +59,10 @@ BEGIN
     RAISE EXCEPTION 'items must be a JSON array';
   END IF;
 
+  IF octet_length(_items::text) > 100000 THEN
+    RAISE EXCEPTION 'items payload too large';
+  END IF;
+
   v_item_count := jsonb_array_length(_items);
   IF v_item_count < 1 OR v_item_count > 50 THEN
     RAISE EXCEPTION 'order must contain between 1 and 50 items';
@@ -70,8 +74,11 @@ BEGIN
     FROM jsonb_array_elements(_items) AS x(item)
     WHERE jsonb_typeof(x.item) <> 'object'
        OR coalesce(x.item->>'item_id', '') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-       OR coalesce(x.item->>'qty', '') !~ '^[0-9]+$'
-       OR (x.item->>'qty')::int NOT BETWEEN 1 AND 99
+       OR CASE
+            WHEN coalesce(x.item->>'qty', '') ~ '^[0-9]{1,2}$'
+              THEN (x.item->>'qty')::int NOT BETWEEN 1 AND 99
+            ELSE true
+          END
        OR (
          x.item ? 'variants'
          AND x.item->'variants' IS NOT NULL
