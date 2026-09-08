@@ -95,19 +95,16 @@ function StorePage() {
         sfx.success();
         toast.success(lang === "ar" ? "تم إرسال طلب الحجز" : "Booking request sent");
       } else {
-        // Generate the id client-side: anonymous checkout has no SELECT policy on
-        // orders, so a chained .select() after insert would fail RLS for guests.
-        const orderId = crypto.randomUUID();
-        const { error } = await supabase.from("orders" as any).insert({
-          id: orderId, tenant_id: tenant.id, customer_id: user?.id ?? null,
-          customer_name: customer.name, customer_phone: customer.phone, customer_address: customer.address || null,
-          delivery_type: customer.address ? "delivery" : "pickup",
-          subtotal: active.price, total: active.price, status: "pending", payment_status: "unpaid",
-        });
+        const { error } = await supabase.rpc("create_order" as any, {
+          _tenant: tenant.id,
+          _items: [{ item_id: active.id, qty: 1, variants: {} }],
+          _customer_name: customer.name,
+          _customer_phone: customer.phone,
+          _customer_address: customer.address || null,
+          _delivery_type: customer.address ? "delivery" : "pickup",
+          _notes: null,
+        } as any);
         if (error) throw error;
-        await supabase.from("order_items" as any).insert({
-          order_id: orderId, item_id: active.id, name: active.name, qty: 1, unit_price: active.price, total: active.price,
-        });
         sfx.success();
         toast.success(lang === "ar" ? "تم إرسال طلبك" : "Order sent");
       }
