@@ -18,12 +18,28 @@ export function Hero() {
           loop
           playsInline
           aria-hidden="true"
-          className="absolute inset-0 h-full w-full object-cover object-left md:object-[18%_center] pointer-events-none"
+          className="absolute inset-0 h-full w-full object-cover object-left pointer-events-none"
         >
           <source src="/sanadak-bg.mp4" type="video/mp4" />
         </video>
-        <div className="hero-video-overlay absolute inset-0 pointer-events-none" />
-        <div className="hero-video-error-mask absolute inset-y-0 right-0 w-[42%] pointer-events-none" />
+
+        {/* Keep the clean left side of the video visible; use only a very light global tone. */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(to bottom, rgba(8, 24, 28, 0.10), rgba(8, 24, 28, 0.06) 45%, rgba(8, 24, 28, 0.20))",
+          }}
+        />
+
+        {/* Concentrate the mask over the problematic right side where the wrong video text appears. */}
+        <div
+          className="absolute inset-y-0 right-0 w-[44%] pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(to left, rgba(7, 23, 28, 0.88) 0%, rgba(7, 23, 28, 0.74) 28%, rgba(7, 23, 28, 0.42) 58%, rgba(7, 23, 28, 0.10) 82%, transparent 100%)",
+          }}
+        />
 
         <motion.div
           initial={{ opacity: 0, y: 22 }}
