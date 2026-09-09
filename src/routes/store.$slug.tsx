@@ -95,7 +95,7 @@ function StorePage() {
         sfx.success();
         toast.success(lang === "ar" ? "تم إرسال طلب الحجز" : "Booking request sent");
       } else {
-        const { error } = await supabase.rpc("create_order" as any, {
+        const { error } = await (supabase.rpc as any)("create_order", {
           _tenant: tenant.id,
           _items: [{ item_id: active.id, qty: 1, variants: {} }],
           _customer_name: customer.name,
@@ -103,7 +103,7 @@ function StorePage() {
           _customer_address: customer.address || null,
           _delivery_type: customer.address ? "delivery" : "pickup",
           _notes: null,
-        } as any);
+        });
         if (error) throw error;
         sfx.success();
         toast.success(lang === "ar" ? "تم إرسال طلبك" : "Order sent");
