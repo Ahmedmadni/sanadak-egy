@@ -27,12 +27,12 @@ export function Nav() {
 
   return (
     <header className="fixed top-4 inset-x-0 z-50 flex justify-center px-3">
-      <nav className="glass-panel rounded-full px-3 py-2 flex items-center gap-2 w-full max-w-5xl">
+      <nav className="glass-panel grid w-full max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-full px-3 py-2 xl:flex">
         <Link to="/" className="flex items-center gap-2 ps-1 pe-2">
           <Logo variant="horizontal" className="h-8 w-auto object-contain hidden sm:block" />
           <Logo variant="icon" className="h-8 w-8 object-contain sm:hidden" />
         </Link>
-        <div className="hidden lg:flex items-center gap-0.5 text-xs text-muted-foreground mx-auto">
+        <div className="mx-auto hidden items-center gap-0.5 text-xs text-muted-foreground xl:flex">
           {links.map(([to, k]) => (
             <Link key={to} to={to} onClick={() => sfx.tap()} activeProps={{ className: "text-foreground bg-foreground/5" }} className={`px-2.5 py-1.5 rounded-full hover:text-foreground hover:bg-foreground/5 transition-colors ${lang === "ar" ? "font-arabic" : ""}`}>
               {t(k)}
@@ -53,10 +53,10 @@ export function Nav() {
           )}
         </div>
         <div className="ms-auto flex items-center gap-1">
-          <button onClick={() => { setAssistantOpen(true); sfx.open(); }} aria-label={t("open_assistant")} title={t("open_assistant")} className="hidden sm:grid h-9 w-9 place-items-center rounded-full hover:bg-foreground/5 text-[var(--emerald)]">
+          <button onClick={() => { setAssistantOpen(true); sfx.open(); }} aria-label={t("open_assistant")} title={t("open_assistant")} className="hidden md:grid h-9 w-9 place-items-center rounded-full hover:bg-foreground/5 text-primary">
             <Bot className="h-4 w-4" />
           </button>
-          <button onClick={() => { setSound(!sound); sfx.tap(); }} aria-label="Sound" title={sound ? t("sound_on") : t("sound_off")} className="h-9 w-9 grid place-items-center rounded-full hover:bg-foreground/5">
+          <button onClick={() => { setSound(!sound); sfx.tap(); }} aria-label="Sound" title={sound ? t("sound_on") : t("sound_off")} className="hidden h-9 w-9 place-items-center rounded-full hover:bg-foreground/5 sm:grid">
             {sound ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4 text-muted-foreground" />}
           </button>
           <button onClick={() => { setCartOpen(true); sfx.open(); }} aria-label="Cart" className="relative h-9 w-9 grid place-items-center rounded-full hover:bg-foreground/5">
@@ -78,13 +78,13 @@ export function Nav() {
               <LogIn className="h-3.5 w-3.5" /><span className="hidden sm:inline">{lang === "ar" ? "دخول" : "Login"}</span>
             </Link>
           )}
-          <button onClick={() => setMobile(!mobile)} className="lg:hidden h-9 w-9 grid place-items-center rounded-full hover:bg-foreground/5">
+          <button onClick={() => setMobile(!mobile)} aria-label={mobile ? "Close menu" : "Open menu"} className="grid h-9 w-9 place-items-center rounded-full hover:bg-foreground/5 xl:hidden">
             {mobile ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
         </div>
       </nav>
       {mobile && (
-        <div className="lg:hidden absolute top-16 left-3 right-3 glass-panel rounded-2xl p-3 flex flex-col gap-1 text-sm">
+        <div className="absolute left-3 right-3 top-16 flex flex-col gap-1 rounded-lg glass-panel p-3 text-sm xl:hidden">
           {links.map(([to, k]) => (
             <Link key={to} to={to} onClick={() => { setMobile(false); sfx.tap(); }} className={`px-3 py-2 rounded-lg hover:bg-foreground/5 ${lang === "ar" ? "font-arabic" : ""}`}>{t(k)}</Link>
           ))}

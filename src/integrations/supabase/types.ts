@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_types: {
+        Row: {
+          catalog_kind: string
+          catalog_label_ar: string
+          catalog_label_en: string
+          code: string
+          created_at: string
+          has_bookings: boolean
+          has_orders: boolean
+          is_active: boolean
+          label_ar: string
+          label_en: string
+          sort_order: number
+          staff_label_ar: string
+          staff_label_en: string
+          updated_at: string
+          uses_barcode: boolean
+          uses_duration: boolean
+          uses_stock: boolean
+          uses_variants: boolean
+        }
+        Insert: {
+          catalog_kind?: string
+          catalog_label_ar: string
+          catalog_label_en: string
+          code: string
+          created_at?: string
+          has_bookings?: boolean
+          has_orders?: boolean
+          is_active?: boolean
+          label_ar: string
+          label_en: string
+          sort_order?: number
+          staff_label_ar?: string
+          staff_label_en?: string
+          updated_at?: string
+          uses_barcode?: boolean
+          uses_duration?: boolean
+          uses_stock?: boolean
+          uses_variants?: boolean
+        }
+        Update: {
+          catalog_kind?: string
+          catalog_label_ar?: string
+          catalog_label_en?: string
+          code?: string
+          created_at?: string
+          has_bookings?: boolean
+          has_orders?: boolean
+          is_active?: boolean
+          label_ar?: string
+          label_en?: string
+          sort_order?: number
+          staff_label_ar?: string
+          staff_label_en?: string
+          updated_at?: string
+          uses_barcode?: boolean
+          uses_duration?: boolean
+          uses_stock?: boolean
+          uses_variants?: boolean
+        }
+        Relationships: []
+      }
       ai_usage: {
         Row: {
           cost: number
@@ -231,6 +294,7 @@ export type Database = {
       }
       catalog_items: {
         Row: {
+          barcode: string | null
           category: string | null
           created_at: string
           currency: string
@@ -245,10 +309,12 @@ export type Database = {
           sort_order: number
           stock: number | null
           tenant_id: string
+          unit_label: string | null
           updated_at: string
           variants: Json
         }
         Insert: {
+          barcode?: string | null
           category?: string | null
           created_at?: string
           currency?: string
@@ -263,10 +329,12 @@ export type Database = {
           sort_order?: number
           stock?: number | null
           tenant_id: string
+          unit_label?: string | null
           updated_at?: string
           variants?: Json
         }
         Update: {
+          barcode?: string | null
           category?: string | null
           created_at?: string
           currency?: string
@@ -281,6 +349,7 @@ export type Database = {
           sort_order?: number
           stock?: number | null
           tenant_id?: string
+          unit_label?: string | null
           updated_at?: string
           variants?: Json
         }
@@ -461,6 +530,7 @@ export type Database = {
         Row: {
           ai_quota_monthly: number
           code: string
+          commission_rate: number
           created_at: string
           currency: string
           features: Json
@@ -476,6 +546,7 @@ export type Database = {
         Insert: {
           ai_quota_monthly?: number
           code: string
+          commission_rate?: number
           created_at?: string
           currency?: string
           features?: Json
@@ -491,6 +562,7 @@ export type Database = {
         Update: {
           ai_quota_monthly?: number
           code?: string
+          commission_rate?: number
           created_at?: string
           currency?: string
           features?: Json
@@ -715,6 +787,10 @@ export type Database = {
           current_period_end: string
           current_period_start: string
           id: string
+          payment_method: string | null
+          payment_reference: string | null
+          payment_verified_at: string | null
+          payment_verified_by: string | null
           plan_id: string
           status: string
           tenant_id: string
@@ -726,6 +802,10 @@ export type Database = {
           current_period_end?: string
           current_period_start?: string
           id?: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          payment_verified_at?: string | null
+          payment_verified_by?: string | null
           plan_id: string
           status?: string
           tenant_id: string
@@ -737,6 +817,10 @@ export type Database = {
           current_period_end?: string
           current_period_start?: string
           id?: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          payment_verified_at?: string | null
+          payment_verified_by?: string | null
           plan_id?: string
           status?: string
           tenant_id?: string
@@ -796,6 +880,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "support_tickets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_documents: {
+        Row: {
+          created_at: string
+          file_path: string
+          id: string
+          kind: string
+          note: string | null
+          status: string
+          tenant_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_path: string
+          id?: string
+          kind: string
+          note?: string | null
+          status?: string
+          tenant_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_path?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          status?: string
+          tenant_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_documents_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -929,7 +1054,33 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_subscription_expiry: {
+        Args: { _tenant: string }
+        Returns: undefined
+      }
+      create_order: {
+        Args: {
+          _customer_address?: string
+          _customer_name: string
+          _customer_phone: string
+          _delivery_type?: string
+          _items: Json
+          _notes?: string
+          _tenant: string
+        }
+        Returns: {
+          currency: string
+          order_id: string
+          serial_no: number
+          subtotal: number
+          total: number
+        }[]
+      }
+      submit_payment_info: {
+        Args: { _method: string; _reference: string; _tenant: string }
+        Returns: undefined
+      }
+      tenant_is_visible: { Args: { _tenant: string }; Returns: boolean }
     }
     Enums: {
       app_role:
@@ -957,12 +1108,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -986,11 +1137,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1011,11 +1162,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1036,11 +1187,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1053,11 +1204,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

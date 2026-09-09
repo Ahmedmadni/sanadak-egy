@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSanadak } from "@/lib/sanadak-context";
+import { Building2, MapPin, Star } from "lucide-react";
 
 export function LiveStats() {
   const { lang } = useSanadak();
@@ -19,15 +20,17 @@ export function LiveStats() {
   }, []);
 
   return (
-    <div className={`mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>
+    <aside aria-label={lang === "ar" ? "مؤشرات الثقة" : "Trust indicators"} className={`border-b border-border bg-secondary/50 px-4 py-4 text-xs text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-5 gap-y-3 sm:gap-x-8">
       <div className="flex items-center gap-2">
-        <span className="h-1.5 w-1.5 rounded-full bg-[var(--ember)]" />
+        <Building2 className="h-4 w-4 text-primary" />
         {lang === "ar" ? `+${Math.max(stats.tenants, 1)} نشاط تجاري منضم` : `${Math.max(stats.tenants, 1)}+ businesses joined`}
       </div>
-      <div className="h-3 w-px bg-foreground/10" />
-      <div>{stats.avgRating} · {lang === "ar" ? `${stats.reviews} تقييم` : `${stats.reviews} reviews`}</div>
-      <div className="h-3 w-px bg-foreground/10 hidden sm:block" />
-      <div className="hidden sm:block">{lang === "ar" ? "القاهرة · الإسكندرية · الجيزة" : "Cairo · Alexandria · Giza"}</div>
-    </div>
+      <span className="hidden h-3 w-px bg-border sm:block" />
+      <div className="flex items-center gap-2"><Star className="h-4 w-4 fill-accent text-accent" />{stats.avgRating} · {lang === "ar" ? `${stats.reviews} تقييم` : `${stats.reviews} reviews`}</div>
+      <span className="hidden h-3 w-px bg-border sm:block" />
+      <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" />{lang === "ar" ? "القاهرة · الإسكندرية · الجيزة" : "Cairo · Alexandria · Giza"}</div>
+      </div>
+    </aside>
   );
 }

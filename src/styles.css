@@ -37,6 +37,12 @@
   --color-ember: var(--ember);
   --color-graphite: var(--graphite);
   --color-glass: var(--glass);
+  --color-hero-foreground: var(--hero-foreground);
+  --color-hero-muted: var(--hero-muted);
+  --color-hero-accent: var(--hero-accent);
+  --color-hero-border: var(--hero-border);
+  --color-hero-surface: var(--hero-surface);
+  --color-hero-surface-hover: var(--hero-surface-hover);
   --font-display: var(--font-display);
   --font-arabic: var(--font-arabic);
 }
@@ -82,6 +88,12 @@
   --ember: oklch(0.78 0.16 65);
   --graphite: oklch(0.22 0.02 240);
   --glass: oklch(1 0 0 / 0.55);
+  --hero-foreground: oklch(0.99 0.003 180);
+  --hero-muted: oklch(0.9 0.015 180);
+  --hero-accent: oklch(0.82 0.15 168);
+  --hero-border: oklch(1 0 0 / 0.2);
+  --hero-surface: oklch(0.12 0.018 220 / 0.62);
+  --hero-surface-hover: oklch(0.18 0.025 200 / 0.78);
 
   --font-display: "Plus Jakarta Sans", "SF Pro Display", "Inter", system-ui, sans-serif;
   --font-arabic: "Cairo", "IBM Plex Sans Arabic", "Noto Kufi Arabic", system-ui, sans-serif;
@@ -180,6 +192,13 @@
     background-size: 64px 64px;
     mask-image: radial-gradient(ellipse at center, black 40%, transparent 75%);
   }
+  .hero-video-overlay {
+    background:
+      linear-gradient(to bottom, oklch(0.08 0.02 220 / 0.55), oklch(0.08 0.02 220 / 0.38) 45%, oklch(0.08 0.02 220 / 0.72)),
+      radial-gradient(ellipse at center, transparent 22%, oklch(0.06 0.018 220 / 0.56) 100%);
+  }
+  .scrollbar-none { scrollbar-width: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
 }
 
 @keyframes float-slow {
@@ -215,3 +234,11 @@
 
 /* Section enter underline */
 section { scroll-margin-top: 100px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-slow,
+  .animate-pulse-glow,
+  .animate-spin-slow,
+  .animate-aurora,
+  .animate-glow-pulse { animation: none; }
+}
