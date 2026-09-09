@@ -11,7 +11,7 @@ export function Hero() {
 
   return (
     <>
-      <section className="relative flex min-h-[78svh] items-center justify-center overflow-hidden px-4 pb-16 pt-28 md:min-h-[84svh] md:pb-20 md:pt-32">
+      <section className="relative flex min-h-[70svh] items-center justify-center overflow-hidden px-4 pb-12 pt-28 md:min-h-[76svh] md:pb-16 md:pt-32">
         <video
           autoPlay
           muted
@@ -23,21 +23,21 @@ export function Hero() {
           <source src="/sanadak-bg.mp4" type="video/mp4" />
         </video>
 
-        {/* Keep the clean left side of the video visible; use only a very light global tone. */}
+        {/* Keep the clean left side highly visible with only a very light global tone. */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "linear-gradient(to bottom, rgba(8, 24, 28, 0.10), rgba(8, 24, 28, 0.06) 45%, rgba(8, 24, 28, 0.20))",
+              "linear-gradient(to bottom, rgba(8, 24, 28, 0.07), rgba(8, 24, 28, 0.03) 45%, rgba(8, 24, 28, 0.14))",
           }}
         />
 
-        {/* Concentrate the mask over the problematic right side where the wrong video text appears. */}
+        {/* Keep the stronger mask isolated to the problematic right side only. */}
         <div
-          className="absolute inset-y-0 right-0 w-[44%] pointer-events-none"
+          className="absolute inset-y-0 right-0 w-[42%] pointer-events-none"
           style={{
             background:
-              "linear-gradient(to left, rgba(7, 23, 28, 0.88) 0%, rgba(7, 23, 28, 0.74) 28%, rgba(7, 23, 28, 0.42) 58%, rgba(7, 23, 28, 0.10) 82%, transparent 100%)",
+              "linear-gradient(to left, rgba(7, 23, 28, 0.82) 0%, rgba(7, 23, 28, 0.68) 28%, rgba(7, 23, 28, 0.36) 58%, rgba(7, 23, 28, 0.07) 82%, transparent 100%)",
           }}
         />
 
@@ -50,7 +50,19 @@ export function Hero() {
           <h1 className={`text-balance text-4xl font-bold leading-[1.15] text-hero-foreground sm:text-5xl md:text-7xl ${lang === "ar" ? "font-arabic" : ""}`}>
             {t("hero_h1_a")} <span className="text-hero-accent">{t("hero_h1_b")}</span>
           </h1>
-          <p className={`mx-auto mt-5 max-w-2xl text-pretty text-base leading-8 text-hero-muted md:mt-6 md:text-lg ${lang === "ar" ? "font-arabic" : ""}`}>
+        </motion.div>
+      </section>
+
+      {/* Search, supporting copy and primary actions now live below the video hero. */}
+      <section className="relative border-b border-hero-border bg-[oklch(0.14_0.02_220)] px-4 py-8 md:py-10">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          className="mx-auto w-full max-w-4xl text-center"
+        >
+          <p className={`mx-auto max-w-2xl text-pretty text-base leading-8 text-hero-muted md:text-lg ${lang === "ar" ? "font-arabic" : ""}`}>
             {t("hero_sub")}
           </p>
 
