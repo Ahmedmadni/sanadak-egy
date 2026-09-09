@@ -18,11 +18,12 @@ export function Hero() {
           loop
           playsInline
           aria-hidden="true"
-          className="absolute inset-0 h-full w-full object-cover object-center pointer-events-none"
+          className="absolute inset-0 h-full w-full object-cover object-left md:object-[18%_center] pointer-events-none"
         >
           <source src="/sanadak-bg.mp4" type="video/mp4" />
         </video>
         <div className="hero-video-overlay absolute inset-0 pointer-events-none" />
+        <div className="hero-video-error-mask absolute inset-y-0 right-0 w-[42%] pointer-events-none" />
 
         <motion.div
           initial={{ opacity: 0, y: 22 }}
