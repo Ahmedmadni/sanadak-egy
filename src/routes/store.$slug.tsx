@@ -81,15 +81,21 @@ function StorePage() {
     }
     setBusy(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (cfg.hasBookings && active.duration_minutes) {
-        const startsAt = slotAt ? new Date(slotAt) : new Date(Date.now() + 3600_000);
-        const endsAt = new Date(startsAt.getTime() + active.duration_minutes * 60000);
-        const { error } = await supabase.from("bookings" as any).insert({
-          tenant_id: tenant.id, customer_id: user?.id ?? null,
-          customer_name: customer.name, customer_phone: customer.phone,
-          item_id: active.id, slot_start: startsAt.toISOString(), slot_end: endsAt.toISOString(),
-          status: "pending",
+        const startsAt = new Date(slotAt);
+        if (!slotAt || Number.isNaN(startsAt.getTime())) {
+          throw new Error(lang === "ar" ? "يرجى اختيار موعد صحيح" : "Please choose a valid booking time");
+        }
+
+        const { error } = await (supabase.rpc as any)("create_booking", {
+          _tenant: tenant.id,
+          _item: active.id,
+          _slot_start: startsAt.toISOString(),
+          _customer_name: customer.name,
+          _customer_phone: customer.phone,
+          _branch: null,
+          _staff: null,
+          _notes: null,
         });
         if (error) throw error;
         sfx.success();
@@ -109,8 +115,14 @@ function StorePage() {
         toast.success(lang === "ar" ? "تم إرسال طلبك" : "Order sent");
       }
       setActive(null);
+      setSlotAt("");
     } catch (err) {
-      toast.error((err as Error).message);
+      const message = (err as Error).message || "";
+      if (message.includes("selected time is no longer available")) {
+        toast.error(lang === "ar" ? "هذا الموعد لم يعد متاحًا، اختر موعدًا آخر" : "That time is no longer available. Please choose another slot.");
+      } else {
+        toast.error(message);
+      }
     } finally {
       setBusy(false);
     }
