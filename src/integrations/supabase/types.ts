@@ -1058,6 +1058,25 @@ export type Database = {
         Args: { _tenant: string }
         Returns: undefined
       }
+      create_booking: {
+        Args: {
+          _branch?: string
+          _customer_name: string
+          _customer_phone: string
+          _item: string
+          _notes?: string
+          _slot_start: string
+          _staff?: string
+          _tenant: string
+        }
+        Returns: {
+          booking_id: string
+          serial_no: number
+          slot_end: string
+          slot_start: string
+          status: string
+        }[]
+      }
       create_order: {
         Args: {
           _customer_address?: string
