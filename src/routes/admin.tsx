@@ -194,7 +194,7 @@ function AdminPage() {
         {/* Content */}
         <section className="min-w-0">
           {section === "overview" && <OverviewPanel onJump={setSection} />}
-          {section === "tenants" && <TenantsPanel />}
+          {section === "tenants" && <TenantsPanel adminId={user.id} />}
           {section === "requests" && <OnboardingPanel adminId={user.id} />}
           {section === "legacy_requests" && <RequestsPanel />}
           {section === "stores" && <StoresPanel ownerId={user.id} />}
