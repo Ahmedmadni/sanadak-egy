@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Moon, Sun, Globe, ShoppingCart, Volume2, VolumeX, Menu, X, Bot, LogIn, LogOut, ShieldCheck, User, Briefcase } from "lucide-react";
 import { Logo } from "./Logo";
@@ -9,11 +9,19 @@ import { toast } from "sonner";
 
 export function Nav() {
   const [mobile, setMobile] = useState(false);
+  const [overHero, setOverHero] = useState(true);
   const { lang, setLang, t, cart, bookings, setCartOpen, setMerchantOpen, setAssistantOpen, sound, setSound, theme, toggleTheme } = useSanadak();
   const { user, isAdmin, signOut } = useAuth();
   setSoundEnabled(sound);
 
   const badge = cart.reduce((s, i) => s + i.qty, 0) + bookings.length;
+
+  useEffect(() => {
+    const onScroll = () => setOverHero(window.scrollY < 80);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const links: Array<[string, string]> = [
     ["/restaurants", "nav_food"],
@@ -27,7 +35,7 @@ export function Nav() {
 
   return (
     <header className="fixed top-4 inset-x-0 z-50 flex justify-center px-3">
-      <nav className="glass-panel grid w-full max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-full px-3 py-2 xl:flex">
+      <nav className={`glass-panel grid w-full max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-full px-3 py-2 xl:flex ${overHero ? "nav-over-hero" : ""}`}>
         <Link to="/" className="flex items-center gap-2 ps-1 pe-2">
           <Logo variant="horizontal" className="h-8 w-auto object-contain hidden sm:block" />
           <Logo variant="icon" className="h-8 w-8 object-contain sm:hidden" />

@@ -11,14 +11,14 @@ export function Hero() {
 
   return (
     <>
-      <section className="relative flex min-h-[70svh] items-center justify-center overflow-hidden px-4 pb-12 pt-28 md:min-h-[76svh] md:pb-16 md:pt-32">
+      <section className="relative flex min-h-[52svh] items-center justify-center overflow-hidden px-4 pb-10 pt-24 md:min-h-[64svh] md:pb-14 md:pt-28">
         <video
           autoPlay
           muted
           loop
           playsInline
           aria-hidden="true"
-          className="absolute inset-0 h-full w-full object-cover object-left pointer-events-none"
+          className="absolute inset-0 h-full w-full object-cover object-center pointer-events-none md:object-left"
         >
           <source src="/sanadak-bg.mp4" type="video/mp4" />
         </video>
@@ -40,29 +40,21 @@ export function Hero() {
               "linear-gradient(to left, rgba(7, 23, 28, 0.82) 0%, rgba(7, 23, 28, 0.68) 28%, rgba(7, 23, 28, 0.36) 58%, rgba(7, 23, 28, 0.07) 82%, transparent 100%)",
           }}
         />
+      </section>
 
+      {/* Headline, supporting copy and primary actions now live below the video hero. */}
+      <section className="relative border-b border-hero-border bg-[oklch(0.14_0.02_220)] px-4 py-10 md:py-12">
         <motion.div
           initial={{ opacity: 0, y: 22 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="relative z-10 mx-auto w-full max-w-4xl text-center"
+          className="mx-auto w-full max-w-4xl text-center"
         >
           <h1 className={`text-balance text-4xl font-bold leading-[1.15] text-hero-foreground sm:text-5xl md:text-7xl ${lang === "ar" ? "font-arabic" : ""}`}>
             {t("hero_h1_a")} <span className="text-hero-accent">{t("hero_h1_b")}</span>
           </h1>
-        </motion.div>
-      </section>
 
-      {/* Search, supporting copy and primary actions now live below the video hero. */}
-      <section className="relative border-b border-hero-border bg-[oklch(0.14_0.02_220)] px-4 py-8 md:py-10">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          className="mx-auto w-full max-w-4xl text-center"
-        >
-          <p className={`mx-auto max-w-2xl text-pretty text-base leading-8 text-hero-muted md:text-lg ${lang === "ar" ? "font-arabic" : ""}`}>
+          <p className={`mx-auto mt-5 max-w-2xl text-pretty text-base leading-8 text-hero-muted md:text-lg ${lang === "ar" ? "font-arabic" : ""}`}>
             {t("hero_sub")}
           </p>
 
