@@ -336,6 +336,38 @@ function TenantsPanel({ adminId }: { adminId: string }) {
     if (error) toast.error(error.message); else load();
   };
 
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editing?.name || !editing?.category) return;
+    setSaving(true);
+    try {
+      const payload: any = {
+        name: editing.name,
+        category: editing.category,
+        area: editing.area || null,
+        phone: editing.phone || null,
+        email: editing.email || null,
+        description: editing.description || null,
+        image_url: editing.image_url || null,
+        status: editing.status || "active",
+      };
+      if (editing.id) {
+        const { error } = await supabase.from("tenants" as any).update(payload).eq("id", editing.id);
+        if (error) throw error;
+      } else {
+        payload.slug = (editing.slug && slugify(editing.slug)) || `${slugify(editing.name)}-${Math.random().toString(36).slice(2, 6)}`;
+        payload.owner_id = adminId;
+        if (payload.status === "active") payload.verified_at = new Date().toISOString();
+        const { error } = await supabase.from("tenants" as any).insert(payload);
+        if (error) throw error;
+      }
+      sfx.success();
+      toast.success(lang === "ar" ? "تم الحفظ" : "Saved");
+      setEditing(null);
+      load();
+    } catch (err) { toast.error((err as Error).message); } finally { setSaving(false); }
+  };
+
   const filtered = rows.filter((r) => filter === "all" ? true : r.status === filter);
 
   return (
