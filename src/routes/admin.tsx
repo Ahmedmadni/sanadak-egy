@@ -308,11 +308,13 @@ function OverviewPanel({ onJump }: { onJump: (s: SectionId) => void }) {
 }
 
 /* ===================== Tenants ===================== */
-function TenantsPanel() {
+function TenantsPanel({ adminId }: { adminId: string }) {
   const { lang } = useSanadak();
   const [rows, setRows] = useState<TenantRow[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
+  const [editing, setEditing] = useState<Partial<TenantRow> | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     const { data, error } = await supabase.from("tenants" as any).select("*").order("created_at", { ascending: false });
