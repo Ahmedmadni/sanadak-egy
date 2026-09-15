@@ -194,7 +194,7 @@ function AdminPage() {
         {/* Content */}
         <section className="min-w-0">
           {section === "overview" && <OverviewPanel onJump={setSection} />}
-          {section === "tenants" && <TenantsPanel />}
+          {section === "tenants" && <TenantsPanel adminId={user.id} />}
           {section === "requests" && <OnboardingPanel adminId={user.id} />}
           {section === "legacy_requests" && <RequestsPanel />}
           {section === "stores" && <StoresPanel ownerId={user.id} />}
@@ -308,11 +308,13 @@ function OverviewPanel({ onJump }: { onJump: (s: SectionId) => void }) {
 }
 
 /* ===================== Tenants ===================== */
-function TenantsPanel() {
+function TenantsPanel({ adminId }: { adminId: string }) {
   const { lang } = useSanadak();
   const [rows, setRows] = useState<TenantRow[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
+  const [editing, setEditing] = useState<Partial<TenantRow> | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     const { data, error } = await supabase.from("tenants" as any).select("*").order("created_at", { ascending: false });
@@ -334,13 +336,51 @@ function TenantsPanel() {
     if (error) toast.error(error.message); else load();
   };
 
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editing?.name || !editing?.category) return;
+    setSaving(true);
+    try {
+      const payload: any = {
+        name: editing.name,
+        category: editing.category,
+        area: editing.area || null,
+        phone: editing.phone || null,
+        email: editing.email || null,
+        description: editing.description || null,
+        image_url: editing.image_url || null,
+        status: editing.status || "active",
+      };
+      if (editing.id) {
+        const { error } = await supabase.from("tenants" as any).update(payload).eq("id", editing.id);
+        if (error) throw error;
+      } else {
+        payload.slug = (editing.slug && slugify(editing.slug)) || `${slugify(editing.name)}-${Math.random().toString(36).slice(2, 6)}`;
+        payload.owner_id = adminId;
+        if (payload.status === "active") payload.verified_at = new Date().toISOString();
+        const { error } = await supabase.from("tenants" as any).insert(payload);
+        if (error) throw error;
+      }
+      sfx.success();
+      toast.success(lang === "ar" ? "تم الحفظ" : "Saved");
+      setEditing(null);
+      load();
+    } catch (err) { toast.error((err as Error).message); } finally { setSaving(false); }
+  };
+
   const filtered = rows.filter((r) => filter === "all" ? true : r.status === filter);
 
   return (
     <div>
       <PanelHeader
         title={lang === "ar" ? "المتاجر (Tenants)" : "Tenants"}
-        subtitle={lang === "ar" ? "اعتماد، إخفاء، وتعليق المتاجر على المنصة." : "Verify, hide, and suspend platform tenants."}
+        subtitle={lang === "ar" ? "إضافة، اعتماد، إخفاء، وتعليق المتاجر على المنصة." : "Add, verify, hide, and suspend platform tenants."}
+        action={
+          <button onClick={() => { setEditing({ category: "restaurants", status: "active" }); sfx.open(); }}
+            className="bg-gradient-brand text-primary-foreground h-10 px-4 rounded-full inline-flex items-center gap-2 text-sm font-medium shadow-glow shrink-0">
+            <Plus className="h-4 w-4" /> {lang === "ar" ? "إضافة متجر" : "New tenant"}
+          </button>
+        }
       />
       <p className={`text-xs text-muted-foreground mb-3 ${lang === "ar" ? "font-arabic" : ""}`}>
         {lang === "ar" ? "الطلبات الجديدة (pending) تُعتمد من تبويب \"طلبات الانضمام\" بعد التحقق من السداد — هذه الصفحة لإدارة عمر المتجر بعد الاعتماد." : "New (pending) requests are approved from the Onboarding tab after payment verification — this page manages a tenant's lifecycle after approval."}
@@ -391,12 +431,46 @@ function TenantsPanel() {
                       <Ban className="h-3 w-3" /> {lang === "ar" ? "تعليق" : "Suspend"}
                     </button>
                   )}
+                  <button onClick={() => { setEditing(t); sfx.tap(); }} className="h-9 w-9 grid place-items-center rounded-full hover:bg-foreground/5" title="Edit"><Pencil className="h-4 w-4" /></button>
                   <button onClick={() => del(t.id)} className="h-9 w-9 grid place-items-center rounded-full hover:bg-destructive/10 text-destructive" title="Delete"><Trash2 className="h-4 w-4" /></button>
                 </div>
               </motion.div>
             ))}
           </div>
         )}
+
+      {editing && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm grid place-items-center p-4 overflow-y-auto" onClick={() => setEditing(null)}>
+          <motion.form initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} onSubmit={save} onClick={(e) => e.stopPropagation()} className="glass-card rounded-3xl p-6 w-full max-w-lg shadow-float">
+            <div className="flex items-center justify-between">
+              <h2 className={`text-xl font-bold ${lang === "ar" ? "font-arabic" : ""}`}>
+                {editing.id ? (lang === "ar" ? "تعديل المتجر" : "Edit tenant") : (lang === "ar" ? "متجر جديد" : "New tenant")}
+              </h2>
+              <button type="button" onClick={() => setEditing(null)} className="h-8 w-8 grid place-items-center rounded-full hover:bg-foreground/5"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <input required value={editing.name ?? ""} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder={lang === "ar" ? "اسم المتجر" : "Name"} className="col-span-2 h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+              {!editing.id && (
+                <input value={editing.slug ?? ""} onChange={(e) => setEditing({ ...editing, slug: e.target.value })} placeholder={lang === "ar" ? "الرابط (اختياري)" : "Slug (optional)"} dir="ltr" className="col-span-2 h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+              )}
+              <select required value={editing.category ?? "restaurants"} onChange={(e) => setEditing({ ...editing, category: e.target.value })} className="h-11 rounded-xl border border-input bg-background px-3 text-sm">
+                {CATEGORIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+              <select value={editing.status ?? "active"} onChange={(e) => setEditing({ ...editing, status: e.target.value })} className="h-11 rounded-xl border border-input bg-background px-3 text-sm">
+                {["active", "pending", "hidden", "suspended"].map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <input value={editing.area ?? ""} onChange={(e) => setEditing({ ...editing, area: e.target.value })} placeholder={lang === "ar" ? "المنطقة" : "Area"} className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+              <input value={editing.phone ?? ""} onChange={(e) => setEditing({ ...editing, phone: e.target.value })} placeholder="Phone" dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+              <input value={editing.email ?? ""} onChange={(e) => setEditing({ ...editing, email: e.target.value })} placeholder="Email" dir="ltr" className="col-span-2 h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+              <input value={editing.image_url ?? ""} onChange={(e) => setEditing({ ...editing, image_url: e.target.value })} placeholder="Image URL" dir="ltr" className="col-span-2 h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+              <textarea value={editing.description ?? ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} placeholder={lang === "ar" ? "الوصف" : "Description"} rows={3} className="col-span-2 rounded-xl border border-input bg-background px-4 py-2 text-sm" />
+            </div>
+            <button disabled={saving} type="submit" className="mt-5 w-full h-12 rounded-full bg-gradient-brand text-primary-foreground font-medium shadow-glow flex items-center justify-center gap-2 disabled:opacity-50">
+              <Save className="h-4 w-4" /> {lang === "ar" ? "حفظ" : "Save"}
+            </button>
+          </motion.form>
+        </div>
+      )}
     </div>
   );
 }
