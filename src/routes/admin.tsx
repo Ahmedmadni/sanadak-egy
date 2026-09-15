@@ -374,7 +374,13 @@ function TenantsPanel({ adminId }: { adminId: string }) {
     <div>
       <PanelHeader
         title={lang === "ar" ? "المتاجر (Tenants)" : "Tenants"}
-        subtitle={lang === "ar" ? "اعتماد، إخفاء، وتعليق المتاجر على المنصة." : "Verify, hide, and suspend platform tenants."}
+        subtitle={lang === "ar" ? "إضافة، اعتماد، إخفاء، وتعليق المتاجر على المنصة." : "Add, verify, hide, and suspend platform tenants."}
+        action={
+          <button onClick={() => { setEditing({ category: "restaurants", status: "active" }); sfx.open(); }}
+            className="bg-gradient-brand text-primary-foreground h-10 px-4 rounded-full inline-flex items-center gap-2 text-sm font-medium shadow-glow shrink-0">
+            <Plus className="h-4 w-4" /> {lang === "ar" ? "إضافة متجر" : "New tenant"}
+          </button>
+        }
       />
       <p className={`text-xs text-muted-foreground mb-3 ${lang === "ar" ? "font-arabic" : ""}`}>
         {lang === "ar" ? "الطلبات الجديدة (pending) تُعتمد من تبويب \"طلبات الانضمام\" بعد التحقق من السداد — هذه الصفحة لإدارة عمر المتجر بعد الاعتماد." : "New (pending) requests are approved from the Onboarding tab after payment verification — this page manages a tenant's lifecycle after approval."}
