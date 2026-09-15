@@ -197,6 +197,12 @@
       linear-gradient(to bottom, oklch(0.08 0.02 220 / 0.48), oklch(0.08 0.02 220 / 0.32) 45%, oklch(0.08 0.02 220 / 0.62)),
       radial-gradient(ellipse at center, transparent 22%, oklch(0.06 0.018 220 / 0.44) 100%);
   }
+  /* High-contrast nav while floating over the video hero */
+  .glass-panel.nav-over-hero {
+    background: oklch(0.09 0.018 220 / 0.82);
+    border-color: oklch(1 0 0 / 0.14);
+    box-shadow: 0 10px 40px -14px oklch(0 0 0 / 0.55);
+  }
   .scrollbar-none { scrollbar-width: none; }
   .scrollbar-none::-webkit-scrollbar { display: none; }
 }
