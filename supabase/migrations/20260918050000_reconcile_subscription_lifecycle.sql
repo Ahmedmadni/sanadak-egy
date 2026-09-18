@@ -303,7 +303,7 @@ RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
-AS $
+AS $expiry$
 DECLARE
   sub record;
   owner uuid;
@@ -384,7 +384,7 @@ BEGIN
     WHERE id = sub.id AND status = 'active';
   END IF;
 END;
-$;
+$expiry$;
 
 REVOKE ALL ON FUNCTION public.check_subscription_expiry(uuid) FROM PUBLIC, anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.check_subscription_expiry(uuid) TO authenticated;
