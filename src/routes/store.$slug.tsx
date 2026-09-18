@@ -41,15 +41,15 @@ function StorePage() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data: t } = await supabase.from("tenants" as any).select("*").eq("slug", slug).maybeSingle();
+      const { data: t } = await supabase.from("tenants").select("*").eq("slug", slug).maybeSingle();
       if (t) {
-        setTenant(t as any);
+        setTenant(t);
         const [{ data: i }, { data: r }] = await Promise.all([
-          supabase.from("catalog_items" as any).select("*").eq("tenant_id", (t as any).id).eq("is_active", true).order("sort_order"),
-          supabase.from("reviews" as any).select("*").eq("tenant_id", (t as any).id).eq("is_approved", true).order("created_at", { ascending: false }).limit(10),
+          supabase.from("catalog_items").select("*").eq("tenant_id", t.id).eq("is_active", true).order("sort_order"),
+          supabase.from("reviews").select("*").eq("tenant_id", t.id).eq("is_approved", true).order("created_at", { ascending: false }).limit(10),
         ]);
-        setItems((i as any) ?? []);
-        setReviews((r as any) ?? []);
+        setItems(i ?? []);
+        setReviews(r ?? []);
       }
       setLoading(false);
     })();
@@ -87,7 +87,7 @@ function StorePage() {
           throw new Error(lang === "ar" ? "يرجى اختيار موعد صحيح" : "Please choose a valid booking time");
         }
 
-        const { error } = await (supabase.rpc as any)("create_booking", {
+        const { error } = await supabase.rpc("create_booking", {
           _tenant: tenant.id,
           _item: active.id,
           _slot_start: startsAt.toISOString(),
@@ -101,7 +101,7 @@ function StorePage() {
         sfx.success();
         toast.success(lang === "ar" ? "تم إرسال طلب الحجز" : "Booking request sent");
       } else {
-        const { error } = await (supabase.rpc as any)("create_order", {
+        const { error } = await supabase.rpc("create_order", {
           _tenant: tenant.id,
           _items: [{ item_id: active.id, qty: 1, variants: {} }],
           _customer_name: customer.name,
