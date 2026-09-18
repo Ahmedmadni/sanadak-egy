@@ -366,10 +366,12 @@ function TenantsPanel() {
         const { error } = await supabase.from("tenants").update(payload).eq("id", editing.id);
         if (error) throw error;
       } else {
+        const planId = editing.plan_id;
+        if (!planId) throw new Error(lang === "ar" ? "اختر باقة اشتراك للمتجر" : "Choose a subscription plan");
         const { error } = await supabase.rpc("admin_create_tenant", {
           _name: editing.name,
           _category: editing.category,
-          _plan: editing.plan_id,
+          _plan: planId,
           _slug: (editing.slug && slugify(editing.slug)) || `${slugify(editing.name)}-${Math.random().toString(36).slice(2, 6)}`,
           _area: editing.area || null,
           _phone: editing.phone || null,
@@ -1253,7 +1255,8 @@ function PaymentsPanel() {
       const grouped = new Map<string, { total: number; commission: number; count: number; paid: number }>();
       (orders ?? []).forEach((o) => {
         const g = grouped.get(o.tenant_id) ?? { total: 0, commission: 0, count: 0, paid: 0 };
-        const rate = commissionByPlan.get(planByTenant.get(o.tenant_id)) ?? 0;
+        const planId = planByTenant.get(o.tenant_id);
+        const rate = planId ? (commissionByPlan.get(planId) ?? 0) : 0;
         g.total += Number(o.total ?? 0);
         g.commission += Number(o.total ?? 0) * (rate / 100);
         g.count += 1;

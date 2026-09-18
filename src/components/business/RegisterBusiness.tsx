@@ -8,6 +8,8 @@ import { sfx } from "@/lib/sanadak-sounds";
 import { allCategoryEntries, type PlanRow } from "./types";
 import { DocumentUpload } from "./DocumentUpload";
 
+type RegistrationPlan = Pick<PlanRow, "id" | "code" | "name_ar" | "name_en" | "price_monthly" | "currency">;
+
 function slugify(name: string, seed: string) {
   const base = name.toLowerCase().trim().replace(/[^a-z0-9؀-ۿ]+/g, "-").replace(/^-+|-+$/g, "");
   return `${base || "store"}-${seed.slice(0, 6)}`;
@@ -28,7 +30,7 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
   const { lang } = useSanadak();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [busy, setBusy] = useState(false);
-  const [plans, setPlans] = useState<PlanRow[]>([]);
+  const [plans, setPlans] = useState<RegistrationPlan[]>([]);
   const [form, setForm] = useState({ name: "", category: "restaurants", area: "", phone: "", description: "", plan_code: "" });
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"bank_transfer" | "vodafone_cash">("vodafone_cash");
@@ -42,8 +44,11 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("plans").select("*").eq("is_active", true).order("sort_order");
-      const rows: PlanRow[] = data ?? [];
+      const { data } = await supabase.from("plans")
+        .select("id, code, name_ar, name_en, price_monthly, currency")
+        .eq("is_active", true)
+        .order("sort_order");
+      const rows: RegistrationPlan[] = data ?? [];
       setPlans(rows);
       if (rows[0]) setForm((f) => ({ ...f, plan_code: rows[0].code }));
     })();
