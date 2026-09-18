@@ -700,29 +700,6 @@ function RequestsPanel() {
   };
   useEffect(() => { load(); }, []);
 
-  const approve = async (r: RequestRow) => {
-    setBusy(r.id);
-    try {
-      // Create tenant (new model)
-      const slug = slugify(r.store_name);
-      const { error: tenErr } = await supabase.from("tenants").insert({
-        slug, name: r.store_name, category: r.category, area: r.area,
-        phone: r.phone, description: r.description, image_url: r.image_url,
-        owner_id: r.submitted_by, status: "active", verified_at: new Date().toISOString(),
-      } as any);
-      if (tenErr) throw tenErr;
-      // Keep legacy stores in sync (Phase 6 will retire it)
-      await supabase.from("stores").insert({
-        name: r.store_name, category: r.category, area: r.area,
-        phone: r.phone, description: r.description, image_url: r.image_url,
-      });
-      const { error: updErr } = await supabase.from("store_requests").update({ status: "approved" }).eq("id", r.id);
-      if (updErr) throw updErr;
-      sfx.success();
-      toast.success(lang === "ar" ? "تمت الموافقة وإنشاء المتجر" : "Approved and tenant created");
-      load();
-    } catch (err) { toast.error((err as Error).message); } finally { setBusy(null); }
-  };
   const reject = async (r: RequestRow) => {
     setBusy(r.id);
     const { error } = await supabase.from("store_requests").update({ status: "rejected" }).eq("id", r.id);
@@ -741,7 +718,7 @@ function RequestsPanel() {
 
   return (
     <div>
-      <PanelHeader title={lang === "ar" ? "طلبات الانضمام" : "Join requests"} subtitle={lang === "ar" ? "اعتماد طلبات التجار وفتح حساب متجرهم." : "Approve merchant requests."} />
+      <PanelHeader title={lang === "ar" ? "طلبات الانضمام" : "Join requests"} subtitle={lang === "ar" ? "أرشيف قديم للطلبات. الاعتماد المباشر متوقف لحماية دورة الاشتراك الجديدة." : "Legacy request archive. Direct approval is disabled to protect the current subscription lifecycle."} />
       {rows.length === 0 && <EmptyState text={lang === "ar" ? "لا توجد طلبات." : "No requests."} />}
       <div className="grid gap-3">
         {[...pending, ...others].map((r) => (
@@ -761,8 +738,8 @@ function RequestsPanel() {
               <div className="flex items-center gap-2">
                 {r.status === "pending" && (
                   <>
-                    <button disabled={busy === r.id} onClick={() => approve(r)} className="h-9 px-3 rounded-full bg-[var(--emerald)] text-white text-sm inline-flex items-center gap-1 disabled:opacity-50">
-                      <Check className="h-4 w-4" /> {lang === "ar" ? "اعتماد" : "Approve"}
+                    <button disabled title={lang === "ar" ? "يجب ترحيل الطلب إلى مسار Onboarding الجديد مع اختيار باقة" : "Migrate this request to the current onboarding flow with a plan"} className="h-9 px-3 rounded-full bg-foreground/10 text-muted-foreground text-sm inline-flex items-center gap-1 opacity-60 cursor-not-allowed">
+                      <Ban className="h-4 w-4" /> {lang === "ar" ? "اعتماد قديم متوقف" : "Legacy approval disabled"}
                     </button>
                     <button disabled={busy === r.id} onClick={() => reject(r)} className="h-9 px-3 rounded-full bg-destructive/15 text-destructive text-sm inline-flex items-center gap-1 disabled:opacity-50">
                       <X className="h-4 w-4" /> {lang === "ar" ? "رفض" : "Reject"}
