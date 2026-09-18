@@ -194,7 +194,7 @@ function AdminPage() {
         {/* Content */}
         <section className="min-w-0">
           {section === "overview" && <OverviewPanel onJump={setSection} />}
-          {section === "tenants" && <TenantsPanel adminId={user.id} />}
+          {section === "tenants" && <TenantsPanel />}
           {section === "requests" && <OnboardingPanel adminId={user.id} />}
           {section === "legacy_requests" && <RequestsPanel />}
           {section === "stores" && <StoresPanel ownerId={user.id} />}
@@ -308,25 +308,31 @@ function OverviewPanel({ onJump }: { onJump: (s: SectionId) => void }) {
 }
 
 /* ===================== Tenants ===================== */
-function TenantsPanel({ adminId }: { adminId: string }) {
+function TenantsPanel() {
   const { lang } = useSanadak();
   const [rows, setRows] = useState<TenantRow[]>([]);
+  const [plans, setPlans] = useState<PlanRow[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
   const [editing, setEditing] = useState<Partial<TenantRow> | null>(null);
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
-    const { data, error } = await supabase.from("tenants" as any).select("*").order("created_at", { ascending: false });
-    if (error) toast.error(error.message); else setRows((data as unknown as TenantRow[]) ?? []);
+    const [{ data: tenants, error }, { data: planRows, error: plansError }] = await Promise.all([
+      supabase.from("tenants" as any).select("*").order("created_at", { ascending: false }),
+      supabase.from("plans" as any).select("*").eq("is_active", true).order("sort_order"),
+    ]);
+    if (error) toast.error(error.message); else setRows((tenants as unknown as TenantRow[]) ?? []);
+    if (plansError) toast.error(plansError.message); else setPlans((planRows as unknown as PlanRow[]) ?? []);
   };
   useEffect(() => { load(); }, []);
 
-  const setStatus = async (id: string, status: string) => {
+  const setStatus = async (id: string, status: "active" | "hidden" | "suspended") => {
     setBusy(id);
-    const patch: any = { status };
-    if (status === "active") patch.verified_at = new Date().toISOString();
-    const { error } = await supabase.from("tenants" as any).update(patch).eq("id", id);
+    const { error } = await (supabase.rpc as any)("admin_set_tenant_status", {
+      _tenant: id,
+      _status: status,
+    });
     if (error) toast.error(error.message); else { sfx.success(); load(); }
     setBusy(null);
   };
@@ -339,26 +345,37 @@ function TenantsPanel({ adminId }: { adminId: string }) {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing?.name || !editing?.category) return;
+    if (!editing.id && !editing.plan_id) {
+      toast.error(lang === "ar" ? "اختر باقة اشتراك للمتجر" : "Choose a subscription plan");
+      return;
+    }
     setSaving(true);
     try {
-      const payload: any = {
-        name: editing.name,
-        category: editing.category,
-        area: editing.area || null,
-        phone: editing.phone || null,
-        email: editing.email || null,
-        description: editing.description || null,
-        image_url: editing.image_url || null,
-        status: editing.status || "active",
-      };
       if (editing.id) {
+        const payload: any = {
+          name: editing.name,
+          category: editing.category,
+          area: editing.area || null,
+          phone: editing.phone || null,
+          email: editing.email || null,
+          description: editing.description || null,
+          image_url: editing.image_url || null,
+        };
         const { error } = await supabase.from("tenants" as any).update(payload).eq("id", editing.id);
         if (error) throw error;
       } else {
-        payload.slug = (editing.slug && slugify(editing.slug)) || `${slugify(editing.name)}-${Math.random().toString(36).slice(2, 6)}`;
-        payload.owner_id = adminId;
-        if (payload.status === "active") payload.verified_at = new Date().toISOString();
-        const { error } = await supabase.from("tenants" as any).insert(payload);
+        const { error } = await (supabase.rpc as any)("admin_create_tenant", {
+          _name: editing.name,
+          _category: editing.category,
+          _plan: editing.plan_id,
+          _slug: (editing.slug && slugify(editing.slug)) || `${slugify(editing.name)}-${Math.random().toString(36).slice(2, 6)}`,
+          _area: editing.area || null,
+          _phone: editing.phone || null,
+          _email: editing.email || null,
+          _description: editing.description || null,
+          _image_url: editing.image_url || null,
+          _activate: (editing.status ?? "active") === "active",
+        });
         if (error) throw error;
       }
       sfx.success();
@@ -376,7 +393,7 @@ function TenantsPanel({ adminId }: { adminId: string }) {
         title={lang === "ar" ? "المتاجر (Tenants)" : "Tenants"}
         subtitle={lang === "ar" ? "إضافة، اعتماد، إخفاء، وتعليق المتاجر على المنصة." : "Add, verify, hide, and suspend platform tenants."}
         action={
-          <button onClick={() => { setEditing({ category: "restaurants", status: "active" }); sfx.open(); }}
+          <button onClick={() => { setEditing({ category: "restaurants", status: "active", plan_id: plans[0]?.id ?? null }); sfx.open(); }}
             className="bg-gradient-brand text-primary-foreground h-10 px-4 rounded-full inline-flex items-center gap-2 text-sm font-medium shadow-glow shrink-0">
             <Plus className="h-4 w-4" /> {lang === "ar" ? "إضافة متجر" : "New tenant"}
           </button>
@@ -456,9 +473,26 @@ function TenantsPanel({ adminId }: { adminId: string }) {
               <select required value={editing.category ?? "restaurants"} onChange={(e) => setEditing({ ...editing, category: e.target.value })} className="h-11 rounded-xl border border-input bg-background px-3 text-sm">
                 {CATEGORIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
-              <select value={editing.status ?? "active"} onChange={(e) => setEditing({ ...editing, status: e.target.value })} className="h-11 rounded-xl border border-input bg-background px-3 text-sm">
-                {["active", "pending", "hidden", "suspended"].map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
+              {!editing.id ? (
+                <select value={editing.status ?? "active"} onChange={(e) => setEditing({ ...editing, status: e.target.value })} className="h-11 rounded-xl border border-input bg-background px-3 text-sm">
+                  <option value="active">{lang === "ar" ? "نشط فوراً" : "Activate now"}</option>
+                  <option value="pending">{lang === "ar" ? "بانتظار المراجعة" : "Pending review"}</option>
+                </select>
+              ) : (
+                <div className="h-11 rounded-xl border border-input bg-background px-3 text-sm flex items-center">
+                  {lang === "ar" ? `الحالة: ${editing.status ?? "—"}` : `Status: ${editing.status ?? "—"}`}
+                </div>
+              )}
+              {!editing.id && (
+                <select required value={editing.plan_id ?? ""} onChange={(e) => setEditing({ ...editing, plan_id: e.target.value })} className="col-span-2 h-11 rounded-xl border border-input bg-background px-3 text-sm">
+                  <option value="" disabled>{lang === "ar" ? "اختر باقة الاشتراك" : "Choose subscription plan"}</option>
+                  {plans.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {lang === "ar" ? p.name_ar : p.name_en} · {p.price_monthly} {p.currency}
+                    </option>
+                  ))}
+                </select>
+              )}
               <input value={editing.area ?? ""} onChange={(e) => setEditing({ ...editing, area: e.target.value })} placeholder={lang === "ar" ? "المنطقة" : "Area"} className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
               <input value={editing.phone ?? ""} onChange={(e) => setEditing({ ...editing, phone: e.target.value })} placeholder="Phone" dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
               <input value={editing.email ?? ""} onChange={(e) => setEditing({ ...editing, email: e.target.value })} placeholder="Email" dir="ltr" className="col-span-2 h-11 rounded-xl border border-input bg-background px-4 text-sm" />
@@ -536,17 +570,17 @@ function OnboardingPanel({ adminId }: { adminId: string }) {
 
   const approve = async (t: TenantRow) => {
     setBusy(t.id);
-    const { error } = await supabase.from("tenants" as any).update({ status: "active", verified_at: new Date().toISOString() }).eq("id", t.id);
+    const { error } = await (supabase.rpc as any)("approve_tenant_onboarding", { _tenant: t.id });
     if (error) { toast.error(error.message); setBusy(null); return; }
     if (t.owner_id) {
       await supabase.from("notifications" as any).insert({
         user_id: t.owner_id, tenant_id: t.id, kind: "tenant_approved",
         title: lang === "ar" ? "تم اعتماد نشاطك" : "Your business was approved",
-        body: lang === "ar" ? `تم اعتماد "${t.name}" وأصبح ظاهراً للعملاء الآن.` : `"${t.name}" is now live and visible to customers.`,
+        body: lang === "ar" ? `تم اعتماد "${t.name}" وبدأ اشتراكك وأصبح النشاط ظاهراً للعملاء الآن.` : `"${t.name}" was approved, its subscription started, and it is now visible to customers.`,
       });
     }
     sfx.success();
-    toast.success(lang === "ar" ? "تم الاعتماد" : "Approved");
+    toast.success(lang === "ar" ? "تم الاعتماد وبدأ الاشتراك" : "Approved and subscription started");
     load();
     setBusy(null);
   };
