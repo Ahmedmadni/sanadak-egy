@@ -1054,6 +1054,34 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_tenant: {
+        Args: {
+          _activate?: boolean
+          _area?: string
+          _category: string
+          _description?: string
+          _email?: string
+          _image_url?: string
+          _name: string
+          _phone?: string
+          _plan: string
+          _slug?: string
+        }
+        Returns: string
+      }
+      admin_set_tenant_status: {
+        Args: { _status: string; _tenant: string }
+        Returns: undefined
+      }
+      approve_tenant_onboarding: {
+        Args: { _tenant: string }
+        Returns: {
+          current_period_end: string
+          current_period_start: string
+          subscription_id: string
+          tenant_id: string
+        }[]
+      }
       check_subscription_expiry: {
         Args: { _tenant: string }
         Returns: undefined
