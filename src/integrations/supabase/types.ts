@@ -1105,6 +1105,19 @@ export type Database = {
           status: string
         }[]
       }
+      get_booking_availability: {
+        Args: {
+          _branch?: string | null
+          _date: string
+          _item: string
+          _staff?: string | null
+          _tenant: string
+        }
+        Returns: {
+          slot_end: string
+          slot_start: string
+        }[]
+      }
       create_order: {
         Args: {
           _customer_address?: string | null
