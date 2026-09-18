@@ -54,6 +54,7 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
     setBusy(true);
     try {
       const plan = plans.find((p) => p.code === form.plan_code);
+      if (!plan) throw new Error(lang === "ar" ? "اختر باقة اشتراك صالحة" : "Choose a valid subscription plan");
       const seed = crypto.randomUUID();
       const { data, error } = await supabase.from("tenants").insert({
         slug: slugify(form.name, seed),
@@ -63,7 +64,7 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
         phone: form.phone || null,
         description: form.description || null,
         owner_id: userId,
-        plan_id: plan?.id ?? null,
+        plan_id: plan.id,
         status: "pending",
       }).select("id").single();
       if (error) throw error;
