@@ -91,11 +91,11 @@ BEGIN
     RAISE EXCEPTION 'tenant is not pending onboarding';
   END IF;
 
-  SELECT *
+  SELECT s.*
   INTO v_sub
-  FROM public.subscriptions
-  WHERE tenant_id = _tenant
-  ORDER BY created_at DESC
+  FROM public.subscriptions s
+  WHERE s.tenant_id = _tenant
+  ORDER BY s.created_at DESC
   LIMIT 1
   FOR UPDATE;
 
