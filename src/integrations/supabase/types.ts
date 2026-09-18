@@ -1057,15 +1057,15 @@ export type Database = {
       admin_create_tenant: {
         Args: {
           _activate?: boolean
-          _area?: string
+          _area?: string | null
           _category: string
-          _description?: string
-          _email?: string
-          _image_url?: string
+          _description?: string | null
+          _email?: string | null
+          _image_url?: string | null
           _name: string
-          _phone?: string
+          _phone?: string | null
           _plan: string
-          _slug?: string
+          _slug?: string | null
         }
         Returns: string
       }
@@ -1088,13 +1088,13 @@ export type Database = {
       }
       create_booking: {
         Args: {
-          _branch?: string
+          _branch?: string | null
           _customer_name: string
           _customer_phone: string
           _item: string
-          _notes?: string
+          _notes?: string | null
           _slot_start: string
-          _staff?: string
+          _staff?: string | null
           _tenant: string
         }
         Returns: {
@@ -1107,12 +1107,12 @@ export type Database = {
       }
       create_order: {
         Args: {
-          _customer_address?: string
+          _customer_address?: string | null
           _customer_name: string
           _customer_phone: string
           _delivery_type?: string
           _items: Json
-          _notes?: string
+          _notes?: string | null
           _tenant: string
         }
         Returns: {
@@ -1124,7 +1124,7 @@ export type Database = {
         }[]
       }
       submit_payment_info: {
-        Args: { _method: string; _reference: string; _tenant: string }
+        Args: { _method: string; _reference: string | null; _tenant: string }
         Returns: undefined
       }
       tenant_is_visible: { Args: { _tenant: string }; Returns: boolean }
