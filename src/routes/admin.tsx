@@ -9,6 +9,7 @@ import {
   ScrollText, BadgeCheck, Ban, Menu, TrendingUp, Bot, FileText, Wallet,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Enums, Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/use-auth";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
@@ -34,7 +35,8 @@ type RequestRow = {
   status: string; notes: string | null; submitted_by: string | null; created_at: string;
 };
 type ProfileRow = { id: string; full_name: string | null; phone: string | null; created_at: string };
-type RoleRow = { user_id: string; role: string };
+type AppRole = Enums<"app_role">;
+type RoleRow = { user_id: string; role: AppRole };
 type TenantRow = {
   id: string; slug: string; name: string; category: string; area: string | null;
   phone: string | null; email: string | null; image_url: string | null; status: string;
@@ -88,7 +90,7 @@ function AdminPage() {
     if (!user) return;
     setClaiming(true);
     setClaimError(null);
-    const { error } = await supabase.from("user_roles").insert({ user_id: user.id, role: "admin" as any });
+    const { error } = await supabase.from("user_roles").insert({ user_id: user.id, role: "admin" });
     if (error) {
       setClaimError(error.message);
       setClaiming(false);
@@ -253,18 +255,18 @@ function OverviewPanel({ onJump }: { onJump: (s: SectionId) => void }) {
   useEffect(() => {
     (async () => {
       const [t, p, a, s, r, k, ai] = await Promise.all([
-        supabase.from("tenants" as any).select("id", { count: "exact", head: true }),
-        supabase.from("tenants" as any).select("id", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("tenants" as any).select("id", { count: "exact", head: true }).eq("status", "active"),
-        supabase.from("subscriptions" as any).select("plan_id, status, plans(price_monthly)"),
-        supabase.from("store_requests" as any).select("id", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("support_tickets" as any).select("id", { count: "exact", head: true }).neq("status", "closed"),
-        supabase.from("ai_usage" as any).select("tokens"),
+        supabase.from("tenants").select("id", { count: "exact", head: true }),
+        supabase.from("tenants").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("tenants").select("id", { count: "exact", head: true }).eq("status", "active"),
+        supabase.from("subscriptions").select("plan_id, status, plans(price_monthly)"),
+        supabase.from("store_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("support_tickets").select("id", { count: "exact", head: true }).neq("status", "closed"),
+        supabase.from("ai_usage").select("tokens"),
       ]);
-      const subsArr = (s.data as any[]) ?? [];
+      const subsArr = s.data ?? [];
       const revenue = subsArr.filter((x) => x.status === "active")
         .reduce((sum, x) => sum + Number(x.plans?.price_monthly ?? 0), 0);
-      const aiOps = ((ai.data as any[]) ?? []).reduce((acc, x) => acc + (x.tokens ?? 0), 0);
+      const aiOps = (ai.data ?? []).reduce((acc, x) => acc + (x.tokens ?? 0), 0);
       setStats({
         tenants: t.count ?? 0, pending: p.count ?? 0, active: a.count ?? 0,
         subs: subsArr.filter((x) => x.status === "active").length,
@@ -319,8 +321,8 @@ function TenantsPanel() {
 
   const load = async () => {
     const [{ data: tenants, error }, { data: planRows, error: plansError }] = await Promise.all([
-      supabase.from("tenants" as any).select("*").order("created_at", { ascending: false }),
-      supabase.from("plans" as any).select("*").eq("is_active", true).order("sort_order"),
+      supabase.from("tenants").select("*").order("created_at", { ascending: false }),
+      supabase.from("plans").select("*").eq("is_active", true).order("sort_order"),
     ]);
     if (error) toast.error(error.message); else setRows((tenants as unknown as TenantRow[]) ?? []);
     if (plansError) toast.error(plansError.message); else setPlans((planRows as unknown as PlanRow[]) ?? []);
@@ -329,7 +331,7 @@ function TenantsPanel() {
 
   const setStatus = async (id: string, status: "active" | "hidden" | "suspended") => {
     setBusy(id);
-    const { error } = await (supabase.rpc as any)("admin_set_tenant_status", {
+    const { error } = await supabase.rpc("admin_set_tenant_status", {
       _tenant: id,
       _status: status,
     });
@@ -338,7 +340,7 @@ function TenantsPanel() {
   };
   const del = async (id: string) => {
     if (!confirm(lang === "ar" ? "حذف هذا المتجر نهائياً؟" : "Delete tenant permanently?")) return;
-    const { error } = await supabase.from("tenants" as any).delete().eq("id", id);
+    const { error } = await supabase.from("tenants").delete().eq("id", id);
     if (error) toast.error(error.message); else load();
   };
 
@@ -352,7 +354,7 @@ function TenantsPanel() {
     setSaving(true);
     try {
       if (editing.id) {
-        const payload: any = {
+        const payload = {
           name: editing.name,
           category: editing.category,
           area: editing.area || null,
@@ -361,13 +363,15 @@ function TenantsPanel() {
           description: editing.description || null,
           image_url: editing.image_url || null,
         };
-        const { error } = await supabase.from("tenants" as any).update(payload).eq("id", editing.id);
+        const { error } = await supabase.from("tenants").update(payload).eq("id", editing.id);
         if (error) throw error;
       } else {
-        const { error } = await (supabase.rpc as any)("admin_create_tenant", {
+        const planId = editing.plan_id;
+        if (!planId) throw new Error(lang === "ar" ? "اختر باقة اشتراك للمتجر" : "Choose a subscription plan");
+        const { error } = await supabase.rpc("admin_create_tenant", {
           _name: editing.name,
           _category: editing.category,
-          _plan: editing.plan_id,
+          _plan: planId,
           _slug: (editing.slug && slugify(editing.slug)) || `${slugify(editing.name)}-${Math.random().toString(36).slice(2, 6)}`,
           _area: editing.area || null,
           _phone: editing.phone || null,
@@ -520,33 +524,33 @@ const DOC_LABELS: Record<string, [string, string]> = {
 function OnboardingPanel({ adminId }: { adminId: string }) {
   const { lang } = useSanadak();
   const [rows, setRows] = useState<TenantRow[]>([]);
-  const [docs, setDocs] = useState<Record<string, any[]>>({});
-  const [subs, setSubs] = useState<Record<string, any>>({});
+  const [docs, setDocs] = useState<Record<string, Tables<"tenant_documents">[]>>({});
+  const [subs, setSubs] = useState<Record<string, Tables<"subscriptions">>>({});
   const [plansById, setPlansById] = useState<Record<string, PlanRow>>({});
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = async () => {
-    const { data: tenants, error } = await supabase.from("tenants" as any).select("*").eq("status", "pending").order("created_at", { ascending: true });
+    const { data: tenants, error } = await supabase.from("tenants").select("*").eq("status", "pending").order("created_at", { ascending: true });
     if (error) { toast.error(error.message); return; }
     const list = (tenants as unknown as TenantRow[]) ?? [];
     setRows(list);
     if (list.length === 0) return;
     const ids = list.map((t) => t.id);
     const [{ data: d }, { data: s }, { data: p }] = await Promise.all([
-      supabase.from("tenant_documents" as any).select("*").in("tenant_id", ids).order("created_at", { ascending: false }),
-      supabase.from("subscriptions" as any).select("*").in("tenant_id", ids).order("current_period_end", { ascending: false }),
-      supabase.from("plans" as any).select("*"),
+      supabase.from("tenant_documents").select("*").in("tenant_id", ids).order("created_at", { ascending: false }),
+      supabase.from("subscriptions").select("*").in("tenant_id", ids).order("current_period_end", { ascending: false }),
+      supabase.from("plans").select("*"),
     ]);
-    const docsByTenant: Record<string, any[]> = {};
-    ((d as any[]) ?? []).forEach((doc) => { (docsByTenant[doc.tenant_id] ??= []).push(doc); });
+    const docsByTenant: Record<string, Tables<"tenant_documents">[]> = {};
+    (d ?? []).forEach((doc) => { (docsByTenant[doc.tenant_id] ??= []).push(doc); });
     setDocs(docsByTenant);
-    const subByTenant: Record<string, any> = {};
-    ((s as any[]) ?? []).forEach((sub) => { if (!subByTenant[sub.tenant_id]) subByTenant[sub.tenant_id] = sub; });
+    const subByTenant: Record<string, Tables<"subscriptions">> = {};
+    (s ?? []).forEach((sub) => { if (!subByTenant[sub.tenant_id]) subByTenant[sub.tenant_id] = sub; });
     setSubs(subByTenant);
     const planMap: Record<string, PlanRow> = {};
-    ((p as any[]) ?? []).forEach((pl) => { planMap[pl.id] = pl; });
+    (p ?? []).forEach((pl) => { planMap[pl.id] = pl; });
     setPlansById(planMap);
   };
   useEffect(() => { load(); }, []);
@@ -561,7 +565,7 @@ function OnboardingPanel({ adminId }: { adminId: string }) {
     const sub = subs[tenantId];
     if (!sub) return;
     setBusy(tenantId);
-    const { error } = await supabase.from("subscriptions" as any)
+    const { error } = await supabase.from("subscriptions")
       .update({ payment_verified_at: new Date().toISOString(), payment_verified_by: adminId })
       .eq("id", sub.id);
     if (error) toast.error(error.message); else { sfx.success(); load(); }
@@ -570,10 +574,10 @@ function OnboardingPanel({ adminId }: { adminId: string }) {
 
   const approve = async (t: TenantRow) => {
     setBusy(t.id);
-    const { error } = await (supabase.rpc as any)("approve_tenant_onboarding", { _tenant: t.id });
+    const { error } = await supabase.rpc("approve_tenant_onboarding", { _tenant: t.id });
     if (error) { toast.error(error.message); setBusy(null); return; }
     if (t.owner_id) {
-      await supabase.from("notifications" as any).insert({
+      await supabase.from("notifications").insert({
         user_id: t.owner_id, tenant_id: t.id, kind: "tenant_approved",
         title: lang === "ar" ? "تم اعتماد نشاطك" : "Your business was approved",
         body: lang === "ar" ? `تم اعتماد "${t.name}" وبدأ اشتراكك وأصبح النشاط ظاهراً للعملاء الآن.` : `"${t.name}" was approved, its subscription started, and it is now visible to customers.`,
@@ -587,10 +591,10 @@ function OnboardingPanel({ adminId }: { adminId: string }) {
 
   const reject = async (t: TenantRow) => {
     setBusy(t.id);
-    const { error } = await supabase.from("tenants" as any).update({ status: "rejected" }).eq("id", t.id);
+    const { error } = await supabase.from("tenants").update({ status: "rejected" }).eq("id", t.id);
     if (error) { toast.error(error.message); setBusy(null); return; }
     if (t.owner_id) {
-      await supabase.from("notifications" as any).insert({
+      await supabase.from("notifications").insert({
         user_id: t.owner_id, tenant_id: t.id, kind: "tenant_rejected",
         title: lang === "ar" ? "تم رفض طلب الانضمام" : "Your request was rejected",
         body: reason || (lang === "ar" ? "يرجى مراجعة بياناتك ومستنداتك وإعادة المحاولة." : "Please review your information and documents and try again."),
@@ -693,44 +697,21 @@ function RequestsPanel() {
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = async () => {
-    const { data, error } = await supabase.from("store_requests" as any).select("*").order("created_at", { ascending: false });
+    const { data, error } = await supabase.from("store_requests").select("*").order("created_at", { ascending: false });
     if (error) toast.error(error.message); else setRows((data as unknown as RequestRow[]) ?? []);
   };
   useEffect(() => { load(); }, []);
 
-  const approve = async (r: RequestRow) => {
-    setBusy(r.id);
-    try {
-      // Create tenant (new model)
-      const slug = slugify(r.store_name);
-      const { error: tenErr } = await supabase.from("tenants" as any).insert({
-        slug, name: r.store_name, category: r.category, area: r.area,
-        phone: r.phone, description: r.description, image_url: r.image_url,
-        owner_id: r.submitted_by, status: "active", verified_at: new Date().toISOString(),
-      } as any);
-      if (tenErr) throw tenErr;
-      // Keep legacy stores in sync (Phase 6 will retire it)
-      await supabase.from("stores").insert({
-        name: r.store_name, category: r.category, area: r.area,
-        phone: r.phone, description: r.description, image_url: r.image_url,
-      });
-      const { error: updErr } = await supabase.from("store_requests" as any).update({ status: "approved" }).eq("id", r.id);
-      if (updErr) throw updErr;
-      sfx.success();
-      toast.success(lang === "ar" ? "تمت الموافقة وإنشاء المتجر" : "Approved and tenant created");
-      load();
-    } catch (err) { toast.error((err as Error).message); } finally { setBusy(null); }
-  };
   const reject = async (r: RequestRow) => {
     setBusy(r.id);
-    const { error } = await supabase.from("store_requests" as any).update({ status: "rejected" }).eq("id", r.id);
+    const { error } = await supabase.from("store_requests").update({ status: "rejected" }).eq("id", r.id);
     if (error) toast.error(error.message);
     else { sfx.tap(); toast.success(lang === "ar" ? "تم الرفض" : "Rejected"); load(); }
     setBusy(null);
   };
   const del = async (id: string) => {
     if (!confirm(lang === "ar" ? "حذف هذا الطلب؟" : "Delete request?")) return;
-    const { error } = await supabase.from("store_requests" as any).delete().eq("id", id);
+    const { error } = await supabase.from("store_requests").delete().eq("id", id);
     if (error) toast.error(error.message); else load();
   };
 
@@ -739,7 +720,7 @@ function RequestsPanel() {
 
   return (
     <div>
-      <PanelHeader title={lang === "ar" ? "طلبات الانضمام" : "Join requests"} subtitle={lang === "ar" ? "اعتماد طلبات التجار وفتح حساب متجرهم." : "Approve merchant requests."} />
+      <PanelHeader title={lang === "ar" ? "طلبات الانضمام" : "Join requests"} subtitle={lang === "ar" ? "أرشيف قديم للطلبات. الاعتماد المباشر متوقف لحماية دورة الاشتراك الجديدة." : "Legacy request archive. Direct approval is disabled to protect the current subscription lifecycle."} />
       {rows.length === 0 && <EmptyState text={lang === "ar" ? "لا توجد طلبات." : "No requests."} />}
       <div className="grid gap-3">
         {[...pending, ...others].map((r) => (
@@ -759,8 +740,8 @@ function RequestsPanel() {
               <div className="flex items-center gap-2">
                 {r.status === "pending" && (
                   <>
-                    <button disabled={busy === r.id} onClick={() => approve(r)} className="h-9 px-3 rounded-full bg-[var(--emerald)] text-white text-sm inline-flex items-center gap-1 disabled:opacity-50">
-                      <Check className="h-4 w-4" /> {lang === "ar" ? "اعتماد" : "Approve"}
+                    <button disabled title={lang === "ar" ? "يجب ترحيل الطلب إلى مسار Onboarding الجديد مع اختيار باقة" : "Migrate this request to the current onboarding flow with a plan"} className="h-9 px-3 rounded-full bg-foreground/10 text-muted-foreground text-sm inline-flex items-center gap-1 opacity-60 cursor-not-allowed">
+                      <Ban className="h-4 w-4" /> {lang === "ar" ? "اعتماد قديم متوقف" : "Legacy approval disabled"}
                     </button>
                     <button disabled={busy === r.id} onClick={() => reject(r)} className="h-9 px-3 rounded-full bg-destructive/15 text-destructive text-sm inline-flex items-center gap-1 disabled:opacity-50">
                       <X className="h-4 w-4" /> {lang === "ar" ? "رفض" : "Reject"}
@@ -896,17 +877,17 @@ function UsersPanel({ currentUserId }: { currentUserId: string }) {
   const rolesOf = (uid: string) => roles.filter((x) => x.user_id === uid).map((x) => x.role);
   const isAdminUser = (uid: string) => rolesOf(uid).includes("admin");
 
-  const grant = async (uid: string, role: string) => {
+  const grant = async (uid: string, role: AppRole) => {
     setBusy(uid);
-    const { error } = await supabase.from("user_roles").insert({ user_id: uid, role: role as any });
+    const { error } = await supabase.from("user_roles").insert({ user_id: uid, role });
     if (error) toast.error(error.message); else { sfx.success(); load(); }
     setBusy(null);
     setPickerFor(null);
   };
-  const revoke = async (uid: string, role: string) => {
+  const revoke = async (uid: string, role: AppRole) => {
     if (uid === currentUserId && role === "admin" && !confirm(lang === "ar" ? "سحب صلاحياتك أنت؟" : "Revoke your own admin?")) return;
     setBusy(uid);
-    const { error } = await supabase.from("user_roles").delete().eq("user_id", uid).eq("role", role as any);
+    const { error } = await supabase.from("user_roles").delete().eq("user_id", uid).eq("role", role);
     if (error) toast.error(error.message); else { sfx.tap(); load(); }
     setBusy(null);
   };
@@ -979,7 +960,7 @@ function PlansPanel() {
   const [busy, setBusy] = useState(false);
 
   const load = async () => {
-    const { data, error } = await supabase.from("plans" as any).select("*").order("sort_order");
+    const { data, error } = await supabase.from("plans").select("*").order("sort_order");
     if (error) toast.error(error.message); else setRows((data as unknown as PlanRow[]) ?? []);
   };
   useEffect(() => { load(); }, []);
@@ -987,26 +968,30 @@ function PlansPanel() {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
+    if (!editing.code || !editing.name_ar || !editing.name_en) {
+      toast.error(lang === "ar" ? "أكمل بيانات الباقة المطلوبة" : "Complete the required plan fields");
+      return;
+    }
     setBusy(true);
-    const payload: any = {
+    const payload = {
       code: editing.code, name_ar: editing.name_ar, name_en: editing.name_en,
       price_monthly: Number(editing.price_monthly ?? 0),
       currency: editing.currency ?? "EGP",
       ai_quota_monthly: Number(editing.ai_quota_monthly ?? 0),
-      commission_rate: Number((editing as any).commission_rate ?? 0),
+      commission_rate: Number(editing.commission_rate ?? 0),
       sort_order: Number(editing.sort_order ?? 0),
       is_active: editing.is_active ?? true,
     };
     const q = editing.id
-      ? supabase.from("plans" as any).update(payload).eq("id", editing.id)
-      : supabase.from("plans" as any).insert(payload);
+      ? supabase.from("plans").update(payload).eq("id", editing.id)
+      : supabase.from("plans").insert(payload);
     const { error } = await q;
     if (error) toast.error(error.message); else { sfx.success(); setEditing(null); load(); }
     setBusy(false);
   };
   const del = async (id: string) => {
     if (!confirm(lang === "ar" ? "حذف الباقة؟" : "Delete plan?")) return;
-    const { error } = await supabase.from("plans" as any).delete().eq("id", id);
+    const { error } = await supabase.from("plans").delete().eq("id", id);
     if (error) toast.error(error.message); else load();
   };
 
@@ -1033,7 +1018,7 @@ function PlansPanel() {
             </div>
             <div className="mt-3 text-3xl font-bold text-gradient-brand">{p.price_monthly} <span className="text-sm font-normal text-muted-foreground">{p.currency}/mo</span></div>
             <div className="mt-2 text-xs text-muted-foreground"><Sparkles className="inline h-3 w-3 mr-1" />{p.ai_quota_monthly} AI ops</div>
-            <div className="mt-1 text-xs text-muted-foreground">{lang === "ar" ? "عمولة المنصة" : "Platform commission"}: {(p as any).commission_rate ?? 0}%</div>
+            <div className="mt-1 text-xs text-muted-foreground">{lang === "ar" ? "عمولة المنصة" : "Platform commission"}: {p.commission_rate ?? 0}%</div>
             <div className="mt-4 flex gap-2">
               <button onClick={() => setEditing(p)} className="h-9 px-3 rounded-full glass-panel text-xs inline-flex items-center gap-1"><Pencil className="h-3 w-3" /> {lang === "ar" ? "تعديل" : "Edit"}</button>
               <button onClick={() => del(p.id)} className="h-9 w-9 grid place-items-center rounded-full hover:bg-destructive/10 text-destructive"><Trash2 className="h-4 w-4" /></button>
@@ -1057,7 +1042,7 @@ function PlansPanel() {
               <input required value={editing.name_en ?? ""} onChange={(e) => setEditing({ ...editing, name_en: e.target.value })} placeholder="Name (EN)" dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
               <input value={editing.currency ?? "EGP"} onChange={(e) => setEditing({ ...editing, currency: e.target.value })} placeholder="currency" dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
               <input type="number" value={editing.ai_quota_monthly ?? 0} onChange={(e) => setEditing({ ...editing, ai_quota_monthly: Number(e.target.value) })} placeholder="AI quota/mo" dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
-              <input type="number" step="0.1" value={(editing as any).commission_rate ?? 0} onChange={(e) => setEditing({ ...editing, commission_rate: Number(e.target.value) } as any)} placeholder={lang === "ar" ? "عمولة المنصة %" : "Commission %"} dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+              <input type="number" step="0.1" value={editing.commission_rate ?? 0} onChange={(e) => setEditing({ ...editing, commission_rate: Number(e.target.value) })} placeholder={lang === "ar" ? "عمولة المنصة %" : "Commission %"} dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
               <input type="number" value={editing.sort_order ?? 0} onChange={(e) => setEditing({ ...editing, sort_order: Number(e.target.value) })} placeholder="sort" dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
               <label className="h-11 inline-flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={editing.is_active ?? true} onChange={(e) => setEditing({ ...editing, is_active: e.target.checked })} />
@@ -1089,7 +1074,7 @@ function ActivityTypesPanel() {
   const [busy, setBusy] = useState(false);
 
   const load = async () => {
-    const { data, error } = await supabase.from("activity_types" as any).select("*").order("sort_order");
+    const { data, error } = await supabase.from("activity_types").select("*").order("sort_order");
     if (error) toast.error(error.message); else setRows((data as unknown as ActivityTypeRow[]) ?? []);
   };
   useEffect(() => { load(); }, []);
@@ -1117,13 +1102,13 @@ function ActivityTypesPanel() {
       uses_duration: editing.uses_duration ?? false, uses_barcode: editing.uses_barcode ?? false,
       is_active: editing.is_active ?? true, sort_order: Number(editing.sort_order ?? rows.length + 1),
     };
-    const { error } = await supabase.from("activity_types" as any).upsert(payload, { onConflict: "code" });
+    const { error } = await supabase.from("activity_types").upsert(payload, { onConflict: "code" });
     if (error) toast.error(error.message); else { sfx.success(); setEditing(null); load(); }
     setBusy(false);
   };
 
   const toggleActive = async (r: ActivityTypeRow) => {
-    const { error } = await supabase.from("activity_types" as any).update({ is_active: !r.is_active }).eq("code", r.code);
+    const { error } = await supabase.from("activity_types").update({ is_active: !r.is_active }).eq("code", r.code);
     if (error) toast.error(error.message); else { sfx.tap(); load(); }
   };
 
@@ -1210,10 +1195,10 @@ function SubscriptionsPanel() {
   const [rows, setRows] = useState<(SubRow & { tenants?: { name: string; slug: string }; plans?: { code: string; price_monthly: number; currency: string } })[]>([]);
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase.from("subscriptions" as any)
+      const { data, error } = await supabase.from("subscriptions")
         .select("*, tenants(name, slug), plans(code, price_monthly, currency)")
         .order("created_at", { ascending: false });
-      if (error) toast.error(error.message); else setRows((data as any[]) ?? []);
+      if (error) toast.error(error.message); else setRows(data ?? []);
     })();
   }, []);
 
@@ -1258,19 +1243,20 @@ function PaymentsPanel() {
     (async () => {
       setLoading(true);
       const [{ data: orders }, { data: tenants }, { data: subs }, { data: plans }] = await Promise.all([
-        supabase.from("orders" as any).select("tenant_id, total, payment_status"),
-        supabase.from("tenants" as any).select("id, name"),
-        supabase.from("subscriptions" as any).select("tenant_id, plan_id"),
-        supabase.from("plans" as any).select("id, commission_rate"),
+        supabase.from("orders").select("tenant_id, total, payment_status"),
+        supabase.from("tenants").select("id, name"),
+        supabase.from("subscriptions").select("tenant_id, plan_id"),
+        supabase.from("plans").select("id, commission_rate"),
       ]);
-      const tenantName = new Map(((tenants as any[]) ?? []).map((t) => [t.id, t.name]));
-      const planByTenant = new Map(((subs as any[]) ?? []).map((s) => [s.tenant_id, s.plan_id]));
-      const commissionByPlan = new Map(((plans as any[]) ?? []).map((p) => [p.id, Number(p.commission_rate ?? 0)]));
+      const tenantName = new Map((tenants ?? []).map((t) => [t.id, t.name]));
+      const planByTenant = new Map((subs ?? []).map((s) => [s.tenant_id, s.plan_id]));
+      const commissionByPlan = new Map((plans ?? []).map((p) => [p.id, Number(p.commission_rate ?? 0)]));
 
       const grouped = new Map<string, { total: number; commission: number; count: number; paid: number }>();
-      ((orders as any[]) ?? []).forEach((o) => {
+      (orders ?? []).forEach((o) => {
         const g = grouped.get(o.tenant_id) ?? { total: 0, commission: 0, count: 0, paid: 0 };
-        const rate = commissionByPlan.get(planByTenant.get(o.tenant_id)) ?? 0;
+        const planId = planByTenant.get(o.tenant_id);
+        const rate = planId ? (commissionByPlan.get(planId) ?? 0) : 0;
         g.total += Number(o.total ?? 0);
         g.commission += Number(o.total ?? 0) * (rate / 100);
         g.count += 1;
@@ -1333,7 +1319,7 @@ function AiUsagePanel() {
   const [rows, setRows] = useState<AiUsageRow[]>([]);
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase.from("ai_usage" as any).select("*").order("period_month", { ascending: false }).limit(200);
+      const { data, error } = await supabase.from("ai_usage").select("*").order("period_month", { ascending: false }).limit(200);
       if (error) toast.error(error.message); else setRows((data as unknown as AiUsageRow[]) ?? []);
     })();
   }, []);
@@ -1386,12 +1372,12 @@ function TicketsPanel() {
   const { lang } = useSanadak();
   const [rows, setRows] = useState<TicketRow[]>([]);
   const load = async () => {
-    const { data, error } = await supabase.from("support_tickets" as any).select("*").order("created_at", { ascending: false });
+    const { data, error } = await supabase.from("support_tickets").select("*").order("created_at", { ascending: false });
     if (error) toast.error(error.message); else setRows((data as unknown as TicketRow[]) ?? []);
   };
   useEffect(() => { load(); }, []);
   const setStatus = async (id: string, status: string) => {
-    const { error } = await supabase.from("support_tickets" as any).update({ status }).eq("id", id);
+    const { error } = await supabase.from("support_tickets").update({ status }).eq("id", id);
     if (error) toast.error(error.message); else load();
   };
 
@@ -1431,7 +1417,7 @@ function AuditPanel() {
   const [rows, setRows] = useState<AuditRow[]>([]);
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase.from("audit_log" as any).select("*").order("created_at", { ascending: false }).limit(200);
+      const { data, error } = await supabase.from("audit_log").select("*").order("created_at", { ascending: false }).limit(200);
       if (error) toast.error(error.message); else setRows((data as unknown as AuditRow[]) ?? []);
     })();
   }, []);
