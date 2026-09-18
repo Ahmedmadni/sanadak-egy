@@ -42,8 +42,8 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("plans" as any).select("*").eq("is_active", true).order("sort_order");
-      const rows = (data as unknown as PlanRow[]) ?? [];
+      const { data } = await supabase.from("plans").select("*").eq("is_active", true).order("sort_order");
+      const rows: PlanRow[] = data ?? [];
       setPlans(rows);
       if (rows[0]) setForm((f) => ({ ...f, plan_code: rows[0].code }));
     })();
@@ -55,7 +55,7 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
     try {
       const plan = plans.find((p) => p.code === form.plan_code);
       const seed = crypto.randomUUID();
-      const { data, error } = await supabase.from("tenants" as any).insert({
+      const { data, error } = await supabase.from("tenants").insert({
         slug: slugify(form.name, seed),
         name: form.name,
         category: form.category,
@@ -67,7 +67,7 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
         status: "pending",
       }).select("id").single();
       if (error) throw error;
-      setTenantId((data as any).id);
+      setTenantId(data.id);
       sfx.success();
       setStep(2);
     } catch (err) {
@@ -84,7 +84,7 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
     }
     setBusy(true);
     try {
-      await (supabase.rpc as any)("submit_payment_info", { _tenant: tenantId, _method: paymentMethod, _reference: reference || null });
+      await supabase.rpc("submit_payment_info", { _tenant: tenantId, _method: paymentMethod, _reference: reference || null });
       sfx.success();
       toast.success(lang === "ar" ? "تم إرسال طلبك للمراجعة" : "Your request was sent for review");
       setStep(3);
