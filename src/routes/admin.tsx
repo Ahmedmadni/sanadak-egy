@@ -88,7 +88,7 @@ function AdminPage() {
     if (!user) return;
     setClaiming(true);
     setClaimError(null);
-    const { error } = await supabase.from("user_roles").insert({ user_id: user.id, role: "admin" as any });
+    const { error } = await supabase.from("user_roles").insert({ user_id: user.id, role: "admin" });
     if (error) {
       setClaimError(error.message);
       setClaiming(false);
@@ -253,10 +253,10 @@ function OverviewPanel({ onJump }: { onJump: (s: SectionId) => void }) {
   useEffect(() => {
     (async () => {
       const [t, p, a, s, r, k, ai] = await Promise.all([
-        supabase.from("tenants" as any).select("id", { count: "exact", head: true }),
-        supabase.from("tenants" as any).select("id", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("tenants" as any).select("id", { count: "exact", head: true }).eq("status", "active"),
-        supabase.from("subscriptions" as any).select("plan_id, status, plans(price_monthly)"),
+        supabase.from("tenants").select("id", { count: "exact", head: true }),
+        supabase.from("tenants").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("tenants").select("id", { count: "exact", head: true }).eq("status", "active"),
+        supabase.from("subscriptions").select("plan_id, status, plans(price_monthly)"),
         supabase.from("store_requests" as any).select("id", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("support_tickets" as any).select("id", { count: "exact", head: true }).neq("status", "closed"),
         supabase.from("ai_usage" as any).select("tokens"),
@@ -319,8 +319,8 @@ function TenantsPanel() {
 
   const load = async () => {
     const [{ data: tenants, error }, { data: planRows, error: plansError }] = await Promise.all([
-      supabase.from("tenants" as any).select("*").order("created_at", { ascending: false }),
-      supabase.from("plans" as any).select("*").eq("is_active", true).order("sort_order"),
+      supabase.from("tenants").select("*").order("created_at", { ascending: false }),
+      supabase.from("plans").select("*").eq("is_active", true).order("sort_order"),
     ]);
     if (error) toast.error(error.message); else setRows((tenants as unknown as TenantRow[]) ?? []);
     if (plansError) toast.error(plansError.message); else setPlans((planRows as unknown as PlanRow[]) ?? []);
@@ -329,7 +329,7 @@ function TenantsPanel() {
 
   const setStatus = async (id: string, status: "active" | "hidden" | "suspended") => {
     setBusy(id);
-    const { error } = await (supabase.rpc as any)("admin_set_tenant_status", {
+    const { error } = await supabase.rpc("admin_set_tenant_status", {
       _tenant: id,
       _status: status,
     });
@@ -338,7 +338,7 @@ function TenantsPanel() {
   };
   const del = async (id: string) => {
     if (!confirm(lang === "ar" ? "حذف هذا المتجر نهائياً؟" : "Delete tenant permanently?")) return;
-    const { error } = await supabase.from("tenants" as any).delete().eq("id", id);
+    const { error } = await supabase.from("tenants").delete().eq("id", id);
     if (error) toast.error(error.message); else load();
   };
 
@@ -352,7 +352,7 @@ function TenantsPanel() {
     setSaving(true);
     try {
       if (editing.id) {
-        const payload: any = {
+        const payload = {
           name: editing.name,
           category: editing.category,
           area: editing.area || null,
@@ -361,10 +361,10 @@ function TenantsPanel() {
           description: editing.description || null,
           image_url: editing.image_url || null,
         };
-        const { error } = await supabase.from("tenants" as any).update(payload).eq("id", editing.id);
+        const { error } = await supabase.from("tenants").update(payload).eq("id", editing.id);
         if (error) throw error;
       } else {
-        const { error } = await (supabase.rpc as any)("admin_create_tenant", {
+        const { error } = await supabase.rpc("admin_create_tenant", {
           _name: editing.name,
           _category: editing.category,
           _plan: editing.plan_id,
@@ -528,16 +528,16 @@ function OnboardingPanel({ adminId }: { adminId: string }) {
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = async () => {
-    const { data: tenants, error } = await supabase.from("tenants" as any).select("*").eq("status", "pending").order("created_at", { ascending: true });
+    const { data: tenants, error } = await supabase.from("tenants").select("*").eq("status", "pending").order("created_at", { ascending: true });
     if (error) { toast.error(error.message); return; }
     const list = (tenants as unknown as TenantRow[]) ?? [];
     setRows(list);
     if (list.length === 0) return;
     const ids = list.map((t) => t.id);
     const [{ data: d }, { data: s }, { data: p }] = await Promise.all([
-      supabase.from("tenant_documents" as any).select("*").in("tenant_id", ids).order("created_at", { ascending: false }),
-      supabase.from("subscriptions" as any).select("*").in("tenant_id", ids).order("current_period_end", { ascending: false }),
-      supabase.from("plans" as any).select("*"),
+      supabase.from("tenant_documents").select("*").in("tenant_id", ids).order("created_at", { ascending: false }),
+      supabase.from("subscriptions").select("*").in("tenant_id", ids).order("current_period_end", { ascending: false }),
+      supabase.from("plans").select("*"),
     ]);
     const docsByTenant: Record<string, any[]> = {};
     ((d as any[]) ?? []).forEach((doc) => { (docsByTenant[doc.tenant_id] ??= []).push(doc); });
@@ -561,7 +561,7 @@ function OnboardingPanel({ adminId }: { adminId: string }) {
     const sub = subs[tenantId];
     if (!sub) return;
     setBusy(tenantId);
-    const { error } = await supabase.from("subscriptions" as any)
+    const { error } = await supabase.from("subscriptions")
       .update({ payment_verified_at: new Date().toISOString(), payment_verified_by: adminId })
       .eq("id", sub.id);
     if (error) toast.error(error.message); else { sfx.success(); load(); }
@@ -570,10 +570,10 @@ function OnboardingPanel({ adminId }: { adminId: string }) {
 
   const approve = async (t: TenantRow) => {
     setBusy(t.id);
-    const { error } = await (supabase.rpc as any)("approve_tenant_onboarding", { _tenant: t.id });
+    const { error } = await supabase.rpc("approve_tenant_onboarding", { _tenant: t.id });
     if (error) { toast.error(error.message); setBusy(null); return; }
     if (t.owner_id) {
-      await supabase.from("notifications" as any).insert({
+      await supabase.from("notifications").insert({
         user_id: t.owner_id, tenant_id: t.id, kind: "tenant_approved",
         title: lang === "ar" ? "تم اعتماد نشاطك" : "Your business was approved",
         body: lang === "ar" ? `تم اعتماد "${t.name}" وبدأ اشتراكك وأصبح النشاط ظاهراً للعملاء الآن.` : `"${t.name}" was approved, its subscription started, and it is now visible to customers.`,
@@ -587,10 +587,10 @@ function OnboardingPanel({ adminId }: { adminId: string }) {
 
   const reject = async (t: TenantRow) => {
     setBusy(t.id);
-    const { error } = await supabase.from("tenants" as any).update({ status: "rejected" }).eq("id", t.id);
+    const { error } = await supabase.from("tenants").update({ status: "rejected" }).eq("id", t.id);
     if (error) { toast.error(error.message); setBusy(null); return; }
     if (t.owner_id) {
-      await supabase.from("notifications" as any).insert({
+      await supabase.from("notifications").insert({
         user_id: t.owner_id, tenant_id: t.id, kind: "tenant_rejected",
         title: lang === "ar" ? "تم رفض طلب الانضمام" : "Your request was rejected",
         body: reason || (lang === "ar" ? "يرجى مراجعة بياناتك ومستنداتك وإعادة المحاولة." : "Please review your information and documents and try again."),
@@ -703,7 +703,7 @@ function RequestsPanel() {
     try {
       // Create tenant (new model)
       const slug = slugify(r.store_name);
-      const { error: tenErr } = await supabase.from("tenants" as any).insert({
+      const { error: tenErr } = await supabase.from("tenants").insert({
         slug, name: r.store_name, category: r.category, area: r.area,
         phone: r.phone, description: r.description, image_url: r.image_url,
         owner_id: r.submitted_by, status: "active", verified_at: new Date().toISOString(),
@@ -979,7 +979,7 @@ function PlansPanel() {
   const [busy, setBusy] = useState(false);
 
   const load = async () => {
-    const { data, error } = await supabase.from("plans" as any).select("*").order("sort_order");
+    const { data, error } = await supabase.from("plans").select("*").order("sort_order");
     if (error) toast.error(error.message); else setRows((data as unknown as PlanRow[]) ?? []);
   };
   useEffect(() => { load(); }, []);
@@ -998,15 +998,15 @@ function PlansPanel() {
       is_active: editing.is_active ?? true,
     };
     const q = editing.id
-      ? supabase.from("plans" as any).update(payload).eq("id", editing.id)
-      : supabase.from("plans" as any).insert(payload);
+      ? supabase.from("plans").update(payload).eq("id", editing.id)
+      : supabase.from("plans").insert(payload);
     const { error } = await q;
     if (error) toast.error(error.message); else { sfx.success(); setEditing(null); load(); }
     setBusy(false);
   };
   const del = async (id: string) => {
     if (!confirm(lang === "ar" ? "حذف الباقة؟" : "Delete plan?")) return;
-    const { error } = await supabase.from("plans" as any).delete().eq("id", id);
+    const { error } = await supabase.from("plans").delete().eq("id", id);
     if (error) toast.error(error.message); else load();
   };
 
@@ -1210,7 +1210,7 @@ function SubscriptionsPanel() {
   const [rows, setRows] = useState<(SubRow & { tenants?: { name: string; slug: string }; plans?: { code: string; price_monthly: number; currency: string } })[]>([]);
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase.from("subscriptions" as any)
+      const { data, error } = await supabase.from("subscriptions")
         .select("*, tenants(name, slug), plans(code, price_monthly, currency)")
         .order("created_at", { ascending: false });
       if (error) toast.error(error.message); else setRows((data as any[]) ?? []);
@@ -1259,9 +1259,9 @@ function PaymentsPanel() {
       setLoading(true);
       const [{ data: orders }, { data: tenants }, { data: subs }, { data: plans }] = await Promise.all([
         supabase.from("orders" as any).select("tenant_id, total, payment_status"),
-        supabase.from("tenants" as any).select("id, name"),
-        supabase.from("subscriptions" as any).select("tenant_id, plan_id"),
-        supabase.from("plans" as any).select("id, commission_rate"),
+        supabase.from("tenants").select("id, name"),
+        supabase.from("subscriptions").select("tenant_id, plan_id"),
+        supabase.from("plans").select("id, commission_rate"),
       ]);
       const tenantName = new Map(((tenants as any[]) ?? []).map((t) => [t.id, t.name]));
       const planByTenant = new Map(((subs as any[]) ?? []).map((s) => [s.tenant_id, s.plan_id]));
