@@ -989,6 +989,10 @@ function PlansPanel() {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
+    if (!editing.code || !editing.name_ar || !editing.name_en) {
+      toast.error(lang === "ar" ? "أكمل بيانات الباقة المطلوبة" : "Complete the required plan fields");
+      return;
+    }
     setBusy(true);
     const payload = {
       code: editing.code, name_ar: editing.name_ar, name_en: editing.name_en,
