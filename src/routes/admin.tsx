@@ -9,6 +9,7 @@ import {
   ScrollText, BadgeCheck, Ban, Menu, TrendingUp, Bot, FileText, Wallet,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Enums, Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/use-auth";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
@@ -34,7 +35,8 @@ type RequestRow = {
   status: string; notes: string | null; submitted_by: string | null; created_at: string;
 };
 type ProfileRow = { id: string; full_name: string | null; phone: string | null; created_at: string };
-type RoleRow = { user_id: string; role: string };
+type AppRole = Enums<"app_role">;
+type RoleRow = { user_id: string; role: AppRole };
 type TenantRow = {
   id: string; slug: string; name: string; category: string; area: string | null;
   phone: string | null; email: string | null; image_url: string | null; status: string;
@@ -261,10 +263,10 @@ function OverviewPanel({ onJump }: { onJump: (s: SectionId) => void }) {
         supabase.from("support_tickets").select("id", { count: "exact", head: true }).neq("status", "closed"),
         supabase.from("ai_usage").select("tokens"),
       ]);
-      const subsArr = (s.data as any[]) ?? [];
+      const subsArr = s.data ?? [];
       const revenue = subsArr.filter((x) => x.status === "active")
         .reduce((sum, x) => sum + Number(x.plans?.price_monthly ?? 0), 0);
-      const aiOps = ((ai.data as any[]) ?? []).reduce((acc, x) => acc + (x.tokens ?? 0), 0);
+      const aiOps = (ai.data ?? []).reduce((acc, x) => acc + (x.tokens ?? 0), 0);
       setStats({
         tenants: t.count ?? 0, pending: p.count ?? 0, active: a.count ?? 0,
         subs: subsArr.filter((x) => x.status === "active").length,
@@ -520,8 +522,8 @@ const DOC_LABELS: Record<string, [string, string]> = {
 function OnboardingPanel({ adminId }: { adminId: string }) {
   const { lang } = useSanadak();
   const [rows, setRows] = useState<TenantRow[]>([]);
-  const [docs, setDocs] = useState<Record<string, any[]>>({});
-  const [subs, setSubs] = useState<Record<string, any>>({});
+  const [docs, setDocs] = useState<Record<string, Tables<"tenant_documents">[]>>({});
+  const [subs, setSubs] = useState<Record<string, Tables<"subscriptions">>>({});
   const [plansById, setPlansById] = useState<Record<string, PlanRow>>({});
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [reason, setReason] = useState("");
@@ -539,14 +541,14 @@ function OnboardingPanel({ adminId }: { adminId: string }) {
       supabase.from("subscriptions").select("*").in("tenant_id", ids).order("current_period_end", { ascending: false }),
       supabase.from("plans").select("*"),
     ]);
-    const docsByTenant: Record<string, any[]> = {};
-    ((d as any[]) ?? []).forEach((doc) => { (docsByTenant[doc.tenant_id] ??= []).push(doc); });
+    const docsByTenant: Record<string, Tables<"tenant_documents">[]> = {};
+    (d ?? []).forEach((doc) => { (docsByTenant[doc.tenant_id] ??= []).push(doc); });
     setDocs(docsByTenant);
-    const subByTenant: Record<string, any> = {};
-    ((s as any[]) ?? []).forEach((sub) => { if (!subByTenant[sub.tenant_id]) subByTenant[sub.tenant_id] = sub; });
+    const subByTenant: Record<string, Tables<"subscriptions">> = {};
+    (s ?? []).forEach((sub) => { if (!subByTenant[sub.tenant_id]) subByTenant[sub.tenant_id] = sub; });
     setSubs(subByTenant);
     const planMap: Record<string, PlanRow> = {};
-    ((p as any[]) ?? []).forEach((pl) => { planMap[pl.id] = pl; });
+    (p ?? []).forEach((pl) => { planMap[pl.id] = pl; });
     setPlansById(planMap);
   };
   useEffect(() => { load(); }, []);
@@ -896,17 +898,17 @@ function UsersPanel({ currentUserId }: { currentUserId: string }) {
   const rolesOf = (uid: string) => roles.filter((x) => x.user_id === uid).map((x) => x.role);
   const isAdminUser = (uid: string) => rolesOf(uid).includes("admin");
 
-  const grant = async (uid: string, role: string) => {
+  const grant = async (uid: string, role: AppRole) => {
     setBusy(uid);
-    const { error } = await supabase.from("user_roles").insert({ user_id: uid, role: role as any });
+    const { error } = await supabase.from("user_roles").insert({ user_id: uid, role });
     if (error) toast.error(error.message); else { sfx.success(); load(); }
     setBusy(null);
     setPickerFor(null);
   };
-  const revoke = async (uid: string, role: string) => {
+  const revoke = async (uid: string, role: AppRole) => {
     if (uid === currentUserId && role === "admin" && !confirm(lang === "ar" ? "سحب صلاحياتك أنت؟" : "Revoke your own admin?")) return;
     setBusy(uid);
-    const { error } = await supabase.from("user_roles").delete().eq("user_id", uid).eq("role", role as any);
+    const { error } = await supabase.from("user_roles").delete().eq("user_id", uid).eq("role", role);
     if (error) toast.error(error.message); else { sfx.tap(); load(); }
     setBusy(null);
   };
@@ -988,12 +990,12 @@ function PlansPanel() {
     e.preventDefault();
     if (!editing) return;
     setBusy(true);
-    const payload: any = {
+    const payload = {
       code: editing.code, name_ar: editing.name_ar, name_en: editing.name_en,
       price_monthly: Number(editing.price_monthly ?? 0),
       currency: editing.currency ?? "EGP",
       ai_quota_monthly: Number(editing.ai_quota_monthly ?? 0),
-      commission_rate: Number((editing as any).commission_rate ?? 0),
+      commission_rate: Number(editing.commission_rate ?? 0),
       sort_order: Number(editing.sort_order ?? 0),
       is_active: editing.is_active ?? true,
     };
@@ -1033,7 +1035,7 @@ function PlansPanel() {
             </div>
             <div className="mt-3 text-3xl font-bold text-gradient-brand">{p.price_monthly} <span className="text-sm font-normal text-muted-foreground">{p.currency}/mo</span></div>
             <div className="mt-2 text-xs text-muted-foreground"><Sparkles className="inline h-3 w-3 mr-1" />{p.ai_quota_monthly} AI ops</div>
-            <div className="mt-1 text-xs text-muted-foreground">{lang === "ar" ? "عمولة المنصة" : "Platform commission"}: {(p as any).commission_rate ?? 0}%</div>
+            <div className="mt-1 text-xs text-muted-foreground">{lang === "ar" ? "عمولة المنصة" : "Platform commission"}: {p.commission_rate ?? 0}%</div>
             <div className="mt-4 flex gap-2">
               <button onClick={() => setEditing(p)} className="h-9 px-3 rounded-full glass-panel text-xs inline-flex items-center gap-1"><Pencil className="h-3 w-3" /> {lang === "ar" ? "تعديل" : "Edit"}</button>
               <button onClick={() => del(p.id)} className="h-9 w-9 grid place-items-center rounded-full hover:bg-destructive/10 text-destructive"><Trash2 className="h-4 w-4" /></button>
@@ -1057,7 +1059,7 @@ function PlansPanel() {
               <input required value={editing.name_en ?? ""} onChange={(e) => setEditing({ ...editing, name_en: e.target.value })} placeholder="Name (EN)" dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
               <input value={editing.currency ?? "EGP"} onChange={(e) => setEditing({ ...editing, currency: e.target.value })} placeholder="currency" dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
               <input type="number" value={editing.ai_quota_monthly ?? 0} onChange={(e) => setEditing({ ...editing, ai_quota_monthly: Number(e.target.value) })} placeholder="AI quota/mo" dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
-              <input type="number" step="0.1" value={(editing as any).commission_rate ?? 0} onChange={(e) => setEditing({ ...editing, commission_rate: Number(e.target.value) } as any)} placeholder={lang === "ar" ? "عمولة المنصة %" : "Commission %"} dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+              <input type="number" step="0.1" value={editing.commission_rate ?? 0} onChange={(e) => setEditing({ ...editing, commission_rate: Number(e.target.value) })} placeholder={lang === "ar" ? "عمولة المنصة %" : "Commission %"} dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
               <input type="number" value={editing.sort_order ?? 0} onChange={(e) => setEditing({ ...editing, sort_order: Number(e.target.value) })} placeholder="sort" dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
               <label className="h-11 inline-flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={editing.is_active ?? true} onChange={(e) => setEditing({ ...editing, is_active: e.target.checked })} />
@@ -1213,7 +1215,7 @@ function SubscriptionsPanel() {
       const { data, error } = await supabase.from("subscriptions")
         .select("*, tenants(name, slug), plans(code, price_monthly, currency)")
         .order("created_at", { ascending: false });
-      if (error) toast.error(error.message); else setRows((data as any[]) ?? []);
+      if (error) toast.error(error.message); else setRows(data ?? []);
     })();
   }, []);
 
@@ -1263,12 +1265,12 @@ function PaymentsPanel() {
         supabase.from("subscriptions").select("tenant_id, plan_id"),
         supabase.from("plans").select("id, commission_rate"),
       ]);
-      const tenantName = new Map(((tenants as any[]) ?? []).map((t) => [t.id, t.name]));
-      const planByTenant = new Map(((subs as any[]) ?? []).map((s) => [s.tenant_id, s.plan_id]));
-      const commissionByPlan = new Map(((plans as any[]) ?? []).map((p) => [p.id, Number(p.commission_rate ?? 0)]));
+      const tenantName = new Map((tenants ?? []).map((t) => [t.id, t.name]));
+      const planByTenant = new Map((subs ?? []).map((s) => [s.tenant_id, s.plan_id]));
+      const commissionByPlan = new Map((plans ?? []).map((p) => [p.id, Number(p.commission_rate ?? 0)]));
 
       const grouped = new Map<string, { total: number; commission: number; count: number; paid: number }>();
-      ((orders as any[]) ?? []).forEach((o) => {
+      (orders ?? []).forEach((o) => {
         const g = grouped.get(o.tenant_id) ?? { total: 0, commission: 0, count: 0, paid: 0 };
         const rate = commissionByPlan.get(planByTenant.get(o.tenant_id)) ?? 0;
         g.total += Number(o.total ?? 0);
