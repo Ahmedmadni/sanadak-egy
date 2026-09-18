@@ -570,17 +570,17 @@ function OnboardingPanel({ adminId }: { adminId: string }) {
 
   const approve = async (t: TenantRow) => {
     setBusy(t.id);
-    const { error } = await supabase.from("tenants" as any).update({ status: "active", verified_at: new Date().toISOString() }).eq("id", t.id);
+    const { error } = await (supabase.rpc as any)("approve_tenant_onboarding", { _tenant: t.id });
     if (error) { toast.error(error.message); setBusy(null); return; }
     if (t.owner_id) {
       await supabase.from("notifications" as any).insert({
         user_id: t.owner_id, tenant_id: t.id, kind: "tenant_approved",
         title: lang === "ar" ? "تم اعتماد نشاطك" : "Your business was approved",
-        body: lang === "ar" ? `تم اعتماد "${t.name}" وأصبح ظاهراً للعملاء الآن.` : `"${t.name}" is now live and visible to customers.`,
+        body: lang === "ar" ? `تم اعتماد "${t.name}" وبدأ اشتراكك وأصبح النشاط ظاهراً للعملاء الآن.` : `"${t.name}" was approved, its subscription started, and it is now visible to customers.`,
       });
     }
     sfx.success();
-    toast.success(lang === "ar" ? "تم الاعتماد" : "Approved");
+    toast.success(lang === "ar" ? "تم الاعتماد وبدأ الاشتراك" : "Approved and subscription started");
     load();
     setBusy(null);
   };
