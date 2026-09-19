@@ -5,6 +5,14 @@
 -- explicit negative serial (so no sequence is consumed), verifies that the slot
 -- disappears, then intentionally rolls the entire fixture back.
 
+CREATE TEMP TABLE IF NOT EXISTS gate6_smoke_results (
+  check_name text NOT NULL,
+  result text NOT NULL,
+  details text
+);
+
+TRUNCATE gate6_smoke_results;
+
 DO $gate6$
 DECLARE
   v_category text;
@@ -217,5 +225,15 @@ BEGIN
   RAISE NOTICE 'availability_returns_slots: PASS (% slots)', v_before_count;
   RAISE NOTICE 'conflicting_slot_is_removed: PASS';
   RAISE NOTICE 'temporary_fixture_rolled_back: PASS';
+
+  INSERT INTO gate6_smoke_results (check_name, result, details)
+  VALUES
+    ('availability_returns_slots', 'PASS', v_before_count || ' slots returned'),
+    ('conflicting_slot_is_removed', 'PASS', 'selected slot disappeared after conflict'),
+    ('temporary_fixture_rolled_back', 'PASS', 'no smoke tenant, service, staff, branch, or booking was retained');
 END;
 $gate6$;
+
+SELECT check_name, result, details
+FROM gate6_smoke_results
+ORDER BY check_name;
