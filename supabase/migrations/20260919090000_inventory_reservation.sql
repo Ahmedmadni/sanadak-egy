@@ -312,14 +312,16 @@ BEGIN
     RAISE EXCEPTION 'invalid order status';
   END IF;
 
-  IF NOT CASE OLD.status
-    WHEN 'pending' THEN NEW.status IN ('confirmed', 'cancelled')
-    WHEN 'confirmed' THEN NEW.status IN ('preparing', 'ready', 'cancelled')
-    WHEN 'preparing' THEN NEW.status IN ('ready', 'cancelled')
-    WHEN 'ready' THEN NEW.status IN ('out_for_delivery', 'delivered', 'cancelled')
-    WHEN 'out_for_delivery' THEN NEW.status IN ('delivered', 'cancelled')
-    ELSE false
-  END THEN
+  IF NOT (
+    CASE OLD.status
+      WHEN 'pending' THEN NEW.status IN ('confirmed', 'cancelled')
+      WHEN 'confirmed' THEN NEW.status IN ('preparing', 'ready', 'cancelled')
+      WHEN 'preparing' THEN NEW.status IN ('ready', 'cancelled')
+      WHEN 'ready' THEN NEW.status IN ('out_for_delivery', 'delivered', 'cancelled')
+      WHEN 'out_for_delivery' THEN NEW.status IN ('delivered', 'cancelled')
+      ELSE false
+    END
+  ) THEN
     RAISE EXCEPTION 'invalid order status transition from % to %', OLD.status, NEW.status;
   END IF;
 
