@@ -144,19 +144,28 @@ export function StoreCartCheckout({
     try {
       const saved = JSON.parse(localStorage.getItem(storageKey) ?? "[]") as unknown;
       if (Array.isArray(saved)) {
+        const restoredQuantity = new Map<string, number>();
         setCart(
-          saved.filter(isSavedLine).flatMap((line) => {
-            const item = catalog.get(line.id);
-            if (!item || item.stock === 0) return [];
-            const validVariants = variantOptions(item.variants);
-            if (validVariants.length && (!line.variant || !validVariants.includes(line.variant))) {
-              return [];
-            }
-            const qty = Math.min(line.qty, item.stock ?? 99, 99);
-            if (qty < 1) return [];
-            const { variants: _variants, ...cartItem } = item;
-            return [{ ...cartItem, qty, variant: validVariants.length ? line.variant : null }];
-          }),
+          saved
+            .filter(isSavedLine)
+            .slice(0, 50)
+            .flatMap((line) => {
+              const item = catalog.get(line.id);
+              if (!item || item.stock === 0) return [];
+              const validVariants = variantOptions(item.variants);
+              if (
+                validVariants.length &&
+                (!line.variant || !validVariants.includes(line.variant))
+              ) {
+                return [];
+              }
+              const alreadyRestored = restoredQuantity.get(item.id) ?? 0;
+              const qty = Math.min(line.qty, Math.max(0, (item.stock ?? 99) - alreadyRestored), 99);
+              if (qty < 1) return [];
+              restoredQuantity.set(item.id, alreadyRestored + qty);
+              const { variants: _variants, ...cartItem } = item;
+              return [{ ...cartItem, qty, variant: validVariants.length ? line.variant : null }];
+            }),
         );
       }
     } catch {
