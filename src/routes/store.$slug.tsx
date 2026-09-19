@@ -7,9 +7,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
 import { categoryConfig } from "@/components/business/types";
+import { BookingDialog } from "@/components/sanadak/BookingDialog";
 
 export const Route = createFileRoute("/store/$slug")({
   head: () => ({ meta: [{ title: "سندك" }] }),
@@ -25,6 +27,8 @@ type Item = {
   image_url: string | null; duration_minutes: number | null; stock: number | null;
 };
 type Review = { id: string; rating: number; body: string | null; created_at: string };
+type Branch = Pick<Tables<"branches">, "id" | "name" | "address">;
+type Staff = Pick<Tables<"staff">, "id" | "name" | "role" | "specialty" | "branch_id">;
 
 function StorePage() {
   const { slug } = Route.useParams();
@@ -32,9 +36,10 @@ function StorePage() {
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<Item | null>(null);
-  const [slotAt, setSlotAt] = useState("");
   const [busy, setBusy] = useState(false);
   const Arrow = dir === "rtl" ? ArrowRight : ArrowLeft;
 
@@ -44,12 +49,16 @@ function StorePage() {
       const { data: t } = await supabase.from("tenants").select("*").eq("slug", slug).maybeSingle();
       if (t) {
         setTenant(t);
-        const [{ data: i }, { data: r }] = await Promise.all([
+        const [{ data: i }, { data: r }, { data: b }, { data: s }] = await Promise.all([
           supabase.from("catalog_items").select("*").eq("tenant_id", t.id).eq("is_active", true).order("sort_order"),
           supabase.from("reviews").select("*").eq("tenant_id", t.id).eq("is_approved", true).order("created_at", { ascending: false }).limit(10),
+          supabase.from("branches").select("id,name,address").eq("tenant_id", t.id).eq("is_active", true).order("created_at"),
+          supabase.from("staff").select("id,name,role,specialty,branch_id").eq("tenant_id", t.id).eq("is_active", true).order("created_at"),
         ]);
         setItems(i ?? []);
         setReviews(r ?? []);
+        setBranches(b ?? []);
+        setStaff(s ?? []);
       }
       setLoading(false);
     })();
@@ -81,48 +90,21 @@ function StorePage() {
     }
     setBusy(true);
     try {
-      if (cfg.hasBookings && active.duration_minutes) {
-        const startsAt = new Date(slotAt);
-        if (!slotAt || Number.isNaN(startsAt.getTime())) {
-          throw new Error(lang === "ar" ? "يرجى اختيار موعد صحيح" : "Please choose a valid booking time");
-        }
-
-        const { error } = await supabase.rpc("create_booking", {
-          _tenant: tenant.id,
-          _item: active.id,
-          _slot_start: startsAt.toISOString(),
-          _customer_name: customer.name,
-          _customer_phone: customer.phone,
-          _branch: null,
-          _staff: null,
-          _notes: null,
-        });
-        if (error) throw error;
-        sfx.success();
-        toast.success(lang === "ar" ? "تم إرسال طلب الحجز" : "Booking request sent");
-      } else {
-        const { error } = await supabase.rpc("create_order", {
-          _tenant: tenant.id,
-          _items: [{ item_id: active.id, qty: 1, variants: {} }],
-          _customer_name: customer.name,
-          _customer_phone: customer.phone,
-          _customer_address: customer.address || null,
-          _delivery_type: customer.address ? "delivery" : "pickup",
-          _notes: null,
-        });
-        if (error) throw error;
-        sfx.success();
-        toast.success(lang === "ar" ? "تم إرسال طلبك" : "Order sent");
-      }
+      const { error } = await supabase.rpc("create_order", {
+        _tenant: tenant.id,
+        _items: [{ item_id: active.id, qty: 1, variants: {} }],
+        _customer_name: customer.name,
+        _customer_phone: customer.phone,
+        _customer_address: customer.address || null,
+        _delivery_type: customer.address ? "delivery" : "pickup",
+        _notes: null,
+      });
+      if (error) throw error;
+      sfx.success();
+      toast.success(lang === "ar" ? "تم إرسال طلبك" : "Order sent");
       setActive(null);
-      setSlotAt("");
     } catch (err) {
-      const message = (err as Error).message || "";
-      if (message.includes("selected time is no longer available")) {
-        toast.error(lang === "ar" ? "هذا الموعد لم يعد متاحًا، اختر موعدًا آخر" : "That time is no longer available. Please choose another slot.");
-      } else {
-        toast.error(message);
-      }
+      toast.error((err as Error).message || "");
     } finally {
       setBusy(false);
     }
@@ -200,7 +182,19 @@ function StorePage() {
         )}
       </div>
 
-      {active && (
+      {active && cfg.hasBookings && active.duration_minutes ? (
+        <BookingDialog
+          tenantId={tenant.id}
+          tenantName={tenant.name}
+          item={active}
+          branches={branches}
+          staff={staff}
+          customer={customer}
+          lang={lang}
+          onCustomerChange={setCustomer}
+          onClose={() => setActive(null)}
+        />
+      ) : active ? (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm grid place-items-center p-4" onClick={() => setActive(null)}>
           <motion.form initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} onSubmit={submitOrder} onClick={(e) => e.stopPropagation()} className="glass-card rounded-3xl p-6 w-full max-w-md shadow-float">
             <div className="flex items-center justify-between mb-4">
@@ -210,18 +204,14 @@ function StorePage() {
             <div className="grid gap-3">
               <input required value={customer.name} onChange={(e) => setCustomer({ ...customer, name: e.target.value })} placeholder={lang === "ar" ? "اسمك" : "Your name"} className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
               <input required value={customer.phone} onChange={(e) => setCustomer({ ...customer, phone: e.target.value })} placeholder={lang === "ar" ? "رقم الهاتف" : "Phone"} dir="ltr" className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
-              {cfg.hasBookings && active.duration_minutes ? (
-                <input type="datetime-local" required value={slotAt} onChange={(e) => setSlotAt(e.target.value)} className="h-11 rounded-xl border border-input bg-background px-4 text-sm" dir="ltr" />
-              ) : (
-                <input value={customer.address} onChange={(e) => setCustomer({ ...customer, address: e.target.value })} placeholder={lang === "ar" ? "عنوان التوصيل (اختياري)" : "Delivery address (optional)"} className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
-              )}
+              <input value={customer.address} onChange={(e) => setCustomer({ ...customer, address: e.target.value })} placeholder={lang === "ar" ? "عنوان التوصيل (اختياري)" : "Delivery address (optional)"} className="h-11 rounded-xl border border-input bg-background px-4 text-sm" />
             </div>
             <button disabled={busy} type="submit" className="mt-5 w-full h-12 rounded-full bg-gradient-brand text-primary-foreground font-medium shadow-glow flex items-center justify-center gap-2 disabled:opacity-50">
               <Send className="h-4 w-4" /> {lang === "ar" ? "تأكيد" : "Confirm"}
             </button>
           </motion.form>
         </div>
-      )}
+      ) : null}
     </main>
   );
 }
