@@ -148,8 +148,8 @@ from (
   union all
 
   select
-    'authenticated_direct_order_update_staged',
+    'authenticated_direct_order_update_closed',
     case when has_table_privilege('authenticated', 'public.orders', 'UPDATE')
-      then 'PASS' else 'CHECK' end
+      then 'FAIL' else 'PASS' end
 ) checks
 order by check_name;
