@@ -4,8 +4,8 @@
 -- - NULL catalog_items.stock continues to mean "inventory is not tracked".
 -- - Existing orders are intentionally left with inventory_reserved_at = NULL so
 --   cancelling a pre-Gate-8 order cannot add stock that was never deducted.
--- - Authenticated table UPDATE remains available during the frontend rollout,
---   but the trigger below enforces status transitions and exactly-once release.
+-- - Direct authenticated UPDATE on orders is closed. Status changes must use
+--   public.set_order_status(...), which preserves the state machine and inventory release contract.
 -- - Order-item snapshots become immutable and orders cannot be deleted by tenant
 --   members, because either action could corrupt a later stock release.
 
@@ -357,10 +357,11 @@ FOR EACH ROW
 EXECUTE FUNCTION public.enforce_order_inventory_status();
 
 REVOKE UPDATE, DELETE ON TABLE public.order_items FROM authenticated;
-REVOKE DELETE ON TABLE public.orders FROM authenticated;
+REVOKE UPDATE, DELETE ON TABLE public.orders FROM authenticated;
 
 DROP POLICY IF EXISTS "Members manage order items" ON public.order_items;
 DROP POLICY IF EXISTS "Members delete order items" ON public.order_items;
+DROP POLICY IF EXISTS "Members manage tenant orders" ON public.orders;
 DROP POLICY IF EXISTS "Managers delete tenant orders" ON public.orders;
 
 COMMENT ON TABLE public.order_items IS
