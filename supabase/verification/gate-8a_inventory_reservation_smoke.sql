@@ -1,6 +1,7 @@
 -- Gate 8A inventory reservation smoke test.
 -- Runs inside a transaction and rolls back all fixtures and order changes.
--- Requires at least one currently visible tenant.
+-- Creates its own active tenant/subscription fixtures, so it does not depend on
+-- production tenant lifecycle state.
 
 begin;
 
@@ -11,6 +12,7 @@ create temporary table gate8_smoke_results (
 
 do $$
 declare
+  v_plan uuid;
   v_tenant uuid;
   v_item uuid;
   v_order uuid;
@@ -18,15 +20,49 @@ declare
   v_released_at timestamptz;
   v_failed boolean := false;
 begin
-  select t.id
-  into v_tenant
-  from public.tenants t
-  where public.tenant_is_visible(t.id)
-  order by t.created_at
-  limit 1;
+  insert into public.plans (
+    code,
+    name_ar,
+    name_en,
+    price_monthly,
+    currency,
+    is_active
+  ) values (
+    'gate8-smoke-' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 12),
+    'اختبار Gate 8',
+    'Gate 8 smoke',
+    0,
+    'EGP',
+    true
+  )
+  returning id into v_plan;
 
-  if v_tenant is null then
-    raise exception 'Gate 8 smoke test requires one visible tenant';
+  insert into public.tenants (
+    slug,
+    name,
+    category,
+    plan_id,
+    status,
+    verified_at
+  ) values (
+    'gate8-smoke-' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 12),
+    'Gate 8 rollback smoke tenant',
+    'shops',
+    v_plan,
+    'active',
+    clock_timestamp()
+  )
+  returning id into v_tenant;
+
+  update public.subscriptions
+  set status = 'active',
+      current_period_start = clock_timestamp(),
+      current_period_end = clock_timestamp() + interval '1 day',
+      cancel_at = null
+  where tenant_id = v_tenant;
+
+  if not public.tenant_is_visible(v_tenant) then
+    raise exception 'Gate 8 smoke fixture tenant is not visible';
   end if;
 
   insert into public.catalog_items (
