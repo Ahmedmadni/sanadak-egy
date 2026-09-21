@@ -98,6 +98,8 @@ export type OrderRow = {
   payment_status: string;
   notes: string | null;
   serial_no: number;
+  inventory_reserved_at: string | null;
+  inventory_released_at: string | null;
   created_at: string;
 };
 

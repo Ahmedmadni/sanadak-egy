@@ -469,6 +469,8 @@ export type Database = {
           delivery_fee: number
           delivery_type: string
           id: string
+          inventory_released_at: string | null
+          inventory_reserved_at: string | null
           notes: string | null
           payment_status: string
           serial_no: number
@@ -488,6 +490,8 @@ export type Database = {
           delivery_fee?: number
           delivery_type?: string
           id?: string
+          inventory_released_at?: string | null
+          inventory_reserved_at?: string | null
           notes?: string | null
           payment_status?: string
           serial_no?: number
@@ -507,6 +511,8 @@ export type Database = {
           delivery_fee?: number
           delivery_type?: string
           id?: string
+          inventory_released_at?: string | null
+          inventory_reserved_at?: string | null
           notes?: string | null
           payment_status?: string
           serial_no?: number
@@ -1134,6 +1140,14 @@ export type Database = {
           serial_no: number
           subtotal: number
           total: number
+        }[]
+      }
+      set_order_status: {
+        Args: { _order: string; _status: string }
+        Returns: {
+          inventory_released_at: string | null
+          order_id: string
+          status: string
         }[]
       }
       submit_payment_info: {
