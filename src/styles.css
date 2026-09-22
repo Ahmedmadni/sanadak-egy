@@ -202,6 +202,12 @@
     background: oklch(0.09 0.018 220 / 0.82);
     border-color: oklch(1 0 0 / 0.14);
     box-shadow: 0 10px 40px -14px oklch(0 0 0 / 0.55);
+    /* The pill stays dark in both themes, so force light text tokens here —
+       otherwise light theme renders dark text on the dark bar. */
+    --foreground: oklch(0.97 0.005 200);
+    --muted-foreground: oklch(0.86 0.02 200);
+    --primary: oklch(0.82 0.15 168);
+    color: var(--foreground);
   }
   .scrollbar-none { scrollbar-width: none; }
   .scrollbar-none::-webkit-scrollbar { display: none; }
