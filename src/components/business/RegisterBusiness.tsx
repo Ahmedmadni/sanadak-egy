@@ -90,7 +90,11 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
     }
     setBusy(true);
     try {
-      await supabase.rpc("submit_payment_info", { _tenant: tenantId, _method: paymentMethod, _reference: reference || null });
+      await supabase.rpc("submit_payment_info", {
+        _tenant: tenantId,
+        _method: paymentMethod,
+        _reference: reference.trim(),
+      });
       sfx.success();
       toast.success(lang === "ar" ? "تم إرسال طلبك للمراجعة" : "Your request was sent for review");
       setStep(3);
