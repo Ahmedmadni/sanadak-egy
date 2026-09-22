@@ -49,7 +49,7 @@ BEGIN
     CASE WHEN v_count = 2 AND v_total = 2 THEN 'PASS' ELSE 'FAIL' END
   );
 
-  SELECT count(*), max(id)
+  SELECT count(*), (array_agg(id))[1]
   INTO v_count, v_result_id
   FROM public.search_tenants(_query => v_marker, _category => 'shops', _area => 'cai');
   INSERT INTO gate9_smoke_results VALUES (
@@ -57,7 +57,7 @@ BEGIN
     CASE WHEN v_count = 1 AND v_result_id = v_alpha THEN 'PASS' ELSE 'FAIL' END
   );
 
-  SELECT count(*), max(id)
+  SELECT count(*), (array_agg(id))[1]
   INTO v_count, v_result_id
   FROM public.search_tenants(_query => v_marker, _verified_only => true);
   INSERT INTO gate9_smoke_results VALUES (
@@ -65,7 +65,7 @@ BEGIN
     CASE WHEN v_count = 1 AND v_result_id = v_alpha THEN 'PASS' ELSE 'FAIL' END
   );
 
-  SELECT count(*), COALESCE(max(total_count), 0), max(id)
+  SELECT count(*), COALESCE(max(total_count), 0), (array_agg(id))[1]
   INTO v_count, v_total, v_result_id
   FROM public.search_tenants(_query => v_marker, _sort => 'name', _limit => 1, _offset => 1);
   INSERT INTO gate9_smoke_results VALUES (
