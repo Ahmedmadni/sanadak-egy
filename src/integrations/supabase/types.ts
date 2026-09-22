@@ -1164,6 +1164,29 @@ export type Database = {
           verified_at: string
         }[]
       }
+      search_tenants_v2: {
+        Args: {
+          _query?: string | null
+          _category?: string | null
+          _area?: string | null
+          _verified_only?: boolean
+          _sort?: string
+          _limit?: number
+          _offset?: number
+          _service?: string
+        }
+        Returns: {
+          id: string
+          slug: string
+          name: string
+          category: string
+          area: string | null
+          description: string | null
+          image_url: string | null
+          verified_at: string | null
+          total_count: number
+        }[]
+      }
       set_order_status: {
         Args: { _order: string; _status: string }
         Returns: {
