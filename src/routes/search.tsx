@@ -12,6 +12,7 @@ const searchSchema = z.object({
   q: z.string().max(100).optional().catch(""),
   category: z.string().max(80).optional().catch(""),
   area: z.string().max(80).optional().catch(""),
+  service: z.enum(["all", "orders", "bookings"]).optional().catch("all"),
   verified: z.string().optional().catch(""),
   sort: z.enum(["relevance", "name", "newest"]).optional().catch("relevance"),
   page: z.coerce.number().int().min(1).max(834).optional().catch(1),
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/search")({
   component: SearchPage,
 });
 
-type SearchRow = Database["public"]["Functions"]["search_tenants"]["Returns"][number];
+type SearchRow = Database["public"]["Functions"]["search_tenants_v2"]["Returns"][number];
 type CategoryOption = { code: string; label_ar: string; label_en: string };
 
 const fallbackCategories: CategoryOption[] = Object.entries(CATEGORY_CONFIG).map(
@@ -40,6 +41,7 @@ function SearchPage() {
     q = "",
     category = "",
     area = "",
+    service = "all",
     verified = "",
     sort = "relevance",
     page = 1,
@@ -49,6 +51,7 @@ function SearchPage() {
   const [queryInput, setQueryInput] = useState(q);
   const [categoryInput, setCategoryInput] = useState(category);
   const [areaInput, setAreaInput] = useState(area);
+  const [serviceInput, setServiceInput] = useState(service);
   const [verifiedInput, setVerifiedInput] = useState(verified === "1");
   const [sortInput, setSortInput] = useState(sort);
   const [categories, setCategories] = useState<CategoryOption[]>(fallbackCategories);
@@ -57,16 +60,19 @@ function SearchPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const Arrow = dir === "rtl" ? ArrowRight : ArrowLeft;
-  const activeFilters = Boolean(q || category || area || verified || sort !== "relevance");
+  const activeFilters = Boolean(
+    q || category || area || service !== "all" || verified || sort !== "relevance",
+  );
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   useEffect(() => {
     setQueryInput(q);
     setCategoryInput(category);
     setAreaInput(area);
+    setServiceInput(service);
     setVerifiedInput(verified === "1");
     setSortInput(sort);
-  }, [q, category, area, verified, sort]);
+  }, [q, category, area, service, verified, sort]);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,16 +96,25 @@ function SearchPage() {
     setRows([]);
     setTotal(0);
     void (async () => {
-      const { data, error: searchError } = await supabase.rpc("search_tenants", {
+      const { data, error: searchError } = await supabase.rpc("search_tenants_v2", {
         _query: q.trim() || null,
         _category: category || null,
         _area: area.trim() || null,
+        _service: service,
         _verified_only: verified === "1",
         _sort: sort,
         _limit: PAGE_SIZE,
         _offset: (page - 1) * PAGE_SIZE,
       });
       if (cancelled) return;
+      if (!searchError && page > 1 && !data?.length) {
+        void navigate({
+          to: "/search",
+          search: { q, category, area, service, verified, sort, page: 1 },
+          replace: true,
+        });
+        return;
+      }
       setRows(data ?? []);
       setTotal(data?.[0]?.total_count ?? 0);
       setError(searchError?.message ?? null);
@@ -108,7 +123,7 @@ function SearchPage() {
     return () => {
       cancelled = true;
     };
-  }, [q, category, area, verified, sort, page]);
+  }, [q, category, area, service, verified, sort, page, navigate]);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -118,6 +133,7 @@ function SearchPage() {
         q: queryInput.trim(),
         category: categoryInput,
         area: areaInput.trim(),
+        service: serviceInput,
         verified: verifiedInput ? "1" : "",
         sort: sortInput,
         page: 1,
@@ -126,7 +142,10 @@ function SearchPage() {
   };
 
   const goToPage = (nextPage: number) => {
-    void navigate({ to: "/search", search: { q, category, area, verified, sort, page: nextPage } });
+    void navigate({
+      to: "/search",
+      search: { q, category, area, service, verified, sort, page: nextPage },
+    });
   };
 
   const clearFilters = () => {
@@ -155,8 +174,8 @@ function SearchPage() {
           </h1>
           <p className={`mt-3 text-sm text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>
             {lang === "ar"
-              ? "ابحث حسب الاسم أو النوع أو المنطقة، ثم صفِّ النتائج بما يناسبك."
-              : "Search by name, category, or area, then refine the results."}
+              ? "ابحث حسب الاسم أو النوع أو المنطقة، ثم اختر الخدمة المناسبة."
+              : "Search by name, category, or area, then choose the service you need."}
           </p>
         </div>
 
@@ -185,7 +204,7 @@ function SearchPage() {
             />
           </div>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <label className={`text-sm ${lang === "ar" ? "font-arabic" : ""}`}>
               <span className="mb-1.5 block font-medium">
                 {lang === "ar" ? "التصنيف" : "Category"}
@@ -201,6 +220,24 @@ function SearchPage() {
                     {lang === "ar" ? option.label_ar : option.label_en}
                   </option>
                 ))}
+              </select>
+            </label>
+            <label className={`text-sm ${lang === "ar" ? "font-arabic" : ""}`}>
+              <span className="mb-1.5 block font-medium">
+                {lang === "ar" ? "نوع الخدمة" : "Service"}
+              </span>
+              <select
+                value={serviceInput}
+                onChange={(event) => setServiceInput(event.target.value as typeof serviceInput)}
+                className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+              >
+                <option value="all">{lang === "ar" ? "كل الخدمات" : "All services"}</option>
+                <option value="orders">
+                  {lang === "ar" ? "يقدم منتجات للطلب" : "Offers items to order"}
+                </option>
+                <option value="bookings">
+                  {lang === "ar" ? "يقدم خدمات للحجز" : "Offers booking services"}
+                </option>
               </select>
             </label>
             <label className={`text-sm ${lang === "ar" ? "font-arabic" : ""}`}>
