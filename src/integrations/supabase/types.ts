@@ -1063,15 +1063,15 @@ export type Database = {
       admin_create_tenant: {
         Args: {
           _activate?: boolean
-          _area?: string | null
+          _area?: string
           _category: string
-          _description?: string | null
-          _email?: string | null
-          _image_url?: string | null
+          _description?: string
+          _email?: string
+          _image_url?: string
           _name: string
-          _phone?: string | null
+          _phone?: string
           _plan: string
-          _slug?: string | null
+          _slug?: string
         }
         Returns: string
       }
@@ -1094,13 +1094,13 @@ export type Database = {
       }
       create_booking: {
         Args: {
-          _branch?: string | null
+          _branch?: string
           _customer_name: string
           _customer_phone: string
           _item: string
-          _notes?: string | null
+          _notes?: string
           _slot_start: string
-          _staff?: string | null
+          _staff?: string
           _tenant: string
         }
         Returns: {
@@ -1111,27 +1111,14 @@ export type Database = {
           status: string
         }[]
       }
-      get_booking_availability: {
-        Args: {
-          _branch?: string | null
-          _date: string
-          _item: string
-          _staff?: string | null
-          _tenant: string
-        }
-        Returns: {
-          slot_end: string
-          slot_start: string
-        }[]
-      }
       create_order: {
         Args: {
-          _customer_address?: string | null
+          _customer_address?: string
           _customer_name: string
           _customer_phone: string
           _delivery_type?: string
           _items: Json
-          _notes?: string | null
+          _notes?: string
           _tenant: string
         }
         Returns: {
@@ -1142,38 +1129,51 @@ export type Database = {
           total: number
         }[]
       }
-      search_tenants: {
+      get_booking_availability: {
         Args: {
-          _query?: string | null
-          _category?: string | null
-          _area?: string | null
-          _verified_only?: boolean
-          _sort?: string
-          _limit?: number
-          _offset?: number
+          _branch?: string
+          _date: string
+          _item: string
+          _staff?: string
+          _tenant: string
         }
         Returns: {
-          id: string
-          slug: string
-          name: string
+          slot_end: string
+          slot_start: string
+        }[]
+      }
+      search_tenants: {
+        Args: {
+          _area?: string
+          _category?: string
+          _limit?: number
+          _offset?: number
+          _query?: string
+          _sort?: string
+          _verified_only?: boolean
+        }
+        Returns: {
+          area: string
           category: string
-          area: string | null
-          description: string | null
-          image_url: string | null
-          verified_at: string | null
+          description: string
+          id: string
+          image_url: string
+          name: string
+          slug: string
           total_count: number
+          verified_at: string
         }[]
       }
       set_order_status: {
         Args: { _order: string; _status: string }
         Returns: {
-          inventory_released_at: string | null
+          inventory_released_at: string
           order_id: string
           status: string
         }[]
       }
       submit_payment_info: {
-        Args: { _method: string; _reference: string | null; _tenant: string }
+        Args: { _method: string; _reference: string; _tenant: string }
         Returns: undefined
       }
       tenant_is_visible: { Args: { _tenant: string }; Returns: boolean }
