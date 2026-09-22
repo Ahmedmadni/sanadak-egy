@@ -187,8 +187,8 @@ export function BookingDialog({
           _tenant: tenantId,
           _item: item.id,
           _date: selectedDate,
-          _branch: branchId,
-          _staff: staffId,
+          _branch: branchId ?? undefined,
+          _staff: staffId ?? undefined,
         });
         if (!active) return;
         if (error) {
@@ -237,9 +237,9 @@ export function BookingDialog({
         _slot_start: slotAt,
         _customer_name: customer.name,
         _customer_phone: customer.phone,
-        _branch: branchId,
-        _staff: staffId,
-        _notes: notes.trim() || null,
+        _branch: branchId ?? undefined,
+        _staff: staffId ?? undefined,
+        _notes: notes.trim() || undefined,
       });
       if (error) throw error;
       const booking = data?.[0];

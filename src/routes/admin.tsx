@@ -373,11 +373,11 @@ function TenantsPanel() {
           _category: editing.category,
           _plan: planId,
           _slug: (editing.slug && slugify(editing.slug)) || `${slugify(editing.name)}-${Math.random().toString(36).slice(2, 6)}`,
-          _area: editing.area || null,
-          _phone: editing.phone || null,
-          _email: editing.email || null,
-          _description: editing.description || null,
-          _image_url: editing.image_url || null,
+          _area: editing.area || undefined,
+          _phone: editing.phone || undefined,
+          _email: editing.email || undefined,
+          _description: editing.description || undefined,
+          _image_url: editing.image_url || undefined,
           _activate: (editing.status ?? "active") === "active",
         });
         if (error) throw error;

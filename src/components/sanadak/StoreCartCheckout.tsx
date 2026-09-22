@@ -285,9 +285,9 @@ export function StoreCartCheckout({
         })),
         _customer_name: customer.name.trim(),
         _customer_phone: customer.phone.trim(),
-        _customer_address: deliveryType === "delivery" ? customer.address.trim() : null,
+        _customer_address: deliveryType === "delivery" ? customer.address.trim() : undefined,
         _delivery_type: deliveryType,
-        _notes: notes.trim() || null,
+        _notes: notes.trim() || undefined,
       });
       if (error) throw error;
       const receipt = data?.[0];
