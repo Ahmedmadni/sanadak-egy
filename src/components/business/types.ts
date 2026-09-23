@@ -110,7 +110,11 @@ export type ReviewRow = {
   rating: number;
   body: string | null;
   is_approved: boolean;
+  moderated_at: string | null;
+  moderated_by: string | null;
+  verified_at: string | null;
   created_at: string;
+  updated_at: string;
 };
 
 export type PlanRow = {

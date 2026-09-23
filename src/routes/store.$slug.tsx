@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
+import { toast } from "sonner";
 import {
   Store,
   MapPin,
@@ -15,6 +16,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useSanadak } from "@/lib/sanadak-context";
+import { useAuth } from "@/lib/use-auth";
 import { sfx } from "@/lib/sanadak-sounds";
 import { categoryConfig } from "@/components/business/types";
 import { BookingDialog } from "@/components/sanadak/BookingDialog";
@@ -41,13 +43,20 @@ type Item = StoreOrderItem & {
   description: string | null;
   duration_minutes: number | null;
 };
-type Review = { id: string; rating: number; body: string | null; created_at: string };
+type Review = {
+  id: string;
+  rating: number;
+  body: string | null;
+  created_at: string;
+  verified_at: string | null;
+};
 type Branch = Pick<Tables<"branches">, "id" | "name" | "address">;
 type Staff = Pick<Tables<"staff">, "id" | "name" | "role" | "specialty" | "branch_id">;
 
 function StorePage() {
   const { slug } = Route.useParams();
   const { lang, dir, customer, setCustomer } = useSanadak();
+  const { user } = useAuth();
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -55,6 +64,9 @@ function StorePage() {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<Item | null>(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewBody, setReviewBody] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
   const Arrow = dir === "rtl" ? ArrowRight : ArrowLeft;
 
   useEffect(() => {
@@ -130,6 +142,31 @@ function StorePage() {
   const avgRating = reviews.length
     ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
     : null;
+
+  const submitReview = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSubmittingReview(true);
+    const { error } = await supabase.rpc("submit_review", {
+      _tenant: tenant.id,
+      _rating: reviewRating,
+      _body: reviewBody.trim() || null,
+    });
+    setSubmittingReview(false);
+    if (error) {
+      const message = error.message.includes("completed order or booking")
+        ? lang === "ar"
+          ? "يمكنك التقييم بعد اكتمال طلب أو حجز لدى هذا النشاط."
+          : "You can review after completing an order or booking with this business."
+        : error.message;
+      toast.error(message);
+      return;
+    }
+    setReviewBody("");
+    setReviewRating(5);
+    toast.success(
+      lang === "ar" ? "تم إرسال تقييمك للمراجعة." : "Your review was submitted for moderation.",
+    );
+  };
 
   return (
     <main className="relative min-h-screen pt-28 pb-20">
@@ -260,30 +297,125 @@ function StorePage() {
           </div>
         )}
 
-        {reviews.length > 0 && (
-          <>
-            <h2 className={`mt-10 text-xl font-bold ${lang === "ar" ? "font-arabic" : ""}`}>
-              {lang === "ar" ? "آراء العملاء" : "Customer reviews"}
-            </h2>
+        <section className="mt-10">
+          <h2 className={`text-xl font-bold ${lang === "ar" ? "font-arabic" : ""}`}>
+            {lang === "ar" ? "آراء العملاء" : "Customer reviews"}
+          </h2>
+
+          <div className="mt-4 rounded-2xl border border-border/70 bg-background/80 p-4 sm:p-5">
+            {user ? (
+              <form onSubmit={submitReview}>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className={`font-semibold ${lang === "ar" ? "font-arabic" : ""}`}>
+                      {lang === "ar" ? "شارك تجربتك" : "Share your experience"}
+                    </h3>
+                    <p
+                      className={`mt-1 text-xs text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}
+                    >
+                      {lang === "ar"
+                        ? "متاح بعد طلب مُسلّم أو حجز مكتمل، ويُنشر بعد المراجعة."
+                        : "Available after a delivered order or completed booking, then published after moderation."}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1" aria-label={`${reviewRating} / 5`}>
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => setReviewRating(index + 1)}
+                        className="rounded p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--emerald)]"
+                        aria-label={`${index + 1} / 5`}
+                      >
+                        <Star
+                          aria-hidden="true"
+                          className={`h-5 w-5 ${index < reviewRating ? "fill-[var(--ember)] text-[var(--ember)]" : "text-foreground/20"}`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <label className="mt-4 block">
+                  <span className="sr-only">{lang === "ar" ? "نص التقييم" : "Review text"}</span>
+                  <textarea
+                    value={reviewBody}
+                    onChange={(event) => setReviewBody(event.target.value)}
+                    maxLength={1000}
+                    rows={3}
+                    placeholder={
+                      lang === "ar" ? "اكتب رأيك (اختياري)" : "Write your review (optional)"
+                    }
+                    className={`w-full resize-y rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--emerald)]/40 ${lang === "ar" ? "font-arabic" : ""}`}
+                  />
+                </label>
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={submittingReview}
+                    className="h-10 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground disabled:opacity-50"
+                  >
+                    {submittingReview
+                      ? lang === "ar"
+                        ? "جارٍ الإرسال..."
+                        : "Submitting..."
+                      : lang === "ar"
+                        ? "إرسال التقييم"
+                        : "Submit review"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p
+                  className={`text-sm text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}
+                >
+                  {lang === "ar"
+                    ? "سجّل الدخول لتقييم تجربة مكتملة."
+                    : "Sign in to review a completed experience."}
+                </p>
+                <Link
+                  to="/auth"
+                  search={{ redirect: `/store/${tenant.slug}` }}
+                  className="h-10 rounded-full border border-input px-4 text-sm leading-10 hover:bg-foreground/5"
+                >
+                  {lang === "ar" ? "تسجيل الدخول" : "Sign in"}
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {reviews.length > 0 && (
             <div className="mt-4 grid gap-3">
               {reviews.map((r) => (
-                <div key={r.id} className="glass-card rounded-2xl p-4">
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-3.5 w-3.5 ${i < r.rating ? "fill-[var(--ember)] text-[var(--ember)]" : "text-foreground/20"}`}
-                      />
-                    ))}
+                <article
+                  key={r.id}
+                  className="rounded-2xl border border-border/70 bg-background/80 p-4"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-1" aria-label={`${r.rating} / 5`}>
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          aria-hidden="true"
+                          className={`h-3.5 w-3.5 ${i < r.rating ? "fill-[var(--ember)] text-[var(--ember)]" : "text-foreground/20"}`}
+                        />
+                      ))}
+                    </div>
+                    {r.verified_at && (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-[var(--emerald)]">
+                        <BadgeCheck className="h-3.5 w-3.5" />
+                        {lang === "ar" ? "تجربة موثقة" : "Verified visit"}
+                      </span>
+                    )}
                   </div>
                   {r.body && (
                     <p className={`mt-2 text-sm ${lang === "ar" ? "font-arabic" : ""}`}>{r.body}</p>
                   )}
-                </div>
+                </article>
               ))}
             </div>
-          </>
-        )}
+          )}
+        </section>
       </div>
 
       {active && cfg.hasBookings && active.duration_minutes ? (
