@@ -611,8 +611,12 @@ export type Database = {
           customer_id: string | null
           id: string
           is_approved: boolean
+          moderated_at: string | null
+          moderated_by: string | null
           rating: number
           tenant_id: string
+          updated_at: string
+          verified_at: string | null
         }
         Insert: {
           body?: string | null
@@ -620,8 +624,12 @@ export type Database = {
           customer_id?: string | null
           id?: string
           is_approved?: boolean
+          moderated_at?: string | null
+          moderated_by?: string | null
           rating: number
           tenant_id: string
+          updated_at?: string
+          verified_at?: string | null
         }
         Update: {
           body?: string | null
@@ -629,8 +637,12 @@ export type Database = {
           customer_id?: string | null
           id?: string
           is_approved?: boolean
+          moderated_at?: string | null
+          moderated_by?: string | null
           rating?: number
           tenant_id?: string
+          updated_at?: string
+          verified_at?: string | null
         }
         Relationships: [
           {
@@ -1129,6 +1141,10 @@ export type Database = {
           total: number
         }[]
       }
+      delete_own_review: {
+        Args: { _review: string }
+        Returns: boolean
+      }
       get_booking_availability: {
         Args: {
           _branch?: string
@@ -1140,6 +1156,14 @@ export type Database = {
         Returns: {
           slot_end: string
           slot_start: string
+        }[]
+      }
+      moderate_review: {
+        Args: { _approved: boolean; _review: string }
+        Returns: {
+          is_approved: boolean
+          moderated_at: string
+          review_id: string
         }[]
       }
       search_tenants: {
@@ -1198,6 +1222,14 @@ export type Database = {
       submit_payment_info: {
         Args: { _method: string; _reference: string; _tenant: string }
         Returns: undefined
+      }
+      submit_review: {
+        Args: { _body?: string | null; _rating: number; _tenant: string }
+        Returns: {
+          is_approved: boolean
+          review_id: string
+          updated_existing: boolean
+        }[]
       }
       tenant_is_visible: { Args: { _tenant: string }; Returns: boolean }
     }
