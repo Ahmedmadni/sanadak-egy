@@ -17,6 +17,7 @@ import { Route as BusinessRouteImport } from './routes/business'
 import { Route as CafesRouteImport } from './routes/cafes'
 import { Route as HallsRouteImport } from './routes/halls'
 import { Route as MedicalRouteImport } from './routes/medical'
+import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as PharmacyRouteImport } from './routes/pharmacy'
 import { Route as RestaurantsRouteImport } from './routes/restaurants'
 import { Route as SearchRouteImport } from './routes/search'
@@ -64,6 +65,11 @@ const MedicalRoute = MedicalRouteImport.update({
   path: '/medical',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrdersRoute = OrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PharmacyRoute = PharmacyRouteImport.update({
   id: '/pharmacy',
   path: '/pharmacy',
@@ -104,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/cafes': typeof CafesRoute
   '/halls': typeof HallsRoute
   '/medical': typeof MedicalRoute
+  '/orders': typeof OrdersRoute
   '/pharmacy': typeof PharmacyRoute
   '/restaurants': typeof RestaurantsRoute
   '/search': typeof SearchRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByTo {
   '/cafes': typeof CafesRoute
   '/halls': typeof HallsRoute
   '/medical': typeof MedicalRoute
+  '/orders': typeof OrdersRoute
   '/pharmacy': typeof PharmacyRoute
   '/restaurants': typeof RestaurantsRoute
   '/search': typeof SearchRoute
@@ -137,6 +145,7 @@ export interface FileRoutesById {
   '/cafes': typeof CafesRoute
   '/halls': typeof HallsRoute
   '/medical': typeof MedicalRoute
+  '/orders': typeof OrdersRoute
   '/pharmacy': typeof PharmacyRoute
   '/restaurants': typeof RestaurantsRoute
   '/search': typeof SearchRoute
@@ -155,6 +164,7 @@ export interface FileRouteTypes {
     | '/cafes'
     | '/halls'
     | '/medical'
+    | '/orders'
     | '/pharmacy'
     | '/restaurants'
     | '/search'
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/cafes'
     | '/halls'
     | '/medical'
+    | '/orders'
     | '/pharmacy'
     | '/restaurants'
     | '/search'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/cafes'
     | '/halls'
     | '/medical'
+    | '/orders'
     | '/pharmacy'
     | '/restaurants'
     | '/search'
@@ -204,6 +216,7 @@ export interface RootRouteChildren {
   CafesRoute: typeof CafesRoute
   HallsRoute: typeof HallsRoute
   MedicalRoute: typeof MedicalRoute
+  OrdersRoute: typeof OrdersRoute
   PharmacyRoute: typeof PharmacyRoute
   RestaurantsRoute: typeof RestaurantsRoute
   SearchRoute: typeof SearchRoute
@@ -270,6 +283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MedicalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/orders': {
+      id: '/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof OrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pharmacy': {
       id: '/pharmacy'
       path: '/pharmacy'
@@ -324,6 +344,7 @@ const rootRouteChildren: RootRouteChildren = {
   CafesRoute: CafesRoute,
   HallsRoute: HallsRoute,
   MedicalRoute: MedicalRoute,
+  OrdersRoute: OrdersRoute,
   PharmacyRoute: PharmacyRoute,
   RestaurantsRoute: RestaurantsRoute,
   SearchRoute: SearchRoute,
@@ -334,13 +355,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
