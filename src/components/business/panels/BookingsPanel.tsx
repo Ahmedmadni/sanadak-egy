@@ -28,7 +28,10 @@ export function BookingsPanel({ tenant }: { tenant: TenantWithRole }) {
   useEffect(() => { load(); }, [tenant.id]);
 
   const setStatus = async (id: string, status: string) => {
-    const { error } = await supabase.from("bookings" as any).update({ status }).eq("id", id);
+    const { error } = await supabase.rpc("set_booking_status", {
+      _booking: id,
+      _status: status,
+    });
     if (error) toast.error(error.message); else { sfx.tap(); load(); }
   };
 

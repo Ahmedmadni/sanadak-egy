@@ -74,6 +74,9 @@ export type BookingRow = {
   item_id: string | null;
   staff_id: string | null;
   branch_id: string | null;
+  cancelled_at: string | null;
+  cancelled_by: string | null;
+  cancellation_reason: string | null;
   slot_start: string;
   slot_end: string | null;
   status: string;

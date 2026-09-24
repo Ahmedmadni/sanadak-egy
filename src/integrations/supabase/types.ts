@@ -162,6 +162,9 @@ export type Database = {
       bookings: {
         Row: {
           branch_id: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancellation_reason: string | null
           created_at: string
           customer_id: string | null
           customer_name: string | null
@@ -179,6 +182,9 @@ export type Database = {
         }
         Insert: {
           branch_id?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancellation_reason?: string | null
           created_at?: string
           customer_id?: string | null
           customer_name?: string | null
@@ -196,6 +202,9 @@ export type Database = {
         }
         Update: {
           branch_id?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancellation_reason?: string | null
           created_at?: string
           customer_id?: string | null
           customer_name?: string | null
@@ -1120,6 +1129,18 @@ export type Database = {
           serial_no: number
           slot_end: string
           slot_start: string
+          status: string
+        }[]
+      }
+      set_booking_status: {
+        Args: {
+          _booking: string
+          _cancellation_reason?: string
+          _status: string
+        }
+        Returns: {
+          booking_id: string
+          cancelled_at: string | null
           status: string
         }[]
       }
