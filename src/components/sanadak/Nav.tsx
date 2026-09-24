@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Moon, Sun, Globe, ShoppingCart, Volume2, VolumeX, Menu, X, Bot, LogIn, LogOut, ShieldCheck, User, Briefcase } from "lucide-react";
+import { Moon, Sun, Globe, ShoppingCart, Volume2, VolumeX, Menu, X, Bot, LogIn, LogOut, ShieldCheck, User, Briefcase, CalendarDays } from "lucide-react";
 import { Logo } from "./Logo";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx, setSoundEnabled } from "@/lib/sanadak-sounds";
@@ -50,6 +50,11 @@ export function Nav() {
             {t("nav_merchant")}
           </button>
           {user && (
+            <Link to="/bookings" onClick={() => sfx.tap()} className={`px-2.5 py-1.5 rounded-full text-[var(--emerald)] hover:bg-[var(--emerald)]/10 transition-colors inline-flex items-center gap-1 ${lang === "ar" ? "font-arabic" : ""}`}>
+              <CalendarDays className="h-3.5 w-3.5" /> {lang === "ar" ? "حجوزاتي" : "Bookings"}
+            </Link>
+          )}
+          {user && (
             <Link to="/business" onClick={() => sfx.tap()} className={`px-2.5 py-1.5 rounded-full text-[var(--emerald)] hover:bg-[var(--emerald)]/10 transition-colors inline-flex items-center gap-1 ${lang === "ar" ? "font-arabic" : ""}`}>
               <Briefcase className="h-3.5 w-3.5" /> {lang === "ar" ? "لوحة الأعمال" : "Business"}
             </Link>
@@ -97,6 +102,11 @@ export function Nav() {
             <Link key={to} to={to} onClick={() => { setMobile(false); sfx.tap(); }} className={`px-3 py-2 rounded-lg hover:bg-foreground/5 ${lang === "ar" ? "font-arabic" : ""}`}>{t(k)}</Link>
           ))}
           <button onClick={() => { setMerchantOpen(true); setMobile(false); }} className={`text-start px-3 py-2 rounded-lg text-[var(--emerald)] hover:bg-[var(--emerald)]/10 ${lang === "ar" ? "font-arabic" : ""}`}>{t("nav_merchant")}</button>
+          {user && (
+            <Link to="/bookings" onClick={() => setMobile(false)} className={`px-3 py-2 rounded-lg text-[var(--emerald)] hover:bg-[var(--emerald)]/10 inline-flex items-center gap-2 ${lang === "ar" ? "font-arabic" : ""}`}>
+              <CalendarDays className="h-4 w-4" /> {lang === "ar" ? "حجوزاتي" : "My bookings"}
+            </Link>
+          )}
           {user && (
             <Link to="/business" onClick={() => setMobile(false)} className={`px-3 py-2 rounded-lg text-[var(--emerald)] hover:bg-[var(--emerald)]/10 inline-flex items-center gap-2 ${lang === "ar" ? "font-arabic" : ""}`}>
               <Briefcase className="h-4 w-4" /> {lang === "ar" ? "لوحة الأعمال" : "Business dashboard"}
