@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { Bell, BellDot } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +9,7 @@ import type { NotificationRow } from "../types";
 
 export function NotificationsPanel({ userId }: { userId: string }) {
   const { lang } = useSanadak();
+  const navigate = useNavigate();
   const [rows, setRows] = useState<NotificationRow[]>([]);
 
   const load = async () => {
@@ -21,13 +23,21 @@ export function NotificationsPanel({ userId }: { userId: string }) {
     load();
   };
 
+  const openNotification = async (notification: NotificationRow) => {
+    if (!notification.is_read) await markRead(notification.id);
+
+    if (notification.link === "/orders" || notification.link === "/bookings" || notification.link === "/notifications") {
+      void navigate({ to: notification.link });
+    }
+  };
+
   return (
     <div>
       <PanelHeader title={lang === "ar" ? "الإشعارات" : "Notifications"} />
       {rows.length === 0 && <EmptyState text={lang === "ar" ? "لا توجد إشعارات." : "No notifications."} />}
       <div className="grid gap-2">
         {rows.map((n) => (
-          <motion.button key={n.id} layout onClick={() => !n.is_read && markRead(n.id)} className={`text-start glass-card rounded-2xl p-4 flex items-start gap-3 ${!n.is_read ? "ring-1 ring-[var(--emerald)]/40" : ""}`}>
+          <motion.button key={n.id} layout onClick={() => openNotification(n)} className={`text-start glass-card rounded-2xl p-4 flex items-start gap-3 ${n.link ? "cursor-pointer hover:bg-foreground/[0.03]" : ""} ${!n.is_read ? "ring-1 ring-[var(--emerald)]/40" : ""}`}>
             {n.is_read ? <Bell className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" /> : <BellDot className="h-4 w-4 text-[var(--emerald)] mt-0.5 shrink-0" />}
             <div className="min-w-0">
               <div className={`text-sm font-semibold ${lang === "ar" ? "font-arabic" : ""}`}>{n.title}</div>
