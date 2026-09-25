@@ -17,6 +17,7 @@ import { Route as BusinessRouteImport } from './routes/business'
 import { Route as CafesRouteImport } from './routes/cafes'
 import { Route as HallsRouteImport } from './routes/halls'
 import { Route as MedicalRouteImport } from './routes/medical'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as PharmacyRouteImport } from './routes/pharmacy'
 import { Route as RestaurantsRouteImport } from './routes/restaurants'
@@ -65,6 +66,11 @@ const MedicalRoute = MedicalRouteImport.update({
   path: '/medical',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrdersRoute = OrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/cafes': typeof CafesRoute
   '/halls': typeof HallsRoute
   '/medical': typeof MedicalRoute
+  '/notifications': typeof NotificationsRoute
   '/orders': typeof OrdersRoute
   '/pharmacy': typeof PharmacyRoute
   '/restaurants': typeof RestaurantsRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/cafes': typeof CafesRoute
   '/halls': typeof HallsRoute
   '/medical': typeof MedicalRoute
+  '/notifications': typeof NotificationsRoute
   '/orders': typeof OrdersRoute
   '/pharmacy': typeof PharmacyRoute
   '/restaurants': typeof RestaurantsRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/cafes': typeof CafesRoute
   '/halls': typeof HallsRoute
   '/medical': typeof MedicalRoute
+  '/notifications': typeof NotificationsRoute
   '/orders': typeof OrdersRoute
   '/pharmacy': typeof PharmacyRoute
   '/restaurants': typeof RestaurantsRoute
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/cafes'
     | '/halls'
     | '/medical'
+    | '/notifications'
     | '/orders'
     | '/pharmacy'
     | '/restaurants'
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
     | '/cafes'
     | '/halls'
     | '/medical'
+    | '/notifications'
     | '/orders'
     | '/pharmacy'
     | '/restaurants'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/cafes'
     | '/halls'
     | '/medical'
+    | '/notifications'
     | '/orders'
     | '/pharmacy'
     | '/restaurants'
@@ -216,6 +228,7 @@ export interface RootRouteChildren {
   CafesRoute: typeof CafesRoute
   HallsRoute: typeof HallsRoute
   MedicalRoute: typeof MedicalRoute
+  NotificationsRoute: typeof NotificationsRoute
   OrdersRoute: typeof OrdersRoute
   PharmacyRoute: typeof PharmacyRoute
   RestaurantsRoute: typeof RestaurantsRoute
@@ -283,6 +296,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MedicalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/orders': {
       id: '/orders'
       path: '/orders'
@@ -344,6 +364,7 @@ const rootRouteChildren: RootRouteChildren = {
   CafesRoute: CafesRoute,
   HallsRoute: HallsRoute,
   MedicalRoute: MedicalRoute,
+  NotificationsRoute: NotificationsRoute,
   OrdersRoute: OrdersRoute,
   PharmacyRoute: PharmacyRoute,
   RestaurantsRoute: RestaurantsRoute,
