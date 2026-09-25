@@ -41,6 +41,8 @@ export function Nav() {
     };
 
     void loadUnreadNotifications();
+    window.addEventListener("sanadak:notifications-changed", loadUnreadNotifications);
+    return () => window.removeEventListener("sanadak:notifications-changed", loadUnreadNotifications);
   }, [user]);
 
   const links: Array<[string, string]> = [

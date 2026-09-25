@@ -20,6 +20,7 @@ export function NotificationsPanel({ userId }: { userId: string }) {
 
   const markRead = async (id: string) => {
     await supabase.from("notifications" as any).update({ is_read: true }).eq("id", id);
+    window.dispatchEvent(new Event("sanadak:notifications-changed"));
     load();
   };
 
