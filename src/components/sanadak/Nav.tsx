@@ -5,11 +5,13 @@ import { Logo } from "./Logo";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx, setSoundEnabled } from "@/lib/sanadak-sounds";
 import { useAuth } from "@/lib/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export function Nav() {
   const [mobile, setMobile] = useState(false);
   const [overHero, setOverHero] = useState(true);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const { lang, setLang, t, cart, bookings, setCartOpen, setMerchantOpen, setAssistantOpen, sound, setSound, theme, toggleTheme } = useSanadak();
   const { user, isAdmin, signOut } = useAuth();
   setSoundEnabled(sound);
@@ -22,6 +24,24 @@ export function Nav() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setUnreadNotifications(0);
+      return;
+    }
+
+    const loadUnreadNotifications = async () => {
+      const { count } = await supabase
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("is_read", false);
+      setUnreadNotifications(count ?? 0);
+    };
+
+    void loadUnreadNotifications();
+  }, [user]);
 
   const links: Array<[string, string]> = [
     ["/restaurants", "nav_food"],
@@ -50,8 +70,9 @@ export function Nav() {
             {t("nav_merchant")}
           </button>
           {user && (
-            <Link to="/notifications" onClick={() => sfx.tap()} className={`px-2.5 py-1.5 rounded-full text-[var(--emerald)] hover:bg-[var(--emerald)]/10 transition-colors inline-flex items-center gap-1 ${lang === "ar" ? "font-arabic" : ""}`}>
+            <Link to="/notifications" onClick={() => sfx.tap()} className={`relative px-2.5 py-1.5 rounded-full text-[var(--emerald)] hover:bg-[var(--emerald)]/10 transition-colors inline-flex items-center gap-1 ${lang === "ar" ? "font-arabic" : ""}`}>
               <Bell className="h-3.5 w-3.5" /> {lang === "ar" ? "الإشعارات" : "Notifications"}
+              {unreadNotifications > 0 && <span aria-label={`${unreadNotifications} unread notifications`} className="-mt-3 rounded-full bg-[var(--ember)] px-1.5 text-[10px] font-bold leading-4 text-white">{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}
             </Link>
           )}
           {user && (
@@ -115,6 +136,7 @@ export function Nav() {
           {user && (
             <Link to="/notifications" onClick={() => setMobile(false)} className={`px-3 py-2 rounded-lg text-[var(--emerald)] hover:bg-[var(--emerald)]/10 inline-flex items-center gap-2 ${lang === "ar" ? "font-arabic" : ""}`}>
               <Bell className="h-4 w-4" /> {lang === "ar" ? "الإشعارات" : "Notifications"}
+              {unreadNotifications > 0 && <span className="rounded-full bg-[var(--ember)] px-1.5 text-[10px] font-bold leading-4 text-white">{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}
             </Link>
           )}
           {user && (
