@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { Clock3, PackageCheck, ShoppingBag, Store } from "lucide-react";
+import { ChevronDown, Clock3, PackageCheck, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -17,6 +17,7 @@ type OrderCard = Pick<
   Tables<"orders">,
   "id" | "tenant_id" | "serial_no" | "status" | "total" | "currency" | "delivery_type" | "payment_status" | "created_at"
 > & { tenantName: string; tenantSlug: string };
+type OrderHistory = Pick<Tables<"order_status_history">, "id" | "order_id" | "previous_status" | "status" | "created_at">;
 
 const statusTone: Record<string, string> = {
   pending: "bg-[var(--ember)]/15 text-[var(--ember)]",
@@ -33,17 +34,18 @@ function CustomerOrdersPage() {
   const { lang } = useSanadak();
   const navigate = useNavigate();
   const [rows, setRows] = useState<OrderCard[]>([]);
+  const [historyByOrder, setHistoryByOrder] = useState<Record<string, OrderHistory[]>>({});
   const [loadingRows, setLoadingRows] = useState(true);
 
   const copy = useMemo(() => lang === "ar" ? {
     label: "الطلبات", title: "طلباتي", subtitle: "تابع حالة طلباتك ومعلومات استلامها أو توصيلها.",
     empty: "لا توجد طلبات مرتبطة بهذا الحساب حتى الآن.", explore: "استكشف الأنشطة",
-    total: "الإجمالي", statuses: { pending: "قيد المراجعة", confirmed: "مؤكد", preparing: "جارٍ التجهيز", ready: "جاهز", out_for_delivery: "خرج للتوصيل", delivered: "تم التسليم", cancelled: "ملغي" } as Record<string, string>,
+    total: "الإجمالي", history: "سجل الحالة", historyEmpty: "لا توجد تحديثات حالة بعد.", statuses: { pending: "قيد المراجعة", confirmed: "مؤكد", preparing: "جارٍ التجهيز", ready: "جاهز", out_for_delivery: "خرج للتوصيل", delivered: "تم التسليم", cancelled: "ملغي" } as Record<string, string>,
     delivery: { pickup: "استلام من النشاط", delivery: "توصيل للعنوان", dine_in: "داخل النشاط" } as Record<string, string>,
   } : {
     label: "Orders", title: "My orders", subtitle: "Track your order status and fulfilment details.",
     empty: "No orders are linked to this account yet.", explore: "Explore businesses",
-    total: "Total", statuses: { pending: "Pending review", confirmed: "Confirmed", preparing: "Preparing", ready: "Ready", out_for_delivery: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled" } as Record<string, string>,
+    total: "Total", history: "Status history", historyEmpty: "No status updates yet.", statuses: { pending: "Pending review", confirmed: "Confirmed", preparing: "Preparing", ready: "Ready", out_for_delivery: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled" } as Record<string, string>,
     delivery: { pickup: "Pickup", delivery: "Home delivery", dine_in: "Dine in" } as Record<string, string>,
   }, [lang]);
 
@@ -66,10 +68,19 @@ function CustomerOrdersPage() {
         return;
       }
       const ids = [...new Set((orders ?? []).map((order) => order.tenant_id))];
+      const orderIds = (orders ?? []).map((order) => order.id);
       const { data: tenants } = ids.length
         ? await supabase.from("tenants").select("id,name,slug").in("id", ids)
         : { data: [] as Pick<Tables<"tenants">, "id" | "name" | "slug">[] };
       const tenantById = new Map((tenants ?? []).map((tenant) => [tenant.id, tenant]));
+      const { data: history } = orderIds.length
+        ? await supabase.from("order_status_history").select("id,order_id,previous_status,status,created_at").in("order_id", orderIds).order("created_at")
+        : { data: [] as OrderHistory[] };
+      const nextHistory = (history ?? []).reduce<Record<string, OrderHistory[]>>((groups, entry) => {
+        (groups[entry.order_id] ??= []).push(entry);
+        return groups;
+      }, {});
+      setHistoryByOrder(nextHistory);
       setRows((orders ?? []).map((order) => {
         const tenant = tenantById.get(order.tenant_id);
         return { ...order, tenantName: tenant?.name ?? (lang === "ar" ? "نشاط غير متاح" : "Unavailable business"), tenantSlug: tenant?.slug ?? "" };
@@ -111,6 +122,19 @@ function CustomerOrdersPage() {
               <span className="flex items-center gap-2"><PackageCheck className="h-4 w-4 text-[var(--emerald)]" />{copy.total}: <strong className="text-foreground">{order.total} {order.currency}</strong></span>
             </div>
             <div className="mt-5 flex items-center justify-between text-xs text-muted-foreground"><span>#{order.serial_no}</span><span>{order.payment_status}</span></div>
+            <details className="group mt-4 border-t border-border/60 pt-3">
+              <summary className={`flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-[var(--emerald)] ${lang === "ar" ? "font-arabic" : ""}`}>
+                {copy.history}<ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="mt-3 grid gap-2 border-s border-[var(--emerald)]/30 ps-4">
+                {(historyByOrder[order.id] ?? []).length === 0 ? <p className={`text-xs text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{copy.historyEmpty}</p> : (historyByOrder[order.id] ?? []).map((entry) => (
+                  <div key={entry.id} className="relative text-xs text-muted-foreground before:absolute before:-start-[1.31rem] before:top-1.5 before:h-2 before:w-2 before:rounded-full before:bg-[var(--emerald)]">
+                    <span className={`font-medium text-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{copy.statuses[entry.previous_status] ?? entry.previous_status} → {copy.statuses[entry.status] ?? entry.status}</span>
+                    <span className="mt-0.5 block">{new Date(entry.created_at).toLocaleString(lang === "ar" ? "ar-EG" : "en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
+                  </div>
+                ))}
+              </div>
+            </details>
           </motion.article>
         ))}</div>}
       </div>
