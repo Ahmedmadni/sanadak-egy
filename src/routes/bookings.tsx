@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { CalendarCheck, CalendarX, Clock3, MapPin, Store } from "lucide-react";
+import { CalendarCheck, CalendarX, ChevronDown, Clock3, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -23,6 +23,7 @@ type BookingCard = Pick<
   itemName: string | null;
   branchName: string | null;
 };
+type BookingHistory = Pick<Tables<"booking_status_history">, "id" | "booking_id" | "previous_status" | "status" | "created_at">;
 
 const statusTone: Record<string, string> = {
   pending: "bg-[var(--ember)]/15 text-[var(--ember)]",
@@ -37,6 +38,7 @@ function CustomerBookingsPage() {
   const { lang } = useSanadak();
   const navigate = useNavigate();
   const [rows, setRows] = useState<BookingCard[]>([]);
+  const [historyByBooking, setHistoryByBooking] = useState<Record<string, BookingHistory[]>>({});
   const [loadingRows, setLoadingRows] = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
@@ -57,6 +59,8 @@ function CustomerBookingsPage() {
             booking: "حجز",
             service: "الخدمة",
             branch: "الفرع",
+            history: "سجل الحالة",
+            historyEmpty: "لا توجد تحديثات حالة بعد.",
             statuses: {
               pending: "بانتظار التأكيد",
               confirmed: "مؤكد",
@@ -79,6 +83,8 @@ function CustomerBookingsPage() {
             booking: "Booking",
             service: "Service",
             branch: "Branch",
+            history: "Status history",
+            historyEmpty: "No status updates yet.",
             statuses: {
               pending: "Awaiting confirmation",
               confirmed: "Confirmed",
@@ -114,9 +120,10 @@ function CustomerBookingsPage() {
       }
 
       const tenantIds = [...new Set((bookings ?? []).map((booking) => booking.tenant_id))];
+      const bookingIds = (bookings ?? []).map((booking) => booking.id);
       const itemIds = [...new Set((bookings ?? []).flatMap((booking) => (booking.item_id ? [booking.item_id] : [])))];
       const branchIds = [...new Set((bookings ?? []).flatMap((booking) => (booking.branch_id ? [booking.branch_id] : [])))];
-      const [tenantsResult, itemsResult, branchesResult] = await Promise.all([
+      const [tenantsResult, itemsResult, branchesResult, historyResult] = await Promise.all([
         tenantIds.length
           ? supabase.from("tenants").select("id,name,slug").in("id", tenantIds)
           : Promise.resolve({ data: [] as Pick<Tables<"tenants">, "id" | "name" | "slug">[] }),
@@ -126,11 +133,19 @@ function CustomerBookingsPage() {
         branchIds.length
           ? supabase.from("branches").select("id,name").in("id", branchIds)
           : Promise.resolve({ data: [] as Pick<Tables<"branches">, "id" | "name">[] }),
+        bookingIds.length
+          ? supabase.from("booking_status_history").select("id,booking_id,previous_status,status,created_at").in("booking_id", bookingIds).order("created_at")
+          : Promise.resolve({ data: [] as BookingHistory[] }),
       ]);
 
       const tenantById = new Map((tenantsResult.data ?? []).map((tenant) => [tenant.id, tenant]));
       const itemById = new Map((itemsResult.data ?? []).map((item) => [item.id, item]));
       const branchById = new Map((branchesResult.data ?? []).map((branch) => [branch.id, branch]));
+      const nextHistory = (historyResult.data ?? []).reduce<Record<string, BookingHistory[]>>((groups, entry) => {
+        (groups[entry.booking_id] ??= []).push(entry);
+        return groups;
+      }, {});
+      setHistoryByBooking(nextHistory);
       setRows(
         (bookings ?? []).map((booking) => {
           const tenant = tenantById.get(booking.tenant_id);
@@ -267,6 +282,20 @@ function CustomerBookingsPage() {
                       </button>
                     )}
                   </div>
+
+                  <details className="group mt-4 border-t border-border/60 pt-3">
+                    <summary className={`flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-[var(--emerald)] ${lang === "ar" ? "font-arabic" : ""}`}>
+                      {copy.history}<ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+                    </summary>
+                    <div className="mt-3 grid gap-2 border-s border-[var(--emerald)]/30 ps-4">
+                      {(historyByBooking[booking.id] ?? []).length === 0 ? <p className={`text-xs text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{copy.historyEmpty}</p> : (historyByBooking[booking.id] ?? []).map((entry) => (
+                        <div key={entry.id} className="relative text-xs text-muted-foreground before:absolute before:-start-[1.31rem] before:top-1.5 before:h-2 before:w-2 before:rounded-full before:bg-[var(--emerald)]">
+                          <span className={`font-medium text-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{copy.statuses[entry.previous_status] ?? entry.previous_status} → {copy.statuses[entry.status] ?? entry.status}</span>
+                          <span className="mt-0.5 block">{new Date(entry.created_at).toLocaleString(lang === "ar" ? "ar-EG" : "en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
                 </motion.article>
               );
             })}
