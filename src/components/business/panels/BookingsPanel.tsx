@@ -9,7 +9,7 @@ import { PanelHeader, EmptyState, StatusPill } from "../ui";
 import type { BookingRow, TenantWithRole } from "../types";
 import type { Tables } from "@/integrations/supabase/types";
 
-type BookingHistory = Pick<Tables<"booking_status_history">, "id" | "booking_id" | "previous_status" | "status" | "created_at">;
+type BookingHistory = Pick<Tables<"booking_status_history">, "id" | "booking_id" | "previous_status" | "status" | "changed_by_name" | "created_at">;
 
 const STATUSES = ["pending", "confirmed", "completed", "cancelled", "no_show"];
 const STATUS_MAP: Record<string, string> = {
@@ -30,7 +30,7 @@ export function BookingsPanel({ tenant }: { tenant: TenantWithRole }) {
     const bookings = data ?? [];
     const bookingIds = bookings.map((booking) => booking.id);
     const { data: history } = bookingIds.length
-      ? await supabase.from("booking_status_history").select("id,booking_id,previous_status,status,created_at").in("booking_id", bookingIds).order("created_at")
+      ? await supabase.from("booking_status_history").select("id,booking_id,previous_status,status,changed_by_name,created_at").in("booking_id", bookingIds).order("created_at")
       : { data: [] as BookingHistory[] };
     setHistoryByBooking((history ?? []).reduce<Record<string, BookingHistory[]>>((groups, entry) => {
       (groups[entry.booking_id] ??= []).push(entry);
@@ -77,8 +77,9 @@ export function BookingsPanel({ tenant }: { tenant: TenantWithRole }) {
               <div className="mt-3 grid gap-2 border-s border-[var(--emerald)]/30 ps-4">
                 {(historyByBooking[b.id] ?? []).length === 0 ? <p className={`text-xs text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? "لا توجد تحديثات حالة بعد." : "No status updates yet."}</p> : (historyByBooking[b.id] ?? []).map((entry) => (
                   <div key={entry.id} className="relative text-xs text-muted-foreground before:absolute before:-start-[1.31rem] before:top-1.5 before:h-2 before:w-2 before:rounded-full before:bg-[var(--emerald)]">
-                    <span className={`font-medium text-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{entry.previous_status} → {entry.status}</span>
-                    <span className="mt-0.5 block">{new Date(entry.created_at).toLocaleString(lang === "ar" ? "ar-EG" : "en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
+                          <span className={`font-medium text-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{entry.previous_status} → {entry.status}</span>
+                          {entry.changed_by_name && <span className={`mt-0.5 block ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? `بواسطة ${entry.changed_by_name}` : `By ${entry.changed_by_name}`}</span>}
+                          <span className="mt-0.5 block">{new Date(entry.created_at).toLocaleString(lang === "ar" ? "ar-EG" : "en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
                   </div>
                 ))}
               </div>
