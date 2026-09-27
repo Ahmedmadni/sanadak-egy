@@ -163,6 +163,7 @@ export type Database = {
         Row: {
           booking_id: string
           changed_by: string | null
+          changed_by_name: string | null
           created_at: string
           id: number
           previous_status: string
@@ -172,6 +173,7 @@ export type Database = {
         Insert: {
           booking_id: string
           changed_by?: string | null
+          changed_by_name?: string | null
           created_at?: string
           id?: number
           previous_status: string
@@ -181,6 +183,7 @@ export type Database = {
         Update: {
           booking_id?: string
           changed_by?: string | null
+          changed_by_name?: string | null
           created_at?: string
           id?: number
           previous_status?: string
@@ -515,6 +518,7 @@ export type Database = {
       order_status_history: {
         Row: {
           changed_by: string | null
+          changed_by_name: string | null
           created_at: string
           id: number
           order_id: string
@@ -524,6 +528,7 @@ export type Database = {
         }
         Insert: {
           changed_by?: string | null
+          changed_by_name?: string | null
           created_at?: string
           id?: number
           order_id: string
@@ -533,6 +538,7 @@ export type Database = {
         }
         Update: {
           changed_by?: string | null
+          changed_by_name?: string | null
           created_at?: string
           id?: number
           order_id?: string

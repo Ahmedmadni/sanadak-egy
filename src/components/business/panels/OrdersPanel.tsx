@@ -9,7 +9,7 @@ import { PanelHeader, EmptyState, StatusPill } from "../ui";
 import type { OrderRow, TenantWithRole } from "../types";
 import type { Tables } from "@/integrations/supabase/types";
 
-type OrderHistory = Pick<Tables<"order_status_history">, "id" | "order_id" | "previous_status" | "status" | "created_at">;
+type OrderHistory = Pick<Tables<"order_status_history">, "id" | "order_id" | "previous_status" | "status" | "changed_by_name" | "created_at">;
 
 const NEXT_STATUSES: Record<string, string[]> = {
   pending: ["confirmed", "cancelled"],
@@ -45,7 +45,7 @@ export function OrdersPanel({ tenant }: { tenant: TenantWithRole }) {
     const orders = data ?? [];
     const orderIds = orders.map((order) => order.id);
     const { data: history } = orderIds.length
-      ? await supabase.from("order_status_history").select("id,order_id,previous_status,status,created_at").in("order_id", orderIds).order("created_at")
+      ? await supabase.from("order_status_history").select("id,order_id,previous_status,status,changed_by_name,created_at").in("order_id", orderIds).order("created_at")
       : { data: [] as OrderHistory[] };
     setHistoryByOrder((history ?? []).reduce<Record<string, OrderHistory[]>>((groups, entry) => {
       (groups[entry.order_id] ??= []).push(entry);
@@ -162,6 +162,7 @@ export function OrdersPanel({ tenant }: { tenant: TenantWithRole }) {
                 {(historyByOrder[o.id] ?? []).length === 0 ? <p className={`text-xs text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? "لا توجد تحديثات حالة بعد." : "No status updates yet."}</p> : (historyByOrder[o.id] ?? []).map((entry) => (
                   <div key={entry.id} className="relative text-xs text-muted-foreground before:absolute before:-start-[1.31rem] before:top-1.5 before:h-2 before:w-2 before:rounded-full before:bg-[var(--emerald)]">
                     <span className={`font-medium text-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{entry.previous_status} → {entry.status}</span>
+                    {entry.changed_by_name && <span className={`mt-0.5 block ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? `بواسطة ${entry.changed_by_name}` : `By ${entry.changed_by_name}`}</span>}
                     <span className="mt-0.5 block">{new Date(entry.created_at).toLocaleString(lang === "ar" ? "ar-EG" : "en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
                   </div>
                 ))}
