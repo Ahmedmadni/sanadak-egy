@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { LoaderCircle, PackageCheck, PackageX, ShoppingBag } from "lucide-react";
+import { ChevronDown, LoaderCircle, PackageCheck, PackageX, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
 import { PanelHeader, EmptyState, StatusPill } from "../ui";
 import type { OrderRow, TenantWithRole } from "../types";
+import type { Tables } from "@/integrations/supabase/types";
+
+type OrderHistory = Pick<Tables<"order_status_history">, "id" | "order_id" | "previous_status" | "status" | "created_at">;
 
 const NEXT_STATUSES: Record<string, string[]> = {
   pending: ["confirmed", "cancelled"],
@@ -30,6 +33,7 @@ const STATUS_MAP: Record<string, string> = {
 export function OrdersPanel({ tenant }: { tenant: TenantWithRole }) {
   const { lang } = useSanadak();
   const [rows, setRows] = useState<OrderRow[]>([]);
+  const [historyByOrder, setHistoryByOrder] = useState<Record<string, OrderHistory[]>>({});
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -38,7 +42,16 @@ export function OrdersPanel({ tenant }: { tenant: TenantWithRole }) {
       .select("*")
       .eq("tenant_id", tenant.id)
       .order("created_at", { ascending: false });
-    setRows(data ?? []);
+    const orders = data ?? [];
+    const orderIds = orders.map((order) => order.id);
+    const { data: history } = orderIds.length
+      ? await supabase.from("order_status_history").select("id,order_id,previous_status,status,created_at").in("order_id", orderIds).order("created_at")
+      : { data: [] as OrderHistory[] };
+    setHistoryByOrder((history ?? []).reduce<Record<string, OrderHistory[]>>((groups, entry) => {
+      (groups[entry.order_id] ??= []).push(entry);
+      return groups;
+    }, {}));
+    setRows(orders);
   }, [tenant.id]);
   useEffect(() => {
     void load();
@@ -141,6 +154,19 @@ export function OrdersPanel({ tenant }: { tenant: TenantWithRole }) {
                 ))}
               </select>
             )}
+            <details className="group basis-full border-t border-border/60 pt-3">
+              <summary className={`flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-[var(--emerald)] ${lang === "ar" ? "font-arabic" : ""}`}>
+                {lang === "ar" ? "سجل الحالة" : "Status history"}<ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="mt-3 grid gap-2 border-s border-[var(--emerald)]/30 ps-4">
+                {(historyByOrder[o.id] ?? []).length === 0 ? <p className={`text-xs text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? "لا توجد تحديثات حالة بعد." : "No status updates yet."}</p> : (historyByOrder[o.id] ?? []).map((entry) => (
+                  <div key={entry.id} className="relative text-xs text-muted-foreground before:absolute before:-start-[1.31rem] before:top-1.5 before:h-2 before:w-2 before:rounded-full before:bg-[var(--emerald)]">
+                    <span className={`font-medium text-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{entry.previous_status} → {entry.status}</span>
+                    <span className="mt-0.5 block">{new Date(entry.created_at).toLocaleString(lang === "ar" ? "ar-EG" : "en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
+                  </div>
+                ))}
+              </div>
+            </details>
           </motion.div>
         ))}
       </div>

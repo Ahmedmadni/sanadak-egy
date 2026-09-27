@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { CalendarCheck } from "lucide-react";
+import { CalendarCheck, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
 import { PanelHeader, EmptyState, StatusPill } from "../ui";
 import type { BookingRow, TenantWithRole } from "../types";
+import type { Tables } from "@/integrations/supabase/types";
+
+type BookingHistory = Pick<Tables<"booking_status_history">, "id" | "booking_id" | "previous_status" | "status" | "created_at">;
 
 const STATUSES = ["pending", "confirmed", "completed", "cancelled", "no_show"];
 const STATUS_MAP: Record<string, string> = {
@@ -20,12 +23,22 @@ const STATUS_MAP: Record<string, string> = {
 export function BookingsPanel({ tenant }: { tenant: TenantWithRole }) {
   const { lang } = useSanadak();
   const [rows, setRows] = useState<BookingRow[]>([]);
+  const [historyByBooking, setHistoryByBooking] = useState<Record<string, BookingHistory[]>>({});
 
-  const load = async () => {
-    const { data } = await supabase.from("bookings" as any).select("*").eq("tenant_id", tenant.id).order("slot_start", { ascending: true });
-    setRows((data as any) ?? []);
-  };
-  useEffect(() => { load(); }, [tenant.id]);
+  const load = useCallback(async () => {
+    const { data } = await supabase.from("bookings").select("*").eq("tenant_id", tenant.id).order("slot_start", { ascending: true });
+    const bookings = data ?? [];
+    const bookingIds = bookings.map((booking) => booking.id);
+    const { data: history } = bookingIds.length
+      ? await supabase.from("booking_status_history").select("id,booking_id,previous_status,status,created_at").in("booking_id", bookingIds).order("created_at")
+      : { data: [] as BookingHistory[] };
+    setHistoryByBooking((history ?? []).reduce<Record<string, BookingHistory[]>>((groups, entry) => {
+      (groups[entry.booking_id] ??= []).push(entry);
+      return groups;
+    }, {}));
+    setRows(bookings);
+  }, [tenant.id]);
+  useEffect(() => { void load(); }, [load]);
 
   const setStatus = async (id: string, status: string) => {
     const { error } = await supabase.rpc("set_booking_status", {
@@ -57,6 +70,19 @@ export function BookingsPanel({ tenant }: { tenant: TenantWithRole }) {
             <select value={b.status} onChange={(e) => setStatus(b.id, e.target.value)} className="h-9 rounded-full border border-input bg-background px-3 text-xs">
               {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
+            <details className="group basis-full border-t border-border/60 pt-3">
+              <summary className={`flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-[var(--emerald)] ${lang === "ar" ? "font-arabic" : ""}`}>
+                {lang === "ar" ? "سجل الحالة" : "Status history"}<ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="mt-3 grid gap-2 border-s border-[var(--emerald)]/30 ps-4">
+                {(historyByBooking[b.id] ?? []).length === 0 ? <p className={`text-xs text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? "لا توجد تحديثات حالة بعد." : "No status updates yet."}</p> : (historyByBooking[b.id] ?? []).map((entry) => (
+                  <div key={entry.id} className="relative text-xs text-muted-foreground before:absolute before:-start-[1.31rem] before:top-1.5 before:h-2 before:w-2 before:rounded-full before:bg-[var(--emerald)]">
+                    <span className={`font-medium text-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{entry.previous_status} → {entry.status}</span>
+                    <span className="mt-0.5 block">{new Date(entry.created_at).toLocaleString(lang === "ar" ? "ar-EG" : "en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
+                  </div>
+                ))}
+              </div>
+            </details>
           </motion.div>
         ))}
       </div>
