@@ -358,7 +358,9 @@ export function SanadakProvider({ children }: { children: ReactNode }) {
         if (p.bookings) setBookings(p.bookings);
         if (p.customer) setCustomerState(p.customer);
         if (typeof p.sound === "boolean") setSoundState(p.sound);
-      } catch {}
+      } catch {
+        // Ignore malformed legacy localStorage state and keep safe defaults.
+      }
     }
     const savedTheme = localStorage.getItem("sanadak_theme");
     if (savedTheme === "dark" || savedTheme === "light") {
