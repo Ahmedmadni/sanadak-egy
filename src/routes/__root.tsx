@@ -59,7 +59,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Sanadak-سندك" },
       { name: "description", content: "سندك كل ما تحتاجه في مكان واحد" },
-      { name: "author", content: "Lovable" },
+      { name: "author", content: "Sanadak" },
       { property: "og:title", content: "Sanadak-سندك" },
       { property: "og:description", content: "سندك كل ما تحتاجه في مكان واحد" },
       { property: "og:type", content: "website" },
