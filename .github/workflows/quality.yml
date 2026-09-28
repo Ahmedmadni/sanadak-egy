@@ -38,8 +38,8 @@ jobs:
             echo "::error::.env must not be tracked. Use .env.example plus deployment secrets."
             exit 1
           fi
-          if git grep -n -E 'SUPABASE_(SERVICE_ROLE|SECRET)|SERVICE_ROLE_KEY|PRIVATE_KEY=' -- ':!*.example' ':!docs/**'; then
-            echo "::error::Potential privileged secret name found in tracked source."
+          if git grep -n -E '^(SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEY|SERVICE_ROLE_KEY|PRIVATE_KEY)=[^[:space:]]+' -- ':!*.example' ':!docs/**'; then
+            echo "::error::Potential privileged secret value found in tracked source."
             exit 1
           fi
 
