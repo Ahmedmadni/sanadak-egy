@@ -21,8 +21,8 @@ const PAYMENT_INSTRUCTIONS = {
     en: "Bank transfer to: Banque Misr — Account 1234567890123 — Sanad Information Technology Co.",
   },
   vodafone_cash: {
-    ar: "فودافون كاش إلى الرقم: 010XXXXXXXX",
-    en: "Vodafone Cash to: 010XXXXXXXX",
+    ar: "فودافون كاش إلى الرقم: 01120016502",
+    en: "Vodafone Cash to: 01120016502",
   },
 };
 
