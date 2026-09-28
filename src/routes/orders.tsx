@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { ChevronDown, Clock3, PackageCheck, ShoppingBag } from "lucide-react";
+import { ChevronDown, Clock3, PackageCheck, ShoppingBag, Star } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -40,12 +40,12 @@ function CustomerOrdersPage() {
   const copy = useMemo(() => lang === "ar" ? {
     label: "الطلبات", title: "طلباتي", subtitle: "تابع حالة طلباتك ومعلومات استلامها أو توصيلها.",
     empty: "لا توجد طلبات مرتبطة بهذا الحساب حتى الآن.", explore: "استكشف الأنشطة",
-    total: "الإجمالي", history: "سجل الحالة", historyEmpty: "لا توجد تحديثات حالة بعد.", statuses: { pending: "قيد المراجعة", confirmed: "مؤكد", preparing: "جارٍ التجهيز", ready: "جاهز", out_for_delivery: "خرج للتوصيل", delivered: "تم التسليم", cancelled: "ملغي" } as Record<string, string>,
+    total: "الإجمالي", history: "سجل الحالة", historyEmpty: "لا توجد تحديثات حالة بعد.", review: "قيّم تجربتك", statuses: { pending: "قيد المراجعة", confirmed: "مؤكد", preparing: "جارٍ التجهيز", ready: "جاهز", out_for_delivery: "خرج للتوصيل", delivered: "تم التسليم", cancelled: "ملغي" } as Record<string, string>,
     delivery: { pickup: "استلام من النشاط", delivery: "توصيل للعنوان", dine_in: "داخل النشاط" } as Record<string, string>,
   } : {
     label: "Orders", title: "My orders", subtitle: "Track your order status and fulfilment details.",
     empty: "No orders are linked to this account yet.", explore: "Explore businesses",
-    total: "Total", history: "Status history", historyEmpty: "No status updates yet.", statuses: { pending: "Pending review", confirmed: "Confirmed", preparing: "Preparing", ready: "Ready", out_for_delivery: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled" } as Record<string, string>,
+    total: "Total", history: "Status history", historyEmpty: "No status updates yet.", review: "Rate your experience", statuses: { pending: "Pending review", confirmed: "Confirmed", preparing: "Preparing", ready: "Ready", out_for_delivery: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled" } as Record<string, string>,
     delivery: { pickup: "Pickup", delivery: "Home delivery", dine_in: "Dine in" } as Record<string, string>,
   }, [lang]);
 
@@ -121,7 +121,21 @@ function CustomerOrdersPage() {
               <span className="flex items-center gap-2"><Clock3 className="h-4 w-4 text-[var(--emerald)]" />{new Date(order.created_at).toLocaleString(lang === "ar" ? "ar-EG" : "en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
               <span className="flex items-center gap-2"><PackageCheck className="h-4 w-4 text-[var(--emerald)]" />{copy.total}: <strong className="text-foreground">{order.total} {order.currency}</strong></span>
             </div>
-            <div className="mt-5 flex items-center justify-between text-xs text-muted-foreground"><span>#{order.serial_no}</span><span>{order.payment_status}</span></div>
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
+              <span>#{order.serial_no}</span>
+              <div className="flex items-center gap-3">
+                <span>{order.payment_status}</span>
+                {order.status === "delivered" && (
+                  <Link
+                    to="/reviews"
+                    className={`inline-flex h-8 items-center gap-1.5 rounded-full border border-[var(--emerald)]/30 px-3 font-semibold text-[var(--emerald)] transition hover:bg-[var(--emerald)]/10 ${lang === "ar" ? "font-arabic" : ""}`}
+                  >
+                    <Star className="h-3.5 w-3.5" />
+                    {copy.review}
+                  </Link>
+                )}
+              </div>
+            </div>
             <details className="group mt-4 border-t border-border/60 pt-3">
               <summary className={`flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-[var(--emerald)] ${lang === "ar" ? "font-arabic" : ""}`}>
                 {copy.history}<ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
