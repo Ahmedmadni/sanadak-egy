@@ -18,14 +18,33 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
+const PREVIEW_HOST_SUFFIXES = [
+  "lovableproject.com",
+  "lovableproject-dev.com",
+  "lovable.app",
+  "gpt-eng.com",
+  "gptengineer.run",
+] as const;
+
+function isTrustedPreviewHost(hostname: string): boolean {
+  return PREVIEW_HOST_SUFFIXES.some(
+    (suffix) => hostname === suffix || hostname.endsWith(`.${suffix}`),
+  );
+}
+
 function applySecurityHeaders(response: Response, request: Request): Response {
   const headers = new Headers(response.headers);
+  const url = new URL(request.url);
   headers.set("x-content-type-options", "nosniff");
-  headers.set("x-frame-options", "DENY");
+  if (isTrustedPreviewHost(url.hostname)) {
+    headers.delete("x-frame-options");
+  } else {
+    headers.set("x-frame-options", "DENY");
+  }
   headers.set("referrer-policy", "strict-origin-when-cross-origin");
   headers.set("cross-origin-opener-policy", "same-origin");
   headers.set("permissions-policy", "camera=(), microphone=(), payment=()");
-  if (new URL(request.url).protocol === "https:") {
+  if (url.protocol === "https:") {
     headers.set("strict-transport-security", "max-age=31536000; includeSubDomains");
   }
 
