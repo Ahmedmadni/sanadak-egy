@@ -22,6 +22,7 @@ import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as PharmacyRouteImport } from './routes/pharmacy'
 import { Route as RestaurantsRouteImport } from './routes/restaurants'
+import { Route as ReviewsRouteImport } from './routes/reviews'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ShopsRouteImport } from './routes/shops'
 import { Route as SuperRouteImport } from './routes/super'
@@ -92,6 +93,11 @@ const RestaurantsRoute = RestaurantsRouteImport.update({
   path: '/restaurants',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReviewsRoute = ReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/orders': typeof OrdersRoute
   '/pharmacy': typeof PharmacyRoute
   '/restaurants': typeof RestaurantsRoute
+  '/reviews': typeof ReviewsRoute
   '/search': typeof SearchRoute
   '/shops': typeof ShopsRoute
   '/super': typeof SuperRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByTo {
   '/orders': typeof OrdersRoute
   '/pharmacy': typeof PharmacyRoute
   '/restaurants': typeof RestaurantsRoute
+  '/reviews': typeof ReviewsRoute
   '/search': typeof SearchRoute
   '/shops': typeof ShopsRoute
   '/super': typeof SuperRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/orders': typeof OrdersRoute
   '/pharmacy': typeof PharmacyRoute
   '/restaurants': typeof RestaurantsRoute
+  '/reviews': typeof ReviewsRoute
   '/search': typeof SearchRoute
   '/shops': typeof ShopsRoute
   '/super': typeof SuperRoute
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/pharmacy'
     | '/restaurants'
+    | '/reviews'
     | '/search'
     | '/shops'
     | '/super'
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/pharmacy'
     | '/restaurants'
+    | '/reviews'
     | '/search'
     | '/shops'
     | '/super'
@@ -225,6 +236,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/pharmacy'
     | '/restaurants'
+    | '/reviews'
     | '/search'
     | '/shops'
     | '/super'
@@ -245,6 +257,7 @@ export interface RootRouteChildren {
   OrdersRoute: typeof OrdersRoute
   PharmacyRoute: typeof PharmacyRoute
   RestaurantsRoute: typeof RestaurantsRoute
+  ReviewsRoute: typeof ReviewsRoute
   SearchRoute: typeof SearchRoute
   ShopsRoute: typeof ShopsRoute
   SuperRoute: typeof SuperRoute
@@ -344,6 +357,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RestaurantsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reviews': {
+      id: '/reviews'
+      path: '/reviews'
+      fullPath: '/reviews'
+      preLoaderRoute: typeof ReviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/search': {
       id: '/search'
       path: '/search'
@@ -389,6 +409,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrdersRoute: OrdersRoute,
   PharmacyRoute: PharmacyRoute,
   RestaurantsRoute: RestaurantsRoute,
+  ReviewsRoute: ReviewsRoute,
   SearchRoute: SearchRoute,
   ShopsRoute: ShopsRoute,
   SuperRoute: SuperRoute,
