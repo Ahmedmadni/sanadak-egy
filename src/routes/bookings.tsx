@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { CalendarCheck, CalendarX, ChevronDown, Clock3, MapPin } from "lucide-react";
+import { CalendarCheck, CalendarX, ChevronDown, Clock3, MapPin, Star } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -61,6 +61,7 @@ function CustomerBookingsPage() {
             branch: "الفرع",
             history: "سجل الحالة",
             historyEmpty: "لا توجد تحديثات حالة بعد.",
+            review: "قيّم تجربتك",
             statuses: {
               pending: "بانتظار التأكيد",
               confirmed: "مؤكد",
@@ -85,6 +86,7 @@ function CustomerBookingsPage() {
             branch: "Branch",
             history: "Status history",
             historyEmpty: "No status updates yet.",
+            review: "Rate your experience",
             statuses: {
               pending: "Awaiting confirmation",
               confirmed: "Confirmed",
@@ -270,6 +272,15 @@ function CustomerBookingsPage() {
 
                   <div className="mt-5 flex items-center justify-between gap-3">
                     <span className="text-xs text-muted-foreground">#{booking.serial_no}</span>
+                    {booking.status === "completed" && (
+                      <Link
+                        to="/reviews"
+                        className={`inline-flex h-9 items-center gap-1.5 rounded-full border border-[var(--emerald)]/30 px-4 text-xs font-semibold text-[var(--emerald)] transition hover:bg-[var(--emerald)]/10 ${lang === "ar" ? "font-arabic" : ""}`}
+                      >
+                        <Star className="h-3.5 w-3.5" />
+                        {copy.review}
+                      </Link>
+                    )}
                     {canCancel && (
                       <button
                         type="button"
