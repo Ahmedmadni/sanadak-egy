@@ -21,12 +21,17 @@ export function ProfilePanel({ tenant, onUpdated }: { tenant: TenantWithRole; on
     e.preventDefault();
     setBusy(true);
     try {
-      const { error } = await supabase.from("tenants" as any).update({
-        name: form.name, description: form.description || null, area: form.area || null,
-        phone: form.phone || null, email: form.email || null,
-        image_url: form.image_url || null, cover_url: form.cover_url || null,
-        category: form.category,
-      }).eq("id", tenant.id);
+      const { error } = await (supabase.rpc as any)("update_tenant_profile", {
+        _tenant: tenant.id,
+        _name: form.name,
+        _category: form.category,
+        _area: form.area || null,
+        _phone: form.phone || null,
+        _email: form.email || null,
+        _description: form.description || null,
+        _image_url: form.image_url || null,
+        _cover_url: form.cover_url || null,
+      });
       if (error) throw error;
       sfx.success();
       toast.success(lang === "ar" ? "تم حفظ الملف الشخصي" : "Profile saved");
