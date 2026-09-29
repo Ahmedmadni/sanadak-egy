@@ -175,7 +175,7 @@ BEGIN
     RAISE EXCEPTION 'invalid product variant selection';
   END IF;
 
-  IF v_reserve_now AND EXISTS (
+  IF EXISTS (
     SELECT 1
     FROM public.catalog_items c
     JOIN (
