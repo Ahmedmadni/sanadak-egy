@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { toast } from "sonner";
 import {
   Plus, Trash2, Pencil, Store, ShieldCheck, ArrowLeft, X, Save,
-  Inbox, Users, Check, Clock, ShieldOff, ExternalLink,
+  Inbox, Users, Check, Clock, ShieldOff, ShieldPlus, ExternalLink,
   LayoutDashboard, Building2, Package, CreditCard, Sparkles, LifeBuoy,
   ScrollText, BadgeCheck, Ban, Menu, TrendingUp, Bot, FileText, Wallet,
 } from "lucide-react";
