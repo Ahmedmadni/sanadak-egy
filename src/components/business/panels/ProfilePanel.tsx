@@ -51,7 +51,8 @@ export function ProfilePanel({ tenant, onUpdated }: { tenant: TenantWithRole; on
       <form onSubmit={save} className="glass-card rounded-3xl p-6 grid grid-cols-2 gap-3 max-w-2xl">
         <input disabled={!canEdit} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
           placeholder={lang === "ar" ? "اسم النشاط" : "Business name"} className="col-span-2 h-11 rounded-xl border border-input bg-background px-4 text-sm disabled:opacity-60" />
-        <select disabled={!canEdit} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
+        <select disabled value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
+          title={lang === "ar" ? "تغيير نوع النشاط يتطلب اعتماد المشرف" : "Changing the activity type requires admin approval"}
           className="col-span-2 h-11 rounded-xl border border-input bg-background px-3 text-sm disabled:opacity-60">
           {allCategoryEntries().map(([value, cfg]) => (
             <option key={value} value={value}>{lang === "ar" ? cfg.labelAr : cfg.labelEn}</option>
