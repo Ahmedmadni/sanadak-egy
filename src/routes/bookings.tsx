@@ -127,13 +127,13 @@ function CustomerBookingsPage() {
       const branchIds = [...new Set((bookings ?? []).flatMap((booking) => (booking.branch_id ? [booking.branch_id] : [])))];
       const [tenantsResult, itemsResult, branchesResult, historyResult] = await Promise.all([
         tenantIds.length
-          ? supabase.from("tenants").select("id,name,slug").in("id", tenantIds)
+          ? (supabase as any).from("storefront_tenants").select("id,name,slug").in("id", tenantIds)
           : Promise.resolve({ data: [] as Pick<Tables<"tenants">, "id" | "name" | "slug">[] }),
         itemIds.length
-          ? supabase.from("catalog_items").select("id,name").in("id", itemIds)
+          ? (supabase as any).from("storefront_catalog_items").select("id,name").in("id", itemIds)
           : Promise.resolve({ data: [] as Pick<Tables<"catalog_items">, "id" | "name">[] }),
         branchIds.length
-          ? supabase.from("branches").select("id,name").in("id", branchIds)
+          ? (supabase as any).from("storefront_branches").select("id,name").in("id", branchIds)
           : Promise.resolve({ data: [] as Pick<Tables<"branches">, "id" | "name">[] }),
         bookingIds.length
           ? supabase.from("booking_status_history").select("id,booking_id,previous_status,status,created_at").in("booking_id", bookingIds).order("created_at")
