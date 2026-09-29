@@ -151,7 +151,11 @@ BEGIN
   END IF;
 
   IF char_length(v_slug) NOT BETWEEN 1 AND 80
-     OR v_slug !~ '^[[:alnum:]][[:alnum:]-]*$' THEN
+     OR position('/' in v_slug) > 0
+     OR position('\\' in v_slug) > 0
+     OR position('?' in v_slug) > 0
+     OR position('#' in v_slug) > 0
+     OR v_slug ~ '[[:space:]]' THEN
     RAISE EXCEPTION 'invalid tenant slug';
   END IF;
 
