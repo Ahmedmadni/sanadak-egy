@@ -356,12 +356,28 @@ export function SanadakProvider({ children }: { children: ReactNode }) {
         if (p.lang) setLangState(p.lang);
         if (p.cart) setCart(p.cart);
         if (p.bookings) setBookings(p.bookings);
-        if (p.customer) setCustomerState(p.customer);
         if (typeof p.sound === "boolean") setSoundState(p.sound);
       } catch {
         // Ignore malformed legacy localStorage state and keep safe defaults.
       }
     }
+    const savedCustomer = sessionStorage.getItem("sanadak_customer");
+    if (savedCustomer) {
+      try {
+        const p = JSON.parse(savedCustomer);
+        if (
+          p &&
+          typeof p.name === "string" &&
+          typeof p.phone === "string" &&
+          typeof p.address === "string"
+        ) {
+          setCustomerState({ name: p.name, phone: p.phone, address: p.address });
+        }
+      } catch {
+        sessionStorage.removeItem("sanadak_customer");
+      }
+    }
+
     const savedTheme = localStorage.getItem("sanadak_theme");
     if (savedTheme === "dark" || savedTheme === "light") {
       setThemeState(savedTheme);
@@ -371,11 +387,25 @@ export function SanadakProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("sanadak", JSON.stringify({ lang, cart, bookings, customer, sound }));
+    localStorage.setItem("sanadak", JSON.stringify({ lang, cart, bookings, sound }));
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
     localStorage.setItem("sanadak_sound", sound ? "1" : "0");
-  }, [lang, cart, bookings, customer, sound]);
+  }, [lang, cart, bookings, sound]);
+
+  useEffect(() => {
+    sessionStorage.setItem("sanadak_customer", JSON.stringify(customer));
+  }, [customer]);
+
+  useEffect(() => {
+    const clearPrivateState = () => {
+      setCustomerState({ name: "", phone: "", address: "" });
+      setBookings([]);
+      sessionStorage.removeItem("sanadak_customer");
+    };
+    window.addEventListener("sanadak:clear-private", clearPrivateState);
+    return () => window.removeEventListener("sanadak:clear-private", clearPrivateState);
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
