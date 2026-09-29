@@ -347,6 +347,7 @@ export function SanadakProvider({ children }: { children: ReactNode }) {
   const [customer, setCustomerState] = useState<Customer>({ name: "", phone: "", address: "" });
   const [sound, setSoundState] = useState(true);
   const [theme, setThemeState] = useState<"light" | "dark">("light");
+  const [storageReady, setStorageReady] = useState(false);
 
   useEffect(() => {
     const s = localStorage.getItem("sanadak");
@@ -384,18 +385,21 @@ export function SanadakProvider({ children }: { children: ReactNode }) {
     } else if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
       setThemeState("dark");
     }
+    setStorageReady(true);
   }, []);
 
   useEffect(() => {
+    if (!storageReady) return;
     localStorage.setItem("sanadak", JSON.stringify({ lang, cart, bookings, sound }));
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
     localStorage.setItem("sanadak_sound", sound ? "1" : "0");
-  }, [lang, cart, bookings, sound]);
+  }, [lang, cart, bookings, sound, storageReady]);
 
   useEffect(() => {
+    if (!storageReady) return;
     sessionStorage.setItem("sanadak_customer", JSON.stringify(customer));
-  }, [customer]);
+  }, [customer, storageReady]);
 
   useEffect(() => {
     const clearPrivateState = () => {
