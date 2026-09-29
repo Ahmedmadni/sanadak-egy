@@ -22,29 +22,48 @@ SET search_path = ''
 AS $function$
 DECLARE
   v_actor uuid := auth.uid();
+  v_is_admin boolean := false;
+  v_current_category text;
 BEGIN
   IF v_actor IS NULL THEN
     RAISE EXCEPTION 'authentication required';
   END IF;
 
+  v_is_admin := private.has_role(v_actor, 'admin'::public.app_role);
+
   IF NOT (
     private.is_tenant_member(v_actor, _tenant, 'manager')
-    OR private.has_role(v_actor, 'admin'::public.app_role)
+    OR v_is_admin
   ) THEN
     RAISE EXCEPTION 'tenant profile access denied';
+  END IF;
+
+  SELECT t.category
+  INTO v_current_category
+  FROM public.tenants t
+  WHERE t.id = _tenant;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'tenant not found';
   END IF;
 
   IF char_length(btrim(COALESCE(_name, ''))) NOT BETWEEN 1 AND 200 THEN
     RAISE EXCEPTION 'tenant name must be between 1 and 200 characters';
   END IF;
 
-  IF NOT EXISTS (
-    SELECT 1
-    FROM public.activity_types a
-    WHERE a.code = _category
-      AND a.is_active = true
-  ) THEN
-    RAISE EXCEPTION 'invalid or inactive activity type';
+  IF _category IS DISTINCT FROM v_current_category THEN
+    IF NOT v_is_admin THEN
+      RAISE EXCEPTION 'activity type changes require admin access';
+    END IF;
+
+    IF NOT EXISTS (
+      SELECT 1
+      FROM public.activity_types a
+      WHERE a.code = _category
+        AND a.is_active = true
+    ) THEN
+      RAISE EXCEPTION 'invalid or inactive activity type';
+    END IF;
   END IF;
 
   IF char_length(COALESCE(_area, '')) > 200
@@ -58,7 +77,7 @@ BEGIN
 
   UPDATE public.tenants t
   SET name = btrim(_name),
-      category = _category,
+      category = CASE WHEN v_is_admin THEN _category ELSE v_current_category END,
       area = NULLIF(btrim(COALESCE(_area, '')), ''),
       phone = NULLIF(btrim(COALESCE(_phone, '')), ''),
       email = NULLIF(btrim(COALESCE(_email, '')), ''),
