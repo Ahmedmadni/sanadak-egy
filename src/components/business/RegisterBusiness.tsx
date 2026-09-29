@@ -26,7 +26,7 @@ const PAYMENT_INSTRUCTIONS = {
   },
 };
 
-export function RegisterBusiness({ userId, onCreated }: { userId: string; onCreated: () => void }) {
+export function RegisterBusiness({ onCreated }: { onCreated: () => void }) {
   const { lang } = useSanadak();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [busy, setBusy] = useState(false);
@@ -61,19 +61,18 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
       const plan = plans.find((p) => p.code === form.plan_code);
       if (!plan) throw new Error(lang === "ar" ? "اختر باقة اشتراك صالحة" : "Choose a valid subscription plan");
       const seed = crypto.randomUUID();
-      const { data, error } = await supabase.from("tenants").insert({
-        slug: slugify(form.name, seed),
-        name: form.name,
-        category: form.category,
-        area: form.area || null,
-        phone: form.phone || null,
-        description: form.description || null,
-        owner_id: userId,
-        plan_id: plan.id,
-        status: "pending",
-      }).select("id").single();
+      const { data, error } = await (supabase.rpc as any)("request_tenant_onboarding", {
+        _name: form.name,
+        _category: form.category,
+        _plan: plan.id,
+        _slug: slugify(form.name, seed),
+        _area: form.area || null,
+        _phone: form.phone || null,
+        _description: form.description || null,
+      });
       if (error) throw error;
-      setTenantId(data.id);
+      if (!data) throw new Error(lang === "ar" ? "تعذر إنشاء طلب الانضمام" : "Could not create onboarding request");
+      setTenantId(data as string);
       sfx.success();
       setStep(2);
     } catch (err) {
