@@ -10,8 +10,8 @@ export function LiveStats() {
   useEffect(() => {
     (async () => {
       const [{ count: tenants }, { data: reviews }] = await Promise.all([
-        supabase.from("tenants" as any).select("id", { count: "exact", head: true }),
-        supabase.from("reviews" as any).select("rating").eq("is_approved", true),
+        supabase.from("storefront_tenants" as any).select("id", { count: "exact", head: true }),
+        supabase.from("storefront_reviews" as any).select("rating"),
       ]);
       const ratings = ((reviews as any[]) ?? []).map((r) => r.rating);
       const avg = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 4.9;
