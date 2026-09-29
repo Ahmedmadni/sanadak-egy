@@ -14,7 +14,7 @@ export function FeaturedBusinesses() {
   useEffect(() => {
     (async () => {
       const { data } = await supabase
-        .from("tenants" as any)
+        .from("storefront_tenants" as any)
         .select("id, slug, name, category, area, image_url, verified_at")
         .order("verified_at", { ascending: false, nullsFirst: false })
         .limit(8);
