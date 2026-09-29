@@ -70,7 +70,7 @@ function CustomerOrdersPage() {
       const ids = [...new Set((orders ?? []).map((order) => order.tenant_id))];
       const orderIds = (orders ?? []).map((order) => order.id);
       const { data: tenants } = ids.length
-        ? await supabase.from("tenants").select("id,name,slug").in("id", ids)
+        ? await (supabase as any).from("storefront_tenants").select("id,name,slug").in("id", ids)
         : { data: [] as Pick<Tables<"tenants">, "id" | "name" | "slug">[] };
       const tenantById = new Map((tenants ?? []).map((tenant) => [tenant.id, tenant]));
       const { data: history } = orderIds.length
