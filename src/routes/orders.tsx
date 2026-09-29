@@ -72,7 +72,9 @@ function CustomerOrdersPage() {
       const { data: tenants } = ids.length
         ? await (supabase as any).from("storefront_tenants").select("id,name,slug").in("id", ids)
         : { data: [] as Pick<Tables<"tenants">, "id" | "name" | "slug">[] };
-      const tenantById = new Map((tenants ?? []).map((tenant) => [tenant.id, tenant]));
+      const tenantById = new Map(
+        ((tenants ?? []) as Pick<Tables<"tenants">, "id" | "name" | "slug">[]).map((tenant) => [tenant.id, tenant]),
+      );
       const { data: history } = orderIds.length
         ? await supabase.from("order_status_history").select("id,order_id,previous_status,status,created_at").in("order_id", orderIds).order("created_at")
         : { data: [] as OrderHistory[] };
