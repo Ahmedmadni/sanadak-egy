@@ -72,34 +72,30 @@ function StorePage() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data: t } = await supabase.from("tenants").select("*").eq("slug", slug).maybeSingle();
+      const { data: t } = await (supabase as any).from("storefront_tenants").select("*").eq("slug", slug).maybeSingle();
       if (t) {
         setTenant(t);
         const [{ data: i }, { data: r }, { data: b }, { data: s }] = await Promise.all([
-          supabase
-            .from("catalog_items")
+          (supabase as any)
+            .from("storefront_catalog_items")
             .select("*")
             .eq("tenant_id", t.id)
-            .eq("is_active", true)
             .order("sort_order"),
-          supabase
-            .from("reviews")
+          (supabase as any)
+            .from("storefront_reviews")
             .select("*")
             .eq("tenant_id", t.id)
-            .eq("is_approved", true)
             .order("created_at", { ascending: false })
             .limit(10),
-          supabase
-            .from("branches")
+          (supabase as any)
+            .from("storefront_branches")
             .select("id,name,address")
             .eq("tenant_id", t.id)
-            .eq("is_active", true)
             .order("created_at"),
-          supabase
-            .from("staff")
+          (supabase as any)
+            .from("storefront_staff")
             .select("id,name,role,specialty,branch_id")
             .eq("tenant_id", t.id)
-            .eq("is_active", true)
             .order("created_at"),
         ]);
         setItems(i ?? []);
