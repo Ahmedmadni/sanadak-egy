@@ -140,9 +140,15 @@ function CustomerBookingsPage() {
           : Promise.resolve({ data: [] as BookingHistory[] }),
       ]);
 
-      const tenantById = new Map((tenantsResult.data ?? []).map((tenant) => [tenant.id, tenant]));
-      const itemById = new Map((itemsResult.data ?? []).map((item) => [item.id, item]));
-      const branchById = new Map((branchesResult.data ?? []).map((branch) => [branch.id, branch]));
+      const tenantById = new Map(
+        ((tenantsResult.data ?? []) as Pick<Tables<"tenants">, "id" | "name" | "slug">[]).map((tenant) => [tenant.id, tenant]),
+      );
+      const itemById = new Map(
+        ((itemsResult.data ?? []) as Pick<Tables<"catalog_items">, "id" | "name">[]).map((item) => [item.id, item]),
+      );
+      const branchById = new Map(
+        ((branchesResult.data ?? []) as Pick<Tables<"branches">, "id" | "name">[]).map((branch) => [branch.id, branch]),
+      );
       const nextHistory = (historyResult.data ?? []).reduce<Record<string, BookingHistory[]>>((groups, entry) => {
         (groups[entry.booking_id] ??= []).push(entry);
         return groups;
