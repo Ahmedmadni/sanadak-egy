@@ -46,5 +46,28 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  return { session, user, isAdmin, loading, signOut: () => supabase.auth.signOut() };
+  const signOut = async () => {
+    const result = await supabase.auth.signOut();
+    if (!result.error && typeof window !== "undefined") {
+      sessionStorage.removeItem("sanadak_customer");
+
+      const legacy = localStorage.getItem("sanadak");
+      if (legacy) {
+        try {
+          const parsed = JSON.parse(legacy);
+          if (parsed && typeof parsed === "object") {
+            delete parsed.customer;
+            localStorage.setItem("sanadak", JSON.stringify(parsed));
+          }
+        } catch {
+          // Leave malformed legacy state for the provider's existing safe fallback.
+        }
+      }
+
+      window.dispatchEvent(new Event("sanadak:clear-private"));
+    }
+    return result;
+  };
+
+  return { session, user, isAdmin, loading, signOut };
 }
