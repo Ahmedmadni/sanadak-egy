@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   LayoutDashboard, Store, MapPin, UserRound, Package, ShoppingBag,
-  CalendarCheck, Star, CreditCard, Sparkles, Bell, Menu, ChevronDown,
+  CalendarCheck, ChefHat, Star, CreditCard, Sparkles, Bell, Menu, ChevronDown,
 } from "lucide-react";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
@@ -12,13 +12,14 @@ import { BranchesPanel } from "./panels/BranchesPanel";
 import { StaffPanel } from "./panels/StaffPanel";
 import { CatalogPanel } from "./panels/CatalogPanel";
 import { OrdersPanel } from "./panels/OrdersPanel";
+import { KitchenBoard } from "./panels/KitchenBoard";
 import { BookingsPanel } from "./panels/BookingsPanel";
 import { ReviewsPanel } from "./panels/ReviewsPanel";
 import { BillingPanel } from "./panels/BillingPanel";
 import { AiStudioPanel } from "./panels/AiStudioPanel";
 import { NotificationsPanel } from "./panels/NotificationsPanel";
 
-type SectionId = "overview" | "profile" | "branches" | "staff" | "catalog" | "orders" | "bookings" | "reviews" | "billing" | "ai" | "notifications";
+type SectionId = "overview" | "profile" | "branches" | "staff" | "catalog" | "orders" | "kitchen" | "bookings" | "reviews" | "billing" | "ai" | "notifications";
 
 export function BusinessLayout({
   userId, tenants, activeId, onSwitchTenant, onRefresh,
@@ -46,6 +47,7 @@ export function BusinessLayout({
       { id: "catalog", ar: cfg.catalogLabelAr, en: cfg.catalogLabelEn, icon: <Package className="h-4 w-4" /> },
     ];
     if (cfg.hasOrders) list.push({ id: "orders", ar: "الطلبات", en: "Orders", icon: <ShoppingBag className="h-4 w-4" /> });
+    if (tenant.category === "restaurants" || tenant.category === "cafes") list.push({ id: "kitchen", ar: "لوحة التحضير", en: "Kitchen board", icon: <ChefHat className="h-4 w-4" /> });
     if (cfg.hasBookings) list.push({ id: "bookings", ar: "الحجوزات", en: "Bookings", icon: <CalendarCheck className="h-4 w-4" /> });
     list.push(
       { id: "reviews", ar: "التقييمات", en: "Reviews", icon: <Star className="h-4 w-4" /> },
@@ -54,7 +56,7 @@ export function BusinessLayout({
       { id: "notifications", ar: "الإشعارات", en: "Notifications", icon: <Bell className="h-4 w-4" /> },
     );
     return list;
-  }, [cfg]);
+  }, [cfg, tenant.category]);
 
   return (
     <main className="relative min-h-screen pt-24 pb-20">
@@ -86,7 +88,7 @@ export function BusinessLayout({
               {switcherOpen && tenants.length > 1 && (
                 <div className="absolute z-20 top-full inset-x-2 mt-1 glass-card rounded-xl p-1">
                   {tenants.map((t) => (
-                    <button key={t.id} onClick={() => { onSwitchTenant(t.id); setSwitcherOpen(false); sfx.tap(); }}
+                    <button key={t.id} onClick={() => { onSwitchTenant(t.id); setSection("overview"); setSwitcherOpen(false); sfx.tap(); }}
                       className={`w-full text-start px-3 py-2 rounded-lg text-sm hover:bg-foreground/5 ${t.id === tenant.id ? "text-[var(--emerald)] font-medium" : ""}`}>
                       {t.name}
                     </button>
@@ -116,6 +118,7 @@ export function BusinessLayout({
           {section === "staff" && <StaffPanel tenant={tenant} />}
           {section === "catalog" && <CatalogPanel tenant={tenant} />}
           {section === "orders" && cfg.hasOrders && <OrdersPanel tenant={tenant} />}
+          {section === "kitchen" && (tenant.category === "restaurants" || tenant.category === "cafes") && <KitchenBoard key={tenant.id} tenant={tenant} />}
           {section === "bookings" && cfg.hasBookings && <BookingsPanel key={tenant.id} tenant={tenant} />}
           {section === "reviews" && <ReviewsPanel tenant={tenant} />}
           {section === "billing" && <BillingPanel tenant={tenant} />}

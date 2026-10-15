@@ -1,0 +1,32 @@
+name: Kitchen regression
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/lib/kitchen-board.ts"
+      - "src/lib/kitchen-board.test.ts"
+      - "src/components/business/panels/KitchenBoard.tsx"
+      - "src/components/business/BusinessLayout.tsx"
+      - ".github/workflows/kitchen-regression.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/lib/kitchen-board.ts"
+      - "src/lib/kitchen-board.test.ts"
+      - ".github/workflows/kitchen-regression.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  kitchen-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.16.0"
+      - name: Run kitchen state machine tests
+        run: node --experimental-strip-types --test src/lib/kitchen-board.test.ts
