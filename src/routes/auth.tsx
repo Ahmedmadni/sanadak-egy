@@ -127,7 +127,7 @@ function AuthPage() {
           </div>
           <div className="relative">
             <Lock className="absolute top-1/2 -translate-y-1/2 start-3 h-4 w-4 text-muted-foreground" />
-            <input required type="password" dir="ltr" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={lang === "ar" ? "كلمة السر (٦ أحرف على الأقل)" : "Password (min 6 chars)"} className="w-full h-12 rounded-xl border border-input bg-background ps-10 pe-4 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--emerald)]/30" />
+            <input required type="password" dir="ltr" minLength={mode === "signup" ? 12 : 6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={lang === "ar" ? "كلمة السر (٦ أحرف على الأقل)" : "Password (min 6 chars)"} className="w-full h-12 rounded-xl border border-input bg-background ps-10 pe-4 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--emerald)]/30" />
           </div>
           <button disabled={loading} type="submit" className={`w-full h-12 rounded-full bg-gradient-brand text-primary-foreground font-medium shadow-glow hover:scale-[1.01] transition flex items-center justify-center gap-2 disabled:opacity-50 ${lang === "ar" ? "font-arabic" : ""}`}>
             {mode === "login" ? <LogIn className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
