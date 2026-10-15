@@ -7,7 +7,7 @@ import {
   kitchenOrderAgeMinutes,
   kitchenOrderIsDelayed,
   KITCHEN_STAGES,
-} from "./kitchen-board";
+} from "./kitchen-board.ts";
 
 const now = new Date("2026-10-15T10:00:00Z");
 
