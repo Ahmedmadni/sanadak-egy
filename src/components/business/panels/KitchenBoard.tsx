@@ -114,7 +114,16 @@ export function KitchenBoard({ tenant }: { tenant: TenantWithRole }) {
           .order("created_at", { ascending: true });
         if (request !== requestId.current) return;
         if (result.error) fetchItemsError = result.error.message;
-        else fetchedItems = result.data ?? [];
+        else {
+          fetchedItems = result.data ?? [];
+          // Supabase may cap a response at 1000 rows. Do not show an
+          // incomplete kitchen ticket or allow advancing it silently.
+          if (fetchedItems.length >= 1000) {
+            fetchItemsError = ar
+              ? "تجاوزت تفاصيل الأصناف حد التحميل الآمن؛ افتح قائمة الطلبات للتحقق قبل تغيير الحالة."
+              : "Item details reached the safe query limit. Verify orders before changing status.";
+          }
+        }
       }
 
       const grouped = fetchedItems.reduce<ItemGroups>((acc, item) => {
@@ -140,11 +149,15 @@ export function KitchenBoard({ tenant }: { tenant: TenantWithRole }) {
 
   useEffect(() => {
     void load();
-    const interval = window.setInterval(() => {
+    const refreshIfVisible = () => {
       if (document.visibilityState === "visible") void load(true);
-    }, 30_000);
+    };
+    const interval = window.setInterval(refreshIfVisible, 30_000);
+    // Pick up changes immediately when staff returns to the kitchen tab.
+    document.addEventListener("visibilitychange", refreshIfVisible);
     return () => {
       window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
       requestId.current += 1;
     };
   }, [load]);
