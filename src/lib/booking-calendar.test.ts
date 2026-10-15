@@ -39,7 +39,8 @@ describe("calendar receipt", () => {
       ...sample, businessName: "Cafe\\Street, 7; Level\r\nBEGIN:VEVENT\r\nSUMMARY:EVIL",
     });
     assert.equal(file.split("\r\n").filter(x => x === "BEGIN:VEVENT").length, 1);
-    assert.ok(file.includes("\\nBEGIN:VEVENT\\nSUMMARY:EVIL"));
+    const unfolded = file.replace(/\\r\\n /g, "");
+    assert.ok(unfolded.includes("\\nBEGIN:VEVENT\\nSUMMARY:EVIL"));
     assert.ok(file.includes("\\,") && file.includes("\\;"));
   });
 
