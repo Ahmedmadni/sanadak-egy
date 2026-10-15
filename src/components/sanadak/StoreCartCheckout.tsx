@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import type { Customer } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
+import { restoreCart, variantOptions } from "@/lib/store-cart";
 import {
   Sheet,
   SheetContent,
@@ -56,39 +57,8 @@ type Props = {
   onCloseItem: () => void;
 };
 
-function variantOptions(value: StoreOrderItem["variants"]) {
-  if (!Array.isArray(value)) return [];
-  return value
-    .map((option) => {
-      if (typeof option === "string") return option.trim();
-      if (
-        option &&
-        typeof option === "object" &&
-        !Array.isArray(option) &&
-        typeof option.label === "string"
-      ) {
-        return option.label.trim();
-      }
-      return "";
-    })
-    .filter(Boolean);
-}
-
 function lineKey(itemId: string, variant: string | null) {
   return `${itemId}::${variant ?? ""}`;
-}
-
-function isSavedLine(value: unknown): value is Pick<CartLine, "id" | "qty" | "variant"> {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  const line = value as Record<string, unknown>;
-  return (
-    typeof line.id === "string" &&
-    typeof line.qty === "number" &&
-    Number.isInteger(line.qty) &&
-    line.qty > 0 &&
-    line.qty <= 99 &&
-    (line.variant === null || typeof line.variant === "string")
-  );
 }
 
 function money(value: number, currency: string, lang: "ar" | "en") {
@@ -118,7 +88,7 @@ export function StoreCartCheckout({
   const reduceMotion = useReducedMotion();
   const storageKey = `sanadak-store-cart:${tenantId}`;
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [hydrated, setHydrated] = useState(false);
+  const [hydratedKey, setHydratedKey] = useState<string | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
@@ -140,48 +110,23 @@ export function StoreCartCheckout({
   }, [selectedItem]);
 
   useEffect(() => {
-    const catalog = new Map(items.map((item) => [item.id, item]));
     try {
       const saved = JSON.parse(localStorage.getItem(storageKey) ?? "[]") as unknown;
-      if (Array.isArray(saved)) {
-        const restoredQuantity = new Map<string, number>();
-        setCart(
-          saved
-            .filter(isSavedLine)
-            .slice(0, 50)
-            .flatMap((line) => {
-              const item = catalog.get(line.id);
-              if (!item || item.stock === 0) return [];
-              const validVariants = variantOptions(item.variants);
-              if (
-                validVariants.length &&
-                (!line.variant || !validVariants.includes(line.variant))
-              ) {
-                return [];
-              }
-              const alreadyRestored = restoredQuantity.get(item.id) ?? 0;
-              const qty = Math.min(line.qty, Math.max(0, (item.stock ?? 99) - alreadyRestored), 99);
-              if (qty < 1) return [];
-              restoredQuantity.set(item.id, alreadyRestored + qty);
-              const { variants: _variants, ...cartItem } = item;
-              return [{ ...cartItem, qty, variant: validVariants.length ? line.variant : null }];
-            }),
-        );
-      }
+      setCart(restoreCart(saved, items));
     } catch {
       localStorage.removeItem(storageKey);
     } finally {
-      setHydrated(true);
+      setHydratedKey(storageKey);
     }
   }, [items, storageKey]);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (hydratedKey !== storageKey) return;
     localStorage.setItem(
       storageKey,
       JSON.stringify(cart.map(({ id, qty, variant }) => ({ id, qty, variant }))),
     );
-  }, [cart, hydrated, storageKey]);
+  }, [cart, hydratedKey, storageKey]);
 
   const itemCount = cart.reduce((sum, line) => sum + line.qty, 0);
   const total = cart.reduce((sum, line) => sum + line.price * line.qty, 0);
@@ -190,7 +135,7 @@ export function StoreCartCheckout({
     ? cart.reduce((sum, line) => sum + (line.id === selectedItem.id ? line.qty : 0), 0)
     : 0;
   const maxAddQuantity = selectedItem
-    ? Math.max(0, Math.min(99, (selectedItem.stock ?? 99) - selectedInCart))
+    ? Math.max(0, Math.min(99 - selectedInCart, (selectedItem.stock ?? 99) - selectedInCart))
     : 0;
 
   const addSelected = () => {
