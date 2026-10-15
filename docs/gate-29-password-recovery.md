@@ -4,7 +4,7 @@
 
 - `/auth`: sign in / register and **Forgot your password?**.
 - `/forgot-password`: calls Supabase `resetPasswordForEmail` and always displays a neutral success message after Supabase accepts a request.
-- `/reset-password`: exchanges the recovery link through the existing Supabase Auth client, requires an authenticated recovery session, validates a new passphrase (12–72 characters), calls `updateUser({ password })`, then signs out.
+- `/reset-password`: handles standard Supabase PKCE/implicit recovery callbacks and explicitly calls `verifyOtp({type: 'recovery', token_hash})` for customized token-hash templates; requires an authenticated recovery session, validates a new passphrase (12–72 characters), calls `updateUser({ password })`, then signs out.
 
 No email, password, token or provider secret is embedded in source code. The app does not send recovery emails itself.
 
