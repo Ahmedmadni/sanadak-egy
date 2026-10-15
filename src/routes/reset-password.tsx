@@ -26,6 +26,9 @@ function ResetPasswordPage() {
     let active = true;
     let verifiedRecoveryEvent = false;
     const callbackHint = isRecoveryCallbackUrl(window.location.search, window.location.hash);
+    const query = new URLSearchParams(window.location.search);
+    const tokenHash = query.get("type") === "recovery" ? query.get("token_hash") : null;
+    const tokenHashFlow = Boolean(tokenHash);
     let timeout: number | undefined;
 
     // PASSWORD_RECOVERY is emitted by Supabase after it verifies a recovery
@@ -37,6 +40,7 @@ function ResetPasswordPage() {
         setFlow("ready");
       } else if (
         callbackHint &&
+        !tokenHashFlow &&
         session?.user &&
         (event === "SIGNED_IN" || event === "INITIAL_SESSION")
       ) {
@@ -46,23 +50,45 @@ function ResetPasswordPage() {
       }
     });
 
-    void supabase.auth.getSession().then(({ data, error: sessionError }) => {
-      if (!active || verifiedRecoveryEvent) return;
-      if (!sessionError && callbackHint && data.session?.user) {
-        setFlow("ready");
-      } else if (!callbackHint) {
-        setFlow("invalid");
-      } else {
-        // PKCE code exchange can complete after getSession() returns.
-        timeout = window.setTimeout(() => {
-          if (active && !verifiedRecoveryEvent) {
-            setFlow((current) => current === "ready" ? current : "invalid");
-          }
-        }, 4000);
-      }
-    }).catch(() => {
-      if (active) setFlow("invalid");
-    });
+    // Custom Supabase email templates may send token_hash rather than a
+    // PKCE code or implicit fragment. The hash MUST be verified with Supabase,
+    // not merely checked for existence in the URL.
+    if (tokenHashFlow) {
+      void (async () => {
+        try {
+          if (!tokenHash || tokenHash.length > 4096) throw new Error("Invalid recovery token");
+          const { data, error: verifyError } = await supabase.auth.verifyOtp({
+            type: "recovery",
+            token_hash: tokenHash,
+          });
+          if (!active) return;
+          setFlow(!verifyError && data.session?.user ? "ready" : "invalid");
+        } catch {
+          if (active) setFlow("invalid");
+        } finally {
+          // Do not retain the single-use recovery token in browser history.
+          if (active) window.history.replaceState(window.history.state, "", window.location.pathname);
+        }
+      })();
+    } else {
+      void supabase.auth.getSession().then(({ data, error: sessionError }) => {
+        if (!active || verifiedRecoveryEvent) return;
+        if (!sessionError && callbackHint && data.session?.user) {
+          setFlow("ready");
+        } else if (!callbackHint) {
+          setFlow("invalid");
+        } else {
+          // PKCE code exchange can complete after getSession() returns.
+          timeout = window.setTimeout(() => {
+            if (active && !verifiedRecoveryEvent) {
+              setFlow((current) => current === "ready" ? current : "invalid");
+            }
+          }, 4000);
+        }
+      }).catch(() => {
+        if (active) setFlow("invalid");
+      });
+    }
 
     return () => {
       active = false;
