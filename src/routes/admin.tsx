@@ -39,7 +39,7 @@ type AppRole = Enums<"app_role">;
 type RoleRow = { user_id: string; role: AppRole };
 type TenantRow = {
   id: string; slug: string; name: string; category: string; area: string | null;
-  phone: string | null; email: string | null; image_url: string | null; status: string;
+  phone: string | null; email: string | null; image_url: string | null; cover_url: string | null; status: string;
   description: string | null;
   verified_at: string | null; plan_id: string | null; owner_id: string | null; created_at: string;
 };
@@ -78,27 +78,11 @@ function AdminPage() {
   const { user, isAdmin, loading } = useAuth();
   const [section, setSection] = useState<SectionId>("overview");
   const [navOpen, setNavOpen] = useState(false);
-  const [claiming, setClaiming] = useState(false);
-  const [claimError, setClaimError] = useState<string | null>(null);
 
   useEffect(() => {
     if (loading) return;
     if (!user) navigate({ to: "/auth" });
   }, [user, loading, navigate]);
-
-  const claimFirstAdmin = async () => {
-    if (!user) return;
-    setClaiming(true);
-    setClaimError(null);
-    const { error } = await supabase.from("user_roles").insert({ user_id: user.id, role: "admin" });
-    if (error) {
-      setClaimError(error.message);
-      setClaiming(false);
-      return;
-    }
-    sfx.success();
-    window.location.reload();
-  };
 
   if (loading) return <main className="min-h-screen grid place-items-center"><div className="text-sm text-muted-foreground">...</div></main>;
   if (!user) return null;
@@ -116,27 +100,6 @@ function AdminPage() {
               ? "هذه الصفحة مخصصة للمشرفين فقط."
               : "Admins only."}
           </p>
-          <p className="mt-3 text-xs text-muted-foreground" dir="ltr">User ID: {user.id}</p>
-
-          <button
-            onClick={claimFirstAdmin}
-            disabled={claiming}
-            className="mt-5 w-full h-11 rounded-full bg-gradient-brand text-primary-foreground text-sm font-medium shadow-glow inline-flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            <ShieldPlus className="h-4 w-4" />
-            {claiming
-              ? (lang === "ar" ? "جارٍ المحاولة..." : "Trying...")
-              : (lang === "ar" ? "المطالبة بصلاحية الأدمن الأول" : "Claim first admin")}
-          </button>
-          <p className={`mt-2 text-[11px] text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>
-            {lang === "ar"
-              ? "يعمل فقط إذا لم يوجد أي أدمن على المنصة بعد."
-              : "Only works if no admin exists on the platform yet."}
-          </p>
-          {claimError && (
-            <p className={`mt-2 text-xs text-destructive ${lang === "ar" ? "font-arabic" : ""}`} dir="auto">{claimError}</p>
-          )}
-
           <Link to="/" className="mt-5 inline-flex items-center gap-2 text-sm text-[var(--emerald)]"><ArrowLeft className="h-4 w-4" /> Home</Link>
         </div>
       </main>
@@ -197,7 +160,7 @@ function AdminPage() {
         <section className="min-w-0">
           {section === "overview" && <OverviewPanel onJump={setSection} />}
           {section === "tenants" && <TenantsPanel />}
-          {section === "requests" && <OnboardingPanel adminId={user.id} />}
+          {section === "requests" && <OnboardingPanel />}
           {section === "legacy_requests" && <RequestsPanel />}
           {section === "stores" && <StoresPanel ownerId={user.id} />}
           {section === "users" && <UsersPanel currentUserId={user.id} />}
@@ -354,16 +317,17 @@ function TenantsPanel() {
     setSaving(true);
     try {
       if (editing.id) {
-        const payload = {
-          name: editing.name,
-          category: editing.category,
-          area: editing.area || null,
-          phone: editing.phone || null,
-          email: editing.email || null,
-          description: editing.description || null,
-          image_url: editing.image_url || null,
-        };
-        const { error } = await supabase.from("tenants").update(payload).eq("id", editing.id);
+        const { error } = await (supabase.rpc as any)("update_tenant_profile", {
+          _tenant: editing.id,
+          _name: editing.name,
+          _category: editing.category,
+          _area: editing.area || null,
+          _phone: editing.phone || null,
+          _email: editing.email || null,
+          _description: editing.description || null,
+          _image_url: editing.image_url || null,
+          _cover_url: editing.cover_url || null,
+        });
         if (error) throw error;
       } else {
         const planId = editing.plan_id;
@@ -521,7 +485,7 @@ const DOC_LABELS: Record<string, [string, string]> = {
   payment_receipt: ["إيصال السداد", "Payment receipt"],
 };
 
-function OnboardingPanel({ adminId }: { adminId: string }) {
+function OnboardingPanel() {
   const { lang } = useSanadak();
   const [rows, setRows] = useState<TenantRow[]>([]);
   const [docs, setDocs] = useState<Record<string, Tables<"tenant_documents">[]>>({});
@@ -558,16 +522,15 @@ function OnboardingPanel({ adminId }: { adminId: string }) {
   const viewDocument = async (path: string) => {
     const { data, error } = await supabase.storage.from("tenant-documents").createSignedUrl(path, 600);
     if (error) { toast.error(error.message); return; }
-    window.open(data.signedUrl, "_blank");
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   };
 
   const verifyPayment = async (tenantId: string) => {
-    const sub = subs[tenantId];
-    if (!sub) return;
+    if (!subs[tenantId]) return;
     setBusy(tenantId);
-    const { error } = await supabase.from("subscriptions")
-      .update({ payment_verified_at: new Date().toISOString(), payment_verified_by: adminId })
-      .eq("id", sub.id);
+    const { error } = await (supabase.rpc as any)("admin_verify_tenant_payment", {
+      _tenant: tenantId,
+    });
     if (error) toast.error(error.message); else { sfx.success(); load(); }
     setBusy(null);
   };
@@ -591,15 +554,11 @@ function OnboardingPanel({ adminId }: { adminId: string }) {
 
   const reject = async (t: TenantRow) => {
     setBusy(t.id);
-    const { error } = await supabase.from("tenants").update({ status: "rejected" }).eq("id", t.id);
+    const { error } = await (supabase.rpc as any)("reject_tenant_onboarding", {
+      _tenant: t.id,
+      _reason: reason || null,
+    });
     if (error) { toast.error(error.message); setBusy(null); return; }
-    if (t.owner_id) {
-      await supabase.from("notifications").insert({
-        user_id: t.owner_id, tenant_id: t.id, kind: "tenant_rejected",
-        title: lang === "ar" ? "تم رفض طلب الانضمام" : "Your request was rejected",
-        body: reason || (lang === "ar" ? "يرجى مراجعة بياناتك ومستنداتك وإعادة المحاولة." : "Please review your information and documents and try again."),
-      });
-    }
     sfx.tap();
     toast.success(lang === "ar" ? "تم الرفض" : "Rejected");
     setRejecting(null); setReason("");

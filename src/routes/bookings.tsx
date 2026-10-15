@@ -127,22 +127,28 @@ function CustomerBookingsPage() {
       const branchIds = [...new Set((bookings ?? []).flatMap((booking) => (booking.branch_id ? [booking.branch_id] : [])))];
       const [tenantsResult, itemsResult, branchesResult, historyResult] = await Promise.all([
         tenantIds.length
-          ? supabase.from("tenants").select("id,name,slug").in("id", tenantIds)
+          ? (supabase as any).from("storefront_tenants").select("id,name,slug").in("id", tenantIds)
           : Promise.resolve({ data: [] as Pick<Tables<"tenants">, "id" | "name" | "slug">[] }),
         itemIds.length
-          ? supabase.from("catalog_items").select("id,name").in("id", itemIds)
+          ? (supabase as any).from("storefront_catalog_items").select("id,name").in("id", itemIds)
           : Promise.resolve({ data: [] as Pick<Tables<"catalog_items">, "id" | "name">[] }),
         branchIds.length
-          ? supabase.from("branches").select("id,name").in("id", branchIds)
+          ? (supabase as any).from("storefront_branches").select("id,name").in("id", branchIds)
           : Promise.resolve({ data: [] as Pick<Tables<"branches">, "id" | "name">[] }),
         bookingIds.length
           ? supabase.from("booking_status_history").select("id,booking_id,previous_status,status,created_at").in("booking_id", bookingIds).order("created_at")
           : Promise.resolve({ data: [] as BookingHistory[] }),
       ]);
 
-      const tenantById = new Map((tenantsResult.data ?? []).map((tenant) => [tenant.id, tenant]));
-      const itemById = new Map((itemsResult.data ?? []).map((item) => [item.id, item]));
-      const branchById = new Map((branchesResult.data ?? []).map((branch) => [branch.id, branch]));
+      const tenantById = new Map(
+        ((tenantsResult.data ?? []) as Pick<Tables<"tenants">, "id" | "name" | "slug">[]).map((tenant) => [tenant.id, tenant]),
+      );
+      const itemById = new Map(
+        ((itemsResult.data ?? []) as Pick<Tables<"catalog_items">, "id" | "name">[]).map((item) => [item.id, item]),
+      );
+      const branchById = new Map(
+        ((branchesResult.data ?? []) as Pick<Tables<"branches">, "id" | "name">[]).map((branch) => [branch.id, branch]),
+      );
       const nextHistory = (historyResult.data ?? []).reduce<Record<string, BookingHistory[]>>((groups, entry) => {
         (groups[entry.booking_id] ??= []).push(entry);
         return groups;

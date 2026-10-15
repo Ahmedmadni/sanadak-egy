@@ -38,7 +38,7 @@ function BusinessPage() {
   if (!user) return null;
 
   if (tenants.length === 0) {
-    return <RegisterBusiness userId={user.id} onCreated={refresh} />;
+    return <RegisterBusiness onCreated={refresh} />;
   }
 
   return (
