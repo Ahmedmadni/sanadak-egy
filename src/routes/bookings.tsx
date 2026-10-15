@@ -1,13 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { CalendarCheck, CalendarX, ChevronDown, Clock3, MapPin, Star } from "lucide-react";
+import { CalendarCheck, CalendarX, ChevronDown, Clock3, MapPin, RefreshCw, Star } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/use-auth";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
+import { bookingHasMore, bookingTimeCairo, customerBookingCanCancel, type CustomerBookingFilter } from "@/lib/customer-booking-tracking";
+import { CustomerBookingHistory } from "@/components/sanadak/CustomerBookingHistory";
 
 export const Route = createFileRoute("/bookings")({
   head: () => ({ meta: [{ title: "حجوزاتي | سندك" }] }),
@@ -23,7 +25,7 @@ type BookingCard = Pick<
   itemName: string | null;
   branchName: string | null;
 };
-type BookingHistory = Pick<Tables<"booking_status_history">, "id" | "booking_id" | "previous_status" | "status" | "created_at">;
+const PAGE_SIZE = 30;
 
 const statusTone: Record<string, string> = {
   pending: "bg-[var(--ember)]/15 text-[var(--ember)]",
@@ -38,8 +40,14 @@ function CustomerBookingsPage() {
   const { lang } = useSanadak();
   const navigate = useNavigate();
   const [rows, setRows] = useState<BookingCard[]>([]);
-  const [historyByBooking, setHistoryByBooking] = useState<Record<string, BookingHistory[]>>({});
   const [loadingRows, setLoadingRows] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [error, setError] = useState("");
+  const [filter, setFilter] = useState<CustomerBookingFilter>("upcoming");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [loadedOwnerId, setLoadedOwnerId] = useState<string | null>(null);
+  const requestId = useRef(0);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const copy = useMemo(
@@ -104,28 +112,40 @@ function CustomerBookingsPage() {
     }
   }, [loading, navigate, user]);
 
-  useEffect(() => {
-    if (!user) return;
-
-    const load = async () => {
+  const userId = user?.id;
+  const loadBookings = useCallback(async (offset = 0, append = false) => {
+    if (!userId) return;
+    const request = ++requestId.current;
+    if (append) setLoadingMore(true);
+    else {
       setLoadingRows(true);
-      const { data: bookings, error } = await supabase
-        .from("bookings")
-        .select("id,tenant_id,item_id,branch_id,slot_start,slot_end,status,serial_no")
-        .eq("customer_id", user.id)
-        .order("slot_start", { ascending: true });
+      setLoadedOwnerId(userId);
+      setRows([]);
+      setExpanded({});
+      setHasMore(false);
+    }
+    setError("");
 
-      if (error) {
-        toast.error(error.message);
-        setLoadingRows(false);
-        return;
+    try {
+      let query = supabase.from("bookings")
+        .select("id,tenant_id,item_id,branch_id,slot_start,slot_end,status,serial_no")
+        .eq("customer_id", userId);
+      if (filter === "upcoming") {
+        query = query.in("status", ["pending", "confirmed"])
+          .gte("slot_start", new Date().toISOString());
+      } else if (filter === "completed" || filter === "cancelled") {
+        query = query.eq("status", filter);
       }
+      const { data: bookings, error: loadError } = await query
+        .order("slot_start", { ascending: filter === "upcoming" })
+        .range(offset, offset + PAGE_SIZE - 1);
+      if (request !== requestId.current) return;
+      if (loadError) throw loadError;
 
       const tenantIds = [...new Set((bookings ?? []).map((booking) => booking.tenant_id))];
-      const bookingIds = (bookings ?? []).map((booking) => booking.id);
-      const itemIds = [...new Set((bookings ?? []).flatMap((booking) => (booking.item_id ? [booking.item_id] : [])))];
-      const branchIds = [...new Set((bookings ?? []).flatMap((booking) => (booking.branch_id ? [booking.branch_id] : [])))];
-      const [tenantsResult, itemsResult, branchesResult, historyResult] = await Promise.all([
+      const itemIds = [...new Set((bookings ?? []).flatMap((booking) => booking.item_id ? [booking.item_id] : []))];
+      const branchIds = [...new Set((bookings ?? []).flatMap((booking) => booking.branch_id ? [booking.branch_id] : []))];
+      const [tenantsResult, itemsResult, branchesResult] = await Promise.all([
         tenantIds.length
           ? supabase.from("tenants").select("id,name,slug").in("id", tenantIds)
           : Promise.resolve({ data: [] as Pick<Tables<"tenants">, "id" | "name" | "slug">[] }),
@@ -135,56 +155,69 @@ function CustomerBookingsPage() {
         branchIds.length
           ? supabase.from("branches").select("id,name").in("id", branchIds)
           : Promise.resolve({ data: [] as Pick<Tables<"branches">, "id" | "name">[] }),
-        bookingIds.length
-          ? supabase.from("booking_status_history").select("id,booking_id,previous_status,status,created_at").in("booking_id", bookingIds).order("created_at")
-          : Promise.resolve({ data: [] as BookingHistory[] }),
       ]);
+      if (request !== requestId.current) return;
 
+      // Merchant details may no longer be public. Retain the customer's own
+      // booking record with neutral fallbacks instead of exposing hidden data.
       const tenantById = new Map((tenantsResult.data ?? []).map((tenant) => [tenant.id, tenant]));
       const itemById = new Map((itemsResult.data ?? []).map((item) => [item.id, item]));
       const branchById = new Map((branchesResult.data ?? []).map((branch) => [branch.id, branch]));
-      const nextHistory = (historyResult.data ?? []).reduce<Record<string, BookingHistory[]>>((groups, entry) => {
-        (groups[entry.booking_id] ??= []).push(entry);
-        return groups;
-      }, {});
-      setHistoryByBooking(nextHistory);
-      setRows(
-        (bookings ?? []).map((booking) => {
-          const tenant = tenantById.get(booking.tenant_id);
-          return {
-            ...booking,
-            tenantName: tenant?.name ?? (lang === "ar" ? "نشاط غير متاح" : "Unavailable business"),
-            tenantSlug: tenant?.slug ?? "",
-            itemName: booking.item_id ? (itemById.get(booking.item_id)?.name ?? null) : null,
-            branchName: booking.branch_id ? (branchById.get(booking.branch_id)?.name ?? null) : null,
-          };
-        }),
-      );
-      setLoadingRows(false);
-    };
+      const mapped: BookingCard[] = (bookings ?? []).map((booking) => {
+        const tenant = tenantById.get(booking.tenant_id);
+        return {
+          ...booking,
+          tenantName: tenant?.name ?? (lang === "ar" ? "نشاط غير متاح" : "Unavailable business"),
+          tenantSlug: tenant?.slug ?? "",
+          itemName: booking.item_id ? (itemById.get(booking.item_id)?.name ?? null) : null,
+          branchName: booking.branch_id ? (branchById.get(booking.branch_id)?.name ?? null) : null,
+        };
+      });
+      setRows((previous) => append
+        ? [...previous, ...mapped.filter((booking) => !previous.some((row) => row.id === booking.id))]
+        : mapped);
+      setHasMore(bookingHasMore((bookings ?? []).length, PAGE_SIZE));
+    } catch (cause) {
+      if (request === requestId.current) {
+        setError((cause as Error).message || (lang === "ar" ? "تعذر تحميل الحجوزات" : "Unable to load bookings"));
+      }
+    } finally {
+      if (request === requestId.current) {
+        setLoadingRows(false);
+        setLoadingMore(false);
+      }
+    }
+  }, [filter, lang, userId]);
 
-    void load();
-  }, [lang, user]);
-
-  const cancelBooking = async (booking: BookingCard) => {
-    if (!window.confirm(copy.cancelConfirm)) return;
-    setCancellingId(booking.id);
-    const { error } = await supabase.rpc("set_booking_status", {
-      _booking: booking.id,
-      _status: "cancelled",
-    });
-    setCancellingId(null);
-
-    if (error) {
-      toast.error(error.message);
+  useEffect(() => {
+    if (!userId) {
+      requestId.current += 1;
+      setRows([]);
+      setLoadedOwnerId(null);
       return;
     }
+    void loadBookings();
+    return () => { requestId.current += 1; };
+  }, [loadBookings, userId]);
 
-    setRows((current) =>
-      current.map((row) => (row.id === booking.id ? { ...row, status: "cancelled" } : row)),
-    );
-    sfx.tap();
-    toast.success(copy.cancelled);
+  const cancelBooking = async (booking: BookingCard) => {
+    if (cancellingId || !customerBookingCanCancel(booking) || !window.confirm(copy.cancelConfirm)) return;
+    setCancellingId(booking.id);
+    try {
+      const { error: cancelError } = await supabase.rpc("set_booking_status", {
+        _booking: booking.id,
+        _status: "cancelled",
+      });
+      if (cancelError) throw cancelError;
+      sfx.tap();
+      toast.success(copy.cancelled);
+      await loadBookings();
+    } catch (cause) {
+      toast.error((cause as Error).message || (lang === "ar" ? "تعذر إلغاء الحجز" : "Cannot cancel booking"));
+      await loadBookings();
+    } finally {
+      setCancellingId(null);
+    }
   };
 
   if (loading || !user) {
@@ -211,9 +244,40 @@ function CustomerBookingsPage() {
           </p>
         </motion.header>
 
-        {loadingRows ? (
-          <div className="grid min-h-48 place-items-center text-sm text-muted-foreground">…</div>
-        ) : rows.length === 0 ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div role="group" aria-label={lang === "ar" ? "تصفية الحجوزات" : "Filter bookings"} className="flex flex-wrap gap-2">
+            {([
+              ["upcoming", "القادمة", "Upcoming"],
+              ["all", "الكل", "All"],
+              ["completed", "المكتملة", "Completed"],
+              ["cancelled", "الملغاة", "Cancelled"],
+            ] as const).map(([value, labelAr, labelEn]) => (
+              <button
+                type="button" key={value} aria-pressed={filter === value}
+                onClick={() => setFilter(value)}
+                className={`min-h-10 rounded-full border px-3 text-xs font-semibold transition ${filter === value ? "border-[var(--emerald)] bg-[var(--emerald)]/10 text-[var(--emerald)]" : "border-border hover:bg-foreground/5"}`}
+              >{lang === "ar" ? labelAr : labelEn}</button>
+            ))}
+          </div>
+          <button type="button" onClick={() => void loadBookings()} disabled={loadingRows || loadingMore}
+            className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border px-4 text-xs font-medium disabled:opacity-50">
+            <RefreshCw className={`h-4 w-4 ${loadingRows ? "animate-spin" : ""}`} />
+            {lang === "ar" ? "تحديث" : "Refresh"}
+          </button>
+        </div>
+
+        {error && (
+          <div role="alert" className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-destructive/30 p-4 text-sm text-destructive">
+            <span>{error}</span>
+            <button type="button" onClick={() => void loadBookings()} className="underline">{lang === "ar" ? "إعادة المحاولة" : "Retry"}</button>
+          </div>
+        )}
+
+        {loadingRows || loadedOwnerId !== user.id ? (
+          <div role="status" className="grid min-h-48 place-items-center text-sm text-muted-foreground">
+            {lang === "ar" ? "جارٍ تحميل الحجوزات…" : "Loading bookings…"}
+          </div>
+        ) : error && rows.length === 0 ? null : rows.length === 0 ? (
           <section className="rounded-3xl border border-border/70 bg-background/80 px-6 py-12 text-center shadow-sm">
             <CalendarCheck className="mx-auto h-9 w-9 text-[var(--emerald)]" />
             <p className={`mt-4 text-sm text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{copy.empty}</p>
@@ -228,10 +292,7 @@ function CustomerBookingsPage() {
         ) : (
           <div className="grid gap-3">
             {rows.map((booking) => {
-              const canCancel =
-                ["pending", "confirmed"].includes(booking.status) &&
-                new Date(booking.slot_start).getTime() > Date.now();
-              const date = new Date(booking.slot_start);
+              const canCancel = customerBookingCanCancel(booking);
               return (
                 <motion.article
                   key={booking.id}
@@ -261,7 +322,7 @@ function CustomerBookingsPage() {
                   <div className="mt-5 grid gap-2 border-t border-border/60 pt-4 text-sm text-muted-foreground sm:grid-cols-2">
                     <span className="flex items-center gap-2">
                       <Clock3 className="h-4 w-4 text-[var(--emerald)]" />
-                      {date.toLocaleString(lang === "ar" ? "ar-EG" : "en-US", { dateStyle: "medium", timeStyle: "short" })}
+                      {bookingTimeCairo(booking.slot_start, lang)}
                     </span>
                     {booking.branchName && (
                       <span className={`flex items-center gap-2 ${lang === "ar" ? "font-arabic" : ""}`}>
@@ -284,7 +345,7 @@ function CustomerBookingsPage() {
                     {canCancel && (
                       <button
                         type="button"
-                        disabled={cancellingId === booking.id}
+                        disabled={cancellingId !== null}
                         onClick={() => void cancelBooking(booking)}
                         className={`inline-flex h-9 items-center gap-1.5 rounded-full border border-destructive/30 px-4 text-xs font-semibold text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50 ${lang === "ar" ? "font-arabic" : ""}`}
                       >
@@ -294,23 +355,31 @@ function CustomerBookingsPage() {
                     )}
                   </div>
 
-                  <details className="group mt-4 border-t border-border/60 pt-3">
+                  <details
+                    className="group mt-4 border-t border-border/60 pt-3"
+                    onToggle={(event) => {
+                      const open = event.currentTarget.open;
+                      setExpanded((previous) => ({ ...previous, [booking.id]: open }));
+                    }}
+                  >
                     <summary className={`flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-[var(--emerald)] ${lang === "ar" ? "font-arabic" : ""}`}>
                       {copy.history}<ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
                     </summary>
-                    <div className="mt-3 grid gap-2 border-s border-[var(--emerald)]/30 ps-4">
-                      {(historyByBooking[booking.id] ?? []).length === 0 ? <p className={`text-xs text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{copy.historyEmpty}</p> : (historyByBooking[booking.id] ?? []).map((entry) => (
-                        <div key={entry.id} className="relative text-xs text-muted-foreground before:absolute before:-start-[1.31rem] before:top-1.5 before:h-2 before:w-2 before:rounded-full before:bg-[var(--emerald)]">
-                          <span className={`font-medium text-foreground ${lang === "ar" ? "font-arabic" : ""}`}>{copy.statuses[entry.previous_status] ?? entry.previous_status} → {copy.statuses[entry.status] ?? entry.status}</span>
-                          <span className="mt-0.5 block">{new Date(entry.created_at).toLocaleString(lang === "ar" ? "ar-EG" : "en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
-                        </div>
-                      ))}
-                    </div>
+                    {expanded[booking.id] && <CustomerBookingHistory bookingId={booking.id} lang={lang} />}
                   </details>
                 </motion.article>
               );
             })}
           </div>
+        )}
+
+        {!loadingRows && !error && hasMore && (
+          <button type="button" disabled={loadingMore} onClick={() => void loadBookings(rows.length, true)}
+            className="mt-5 flex min-h-11 w-full items-center justify-center rounded-full border border-border text-sm font-semibold hover:bg-foreground/5 disabled:opacity-50">
+            {loadingMore
+              ? (lang === "ar" ? "جارٍ التحميل…" : "Loading…")
+              : (lang === "ar" ? "عرض المزيد من الحجوزات" : "Show more bookings")}
+          </button>
         )}
       </div>
     </main>
