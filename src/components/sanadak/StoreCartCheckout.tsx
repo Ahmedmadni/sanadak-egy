@@ -88,7 +88,7 @@ export function StoreCartCheckout({
   const reduceMotion = useReducedMotion();
   const storageKey = `sanadak-store-cart:${tenantId}`;
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [hydrated, setHydrated] = useState(false);
+  const [hydratedKey, setHydratedKey] = useState<string | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
@@ -116,17 +116,17 @@ export function StoreCartCheckout({
     } catch {
       localStorage.removeItem(storageKey);
     } finally {
-      setHydrated(true);
+      setHydratedKey(storageKey);
     }
   }, [items, storageKey]);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (hydratedKey !== storageKey) return;
     localStorage.setItem(
       storageKey,
       JSON.stringify(cart.map(({ id, qty, variant }) => ({ id, qty, variant }))),
     );
-  }, [cart, hydrated, storageKey]);
+  }, [cart, hydratedKey, storageKey]);
 
   const itemCount = cart.reduce((sum, line) => sum + line.qty, 0);
   const total = cart.reduce((sum, line) => sum + line.price * line.qty, 0);
