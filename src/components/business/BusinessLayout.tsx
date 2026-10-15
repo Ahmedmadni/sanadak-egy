@@ -117,7 +117,7 @@ export function BusinessLayout({
           {section === "branches" && <BranchesPanel tenant={tenant} />}
           {section === "staff" && <StaffPanel tenant={tenant} />}
           {section === "catalog" && <CatalogPanel tenant={tenant} />}
-          {section === "orders" && cfg.hasOrders && <OrdersPanel tenant={tenant} />}
+          {section === "orders" && cfg.hasOrders && <OrdersPanel key={tenant.id} tenant={tenant} />}
           {section === "kitchen" && (tenant.category === "restaurants" || tenant.category === "cafes") && <KitchenBoard key={tenant.id} tenant={tenant} />}
           {section === "bookings" && cfg.hasBookings && <BookingsPanel key={tenant.id} tenant={tenant} />}
           {section === "reviews" && <ReviewsPanel tenant={tenant} />}
