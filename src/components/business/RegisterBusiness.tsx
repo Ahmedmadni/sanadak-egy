@@ -7,6 +7,7 @@ import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
 import { allCategoryEntries, type PlanRow } from "./types";
 import { DocumentUpload } from "./DocumentUpload";
+import { configuredMerchantPayments, type MerchantPaymentMethod } from "@/lib/merchant-payment-config";
 
 type RegistrationPlan = Pick<PlanRow, "id" | "code" | "name_ar" | "name_en" | "price_monthly" | "currency">;
 
@@ -15,16 +16,17 @@ function slugify(name: string, seed: string) {
   return `${base || "store"}-${seed.slice(0, 6)}`;
 }
 
-const PAYMENT_INSTRUCTIONS = {
-  bank_transfer: {
-    ar: "تحويل بنكي إلى: بنك مصر — رقم الحساب 1234567890123 — باسم شركة سند لتقنية المعلومات",
-    en: "Bank transfer to: Banque Misr — Account 1234567890123 — Sanad Information Technology Co.",
-  },
-  vodafone_cash: {
-    ar: "فودافون كاش إلى الرقم: 01120016502",
-    en: "Vodafone Cash to: 01120016502",
-  },
-};
+// Public payment instructions are intentionally not bundled with example
+// recipient details. Operators must explicitly verify and configure channels.
+const PAYMENT_CHANNELS = configuredMerchantPayments({
+  verified: import.meta.env.VITE_SANADAK_PAYMENT_DETAILS_VERIFIED,
+  vodafoneCashNumber: import.meta.env.VITE_SANADAK_VODAFONE_CASH_NUMBER,
+  bankNameAr: import.meta.env.VITE_SANADAK_BANK_NAME_AR,
+  bankNameEn: import.meta.env.VITE_SANADAK_BANK_NAME_EN,
+  bankBeneficiaryAr: import.meta.env.VITE_SANADAK_BANK_BENEFICIARY_AR,
+  bankBeneficiaryEn: import.meta.env.VITE_SANADAK_BANK_BENEFICIARY_EN,
+  bankAccountNumber: import.meta.env.VITE_SANADAK_BANK_ACCOUNT_NUMBER,
+});
 
 export function RegisterBusiness({ userId, onCreated }: { userId: string; onCreated: () => void }) {
   const { lang } = useSanadak();
@@ -33,7 +35,7 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
   const [plans, setPlans] = useState<RegistrationPlan[]>([]);
   const [form, setForm] = useState({ name: "", category: "restaurants", area: "", phone: "", description: "", plan_code: "" });
   const [tenantId, setTenantId] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"bank_transfer" | "vodafone_cash">("vodafone_cash");
+  const [paymentMethod, setPaymentMethod] = useState<MerchantPaymentMethod | null>(PAYMENT_CHANNELS[0]?.id ?? null);
   const [reference, setReference] = useState("");
   const [uploaded, setUploaded] = useState<Set<string>>(new Set());
   const REQUIRED_KINDS = ["commercial_register", "owner_id", "payment_receipt"];
@@ -58,6 +60,9 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
     e.preventDefault();
     setBusy(true);
     try {
+      if (!PAYMENT_CHANNELS.length) {
+        throw new Error(lang === "ar" ? "التسجيل المدفوع متوقف مؤقتًا لحين اعتماد بيانات الدفع." : "Paid registration is paused until payment details are verified.");
+      }
       const plan = plans.find((p) => p.code === form.plan_code);
       if (!plan) throw new Error(lang === "ar" ? "اختر باقة اشتراك صالحة" : "Choose a valid subscription plan");
       const seed = crypto.randomUUID();
@@ -84,21 +89,24 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
   };
 
   const submitReceipt = async () => {
-    if (!allRequiredUploaded || !tenantId) {
+    if (!allRequiredUploaded || !tenantId || !paymentMethod || !PAYMENT_CHANNELS.some((p) => p.id === paymentMethod)) {
       toast.error(lang === "ar" ? "يرجى رفع السجل التجاري وبطاقة الرقم القومي وإيصال السداد أولاً" : "Please upload the commercial register, owner ID and payment receipt first");
       return;
     }
     setBusy(true);
     try {
-      await supabase.rpc("submit_payment_info", {
+      const { error } = await supabase.rpc("submit_payment_info", {
         _tenant: tenantId,
         _method: paymentMethod,
         _reference: reference.trim(),
       });
+      if (error) throw error;
       sfx.success();
       toast.success(lang === "ar" ? "تم إرسال طلبك للمراجعة" : "Your request was sent for review");
       setStep(3);
       onCreated();
+    } catch (error) {
+      toast.error((error as Error).message || (lang === "ar" ? "فشل إرسال بيانات السداد؛ يرجى المحاولة مجددًا." : "Failed to submit payment details; please retry."));
     } finally {
       setBusy(false);
     }
@@ -172,7 +180,15 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
               </div>
             </div>
 
-            <button disabled={busy} type="submit"
+            {PAYMENT_CHANNELS.length === 0 && (
+              <p role="alert" className="col-span-2 rounded-xl border border-[var(--ember)]/30 bg-[var(--ember)]/5 p-3 text-xs leading-6">
+                {lang === "ar"
+                  ? "تسجيل الاشتراكات المدفوعة متوقف مؤقتًا حتى تتحقق الإدارة من حسابات التحصيل. لا تحوّل أي مبالغ إلى حسابات تجريبية أو غير معتمدة."
+                  : "Paid merchant onboarding is temporarily paused until verified payment recipients are configured. Do not send money to sample or unverified accounts."}
+              </p>
+            )}
+
+            <button disabled={busy || PAYMENT_CHANNELS.length === 0} type="submit"
               className="col-span-2 mt-2 h-12 rounded-full bg-gradient-brand text-primary-foreground font-medium shadow-glow flex items-center justify-center gap-2 disabled:opacity-50">
               {lang === "ar" ? "التالي: المستندات والسداد" : "Next: documents & payment"}
               {lang === "ar" ? <ArrowLeft className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
@@ -190,19 +206,29 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
             </div>
 
             <div className={`text-sm font-semibold mt-6 mb-3 ${lang === "ar" ? "font-arabic" : ""}`}>{lang === "ar" ? "سداد الاشتراك" : "Subscription payment"}</div>
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              <button type="button" onClick={() => setPaymentMethod("vodafone_cash")}
-                className={`h-11 rounded-xl border text-sm inline-flex items-center justify-center gap-2 ${paymentMethod === "vodafone_cash" ? "border-[var(--emerald)] bg-[var(--emerald)]/5" : "border-input"}`}>
-                <Smartphone className="h-4 w-4" /> {lang === "ar" ? "فودافون كاش" : "Vodafone Cash"}
-              </button>
-              <button type="button" onClick={() => setPaymentMethod("bank_transfer")}
-                className={`h-11 rounded-xl border text-sm inline-flex items-center justify-center gap-2 ${paymentMethod === "bank_transfer" ? "border-[var(--emerald)] bg-[var(--emerald)]/5" : "border-input"}`}>
-                <Landmark className="h-4 w-4" /> {lang === "ar" ? "تحويل بنكي" : "Bank transfer"}
-              </button>
+            <div className="grid grid-cols-1 gap-2 mb-3 sm:grid-cols-2">
+              {PAYMENT_CHANNELS.map((method) => (
+                <button
+                  key={method.id}
+                  type="button"
+                  onClick={() => setPaymentMethod(method.id)}
+                  aria-pressed={paymentMethod === method.id}
+                  className={`h-11 rounded-xl border text-sm inline-flex items-center justify-center gap-2 ${paymentMethod === method.id ? "border-[var(--emerald)] bg-[var(--emerald)]/5" : "border-input"}`}
+                >
+                  {method.id === "vodafone_cash" ? <Smartphone className="h-4 w-4" /> : <Landmark className="h-4 w-4" />}
+                  {method.id === "vodafone_cash"
+                    ? (lang === "ar" ? "فودافون كاش" : "Vodafone Cash")
+                    : (lang === "ar" ? "تحويل بنكي" : "Bank transfer")}
+                </button>
+              ))}
             </div>
-            <p className={`text-xs text-muted-foreground glass-panel rounded-xl p-3 ${lang === "ar" ? "font-arabic" : ""}`}>
-              {lang === "ar" ? PAYMENT_INSTRUCTIONS[paymentMethod].ar : PAYMENT_INSTRUCTIONS[paymentMethod].en}
-            </p>
+            {PAYMENT_CHANNELS.find((method) => method.id === paymentMethod) && (
+              <p className={`text-xs text-muted-foreground glass-panel rounded-xl p-3 ${lang === "ar" ? "font-arabic" : ""}`}>
+                {lang === "ar"
+                  ? PAYMENT_CHANNELS.find((method) => method.id === paymentMethod)?.instructionAr
+                  : PAYMENT_CHANNELS.find((method) => method.id === paymentMethod)?.instructionEn}
+              </p>
+            )}
             <div className="mt-3 grid gap-2">
               <input value={reference} onChange={(e) => setReference(e.target.value)}
                 placeholder={lang === "ar" ? "رقم العملية / المرجع (اختياري، اكتبه قبل رفع الإيصال)" : "Transaction / reference number (optional, fill before uploading)"}
