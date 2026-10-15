@@ -84,6 +84,9 @@ export function BookingsPanel({ tenant }: { tenant: TenantWithRole }) {
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [rows, setRows] = useState<BookingRow[]>([]);
   const [historyByBooking, setHistoryByBooking] = useState<Record<string, BookingHistory[]>>({});
+  const [historyLoading, setHistoryLoading] = useState<Record<string, boolean>>({});
+  const [historyError, setHistoryError] = useState<Record<string, string>>({});
+  const historyRequested = useRef(new Set<string>());
   const [busyId, setBusyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -146,25 +149,32 @@ export function BookingsPanel({ tenant }: { tenant: TenantWithRole }) {
   );
   const counts = useMemo(() => countBookingStatuses(dailyRows), [dailyRows]);
 
-  useEffect(() => {
-    let active = true;
-    setHistoryByBooking({});
-    const bookingIds = visibleRows.slice(0, 100).map((booking) => booking.id);
-    if (!bookingIds.length) return () => { active = false; };
-    void (async () => {
-      const { data, error: historyError } = await supabase
+  const loadHistory = async (id: string, force = false) => {
+    if (!force && historyRequested.current.has(id)) return;
+    historyRequested.current.add(id);
+    setHistoryLoading((current) => ({ ...current, [id]: true }));
+    setHistoryError((current) => ({ ...current, [id]: "" }));
+    try {
+      const { data, error: historyFailure } = await supabase
         .from("booking_status_history")
         .select("id,booking_id,previous_status,status,changed_by_name,created_at")
-        .in("booking_id", bookingIds)
+        .eq("booking_id", id)
         .order("created_at");
-      if (!active || historyError) return;
-      setHistoryByBooking((data ?? []).reduce<Record<string, BookingHistory[]>>((group, entry) => {
-        (group[entry.booking_id] ??= []).push(entry);
-        return group;
-      }, {}));
-    })();
-    return () => { active = false; };
-  }, [visibleRows]);
+      if (historyFailure) throw historyFailure;
+      setHistoryByBooking((current) => ({
+        ...current,
+        [id]: (data ?? []) as BookingHistory[],
+      }));
+    } catch (cause) {
+      historyRequested.current.delete(id);
+      setHistoryError((current) => ({
+        ...current,
+        [id]: (cause as Error).message || (ar ? "تعذر تحميل السجل" : "Could not load history"),
+      }));
+    } finally {
+      setHistoryLoading((current) => ({ ...current, [id]: false }));
+    }
+  };
 
   const navigate = (amount: number) => {
     setWeekStart((day) => shiftCalendarDay(day, amount));
@@ -189,6 +199,7 @@ export function BookingsPanel({ tenant }: { tenant: TenantWithRole }) {
       sfx.tap();
       toast.success(ar ? "تم تحديث حالة الحجز" : "Booking status updated");
       await load();
+      await loadHistory(booking.id, true);
     } catch (cause) {
       toast.error((cause as Error).message || (ar ? "تعذر تحديث الحجز" : "Could not update booking"));
     } finally {
@@ -366,13 +377,19 @@ export function BookingsPanel({ tenant }: { tenant: TenantWithRole }) {
                     ))}
                   </select>
                 )}
-                <details className="group basis-full border-t border-border/60 pt-3">
+                <details onToggle={(event) => { if (event.currentTarget.open) void loadHistory(booking.id); }} className="group basis-full border-t border-border/60 pt-3">
                   <summary className={`flex cursor-pointer list-none items-center justify-between text-xs font-semibold text-[var(--emerald)] ${ar ? "font-arabic" : ""}`}>
                     {ar ? "سجل الحالة" : "Status history"}
                     <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
                   </summary>
                   <div className="mt-3 grid gap-2 border-s border-[var(--emerald)]/30 ps-4">
-                    {(historyByBooking[booking.id] ?? []).length === 0 ? (
+                    {historyLoading[booking.id] ? (
+                      <p role="status" className="text-xs text-muted-foreground">
+                        {ar ? "جارٍ تحميل سجل الحالة…" : "Loading status history…"}
+                      </p>
+                    ) : historyError[booking.id] ? (
+                      <p role="alert" className="text-xs text-destructive">{historyError[booking.id]}</p>
+                    ) : (historyByBooking[booking.id] ?? []).length === 0 ? (
                       <p className="text-xs text-muted-foreground">
                         {ar ? "لا توجد تحديثات حالة بعد." : "No status updates yet."}
                       </p>
