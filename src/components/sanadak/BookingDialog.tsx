@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   CalendarDays,
+  CalendarPlus,
   Check,
   CheckCircle2,
   Clock3,
@@ -18,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { sfx } from "@/lib/sanadak-sounds";
 import { BUSINESS_TIME_ZONE, bookingDays } from "@/lib/booking-dates";
+import { bookingCalendarFilename, createBookingCalendar } from "@/lib/booking-calendar";
 
 type Branch = Pick<Tables<"branches">, "id" | "name" | "address">;
 type Staff = Pick<Tables<"staff">, "id" | "name" | "role" | "specialty" | "branch_id">;
@@ -238,6 +240,34 @@ export function BookingDialog({
     }
   };
 
+  const downloadCalendar = () => {
+    if (!result) return;
+    try {
+      const ics = createBookingCalendar({
+        bookingId: result.booking_id,
+        serialNo: result.serial_no,
+        start: result.slot_start,
+        end: result.slot_end,
+        status: result.status,
+        businessName: tenantName,
+        serviceName: item.name,
+        branchName: branches.find((branch) => branch.id === branchId)?.name,
+        lang,
+      });
+      const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = bookingCalendarFilename(result.serial_no);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 3000);
+    } catch {
+      toast.error(lang === "ar" ? "تعذر إنشاء ملف التقويم" : "Could not create calendar invite");
+    }
+  };
+
   const selectedBranch = branches.find((branch) => branch.id === branchId);
   const selectedStaff = staff.find((member) => member.id === staffId);
   const arabic = lang === "ar";
@@ -361,8 +391,21 @@ export function BookingDialog({
 
                 <button
                   type="button"
+                  onClick={downloadCalendar}
+                  className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-[var(--emerald)]/35 px-4 text-sm font-semibold text-[var(--emerald)] transition hover:bg-[var(--emerald)]/10"
+                >
+                  <CalendarPlus className="h-4 w-4" />
+                  {arabic ? "احفظ طلب الحجز في التقويم" : "Save request to calendar"}
+                </button>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                  {arabic
+                    ? "سيُحفظ كتذكير مبدئي. لا يصبح الحجز مؤكدًا إلا بعد موافقة النشاط."
+                    : "Saved as a tentative reminder until the business confirms your booking."}
+                </p>
+                <button
+                  type="button"
                   onClick={onClose}
-                  className="mt-6 h-12 w-full rounded-full bg-gradient-brand font-medium text-primary-foreground shadow-glow"
+                  className="mt-4 h-12 w-full rounded-full bg-gradient-brand font-medium text-primary-foreground shadow-glow"
                 >
                   {arabic ? "تم" : "Done"}
                 </button>
