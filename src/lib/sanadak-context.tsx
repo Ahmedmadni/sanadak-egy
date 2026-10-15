@@ -371,6 +371,19 @@ export function SanadakProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const clearPrivate = () => {
+      setCustomerState({ name: "", phone: "", address: "" });
+      setCart([]);
+      setBookings([]);
+      setCartOpen(false);
+      setMerchantOpen(false);
+      setAssistantOpen(false);
+    };
+    window.addEventListener("sanadak:clear-private", clearPrivate);
+    return () => window.removeEventListener("sanadak:clear-private", clearPrivate);
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem("sanadak", JSON.stringify({ lang, cart, bookings, customer, sound }));
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";

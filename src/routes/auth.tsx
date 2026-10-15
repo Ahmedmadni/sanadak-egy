@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
+import { useAuth } from "@/lib/use-auth";
+import { safeAuthDestination } from "@/lib/auth-redirect";
 
 const authSearchSchema = z.object({ redirect: z.string().optional() });
 
@@ -26,44 +28,19 @@ function AuthPage() {
   const { lang, t } = useSanadak();
   const navigate = useNavigate();
   const { redirect } = Route.useSearch();
+  const { user, isAdmin, loading: sessionLoading, roleLoading } = useAuth();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Use the single auth-session hook rather than racing onAuthStateChange
+  // and getSession here. Wait for the role lookup before admin redirection.
   useEffect(() => {
-    const destination = (isAdmin: boolean) => (redirect ? redirect : isAdmin ? "/admin" : "/");
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      if (s?.user) {
-        setTimeout(async () => {
-          const { data } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", s.user.id)
-            .eq("role", "admin")
-            .maybeSingle();
-          sfx.success();
-          toast.success(lang === "ar" ? "أهلاً بعودتك!" : "Welcome back!");
-          navigate({ to: destination(!!data) as any });
-        }, 0);
-      }
-    });
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session?.user) {
-        setTimeout(async () => {
-          const { data: r } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", data.session!.user.id)
-            .eq("role", "admin")
-            .maybeSingle();
-          navigate({ to: destination(!!r) as any });
-        }, 0);
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [navigate, lang, redirect]);
+    if (sessionLoading || roleLoading || !user) return;
+    void navigate({ to: safeAuthDestination(redirect, isAdmin) as any });
+  }, [sessionLoading, roleLoading, user, isAdmin, redirect, navigate]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +61,9 @@ function AuthPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        // onAuthStateChange will handle navigation + toast
+        sfx.success();
+        toast.success(lang === "ar" ? "أهلاً بعودتك!" : "Welcome back!");
+        // useAuth observes the new session and navigates when roles resolve.
       }
     } catch (err) {
       toast.error((err as Error).message);
