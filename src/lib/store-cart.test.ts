@@ -1,4 +1,5 @@
-import { describe, expect, test } from "bun:test";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { isSavedLine, restoreCart, variantOptions } from "./store-cart";
 
 function catalogItem(
@@ -7,21 +8,14 @@ function catalogItem(
   variants: unknown = [],
   currency = "EGP",
 ) {
-  return {
-    id,
-    name: `Product ${id}`,
-    price: 25,
-    currency,
-    stock,
-    variants,
-  };
+  return { id, name: `Product ${id}`, price: 25, currency, stock, variants };
 }
 
 describe("catalog variant validation", () => {
-  test("handles malformed input, whitespace and duplicate labels", () => {
-    expect(variantOptions(null)).toEqual([]);
-    expect(variantOptions({ label: "invalid" })).toEqual([]);
-    expect(variantOptions([" Red ", { label: "Red" }, { label: " Blue " }, 0])).toEqual([
+  it("handles malformed input, whitespace and duplicate labels", () => {
+    assert.deepEqual(variantOptions(null), []);
+    assert.deepEqual(variantOptions({ label: "invalid" }), []);
+    assert.deepEqual(variantOptions([" Red ", { label: "Red" }, { label: " Blue " }, 0]), [
       "Red",
       "Blue",
     ]);
@@ -29,75 +23,85 @@ describe("catalog variant validation", () => {
 });
 
 describe("persisted cart input validation", () => {
-  test("rejects malformed quantities and legacy rows without variant", () => {
-    expect(isSavedLine({ id: "a", qty: 1, variant: null })).toBe(true);
+  it("rejects malformed quantities and legacy rows without variant", () => {
+    assert.equal(isSavedLine({ id: "a", qty: 1, variant: null }), true);
     for (const qty of [0, -1, 100, 2.5, Infinity, NaN, "1"]) {
-      expect(isSavedLine({ id: "a", qty, variant: null })).toBe(false);
+      assert.equal(isSavedLine({ id: "a", qty, variant: null }), false);
     }
-    expect(isSavedLine({ id: " ", qty: 1, variant: null })).toBe(false);
-    expect(isSavedLine({ id: "a", qty: 1 })).toBe(false);
+    assert.equal(isSavedLine({ id: " ", qty: 1, variant: null }), false);
+    assert.equal(isSavedLine({ id: "a", qty: 1 }), false);
   });
 });
 
 describe("store cart restoration", () => {
-  test("uses current catalog prices and ignores browser-controlled amounts", () => {
-    const [line] = restoreCart(
+  it("takes prices from current catalog, not browser state", () => {
+    const lines = restoreCart(
       [{ id: "a", qty: 2, variant: null, price: 0, currency: "USD", name: "forged" }],
       [catalogItem("a")],
     );
-    expect(line).toMatchObject({ id: "a", name: "Product a", qty: 2, price: 25, currency: "EGP" });
-    expect("variants" in line).toBe(false);
+    assert.equal(lines.length, 1);
+    assert.deepEqual(
+      { id: lines[0].id, name: lines[0].name, qty: lines[0].qty, price: lines[0].price, currency: lines[0].currency },
+      { id: "a", name: "Product a", qty: 2, price: 25, currency: "EGP" },
+    );
+    assert.equal("variants" in lines[0], false);
   });
 
-  test("ignores deleted and out-of-stock catalog entries", () => {
-    expect(restoreCart([
-      { id: "missing", qty: 1, variant: null },
-      { id: "sold-out", qty: 1, variant: null },
-    ], [catalogItem("sold-out", 0)])).toEqual([]);
+  it("ignores deleted and out-of-stock catalog entries", () => {
+    assert.deepEqual(
+      restoreCart([
+        { id: "missing", qty: 1, variant: null },
+        { id: "sold-out", qty: 1, variant: null },
+      ], [catalogItem("sold-out", 0)]),
+      [],
+    );
   });
 
-  test("rejects selections removed from the current catalog", () => {
-    expect(restoreCart([
-      { id: "a", qty: 1, variant: "Medium" },
-    ], [catalogItem("a", 5, ["Small", "Large"])])).toEqual([]);
-    expect(restoreCart([
-      { id: "a", qty: 1, variant: "Large" },
-    ], [catalogItem("a", 5, ["Small", "Large"])])[0].variant).toBe("Large");
+  it("rejects selections removed from the current catalog", () => {
+    assert.deepEqual(
+      restoreCart([{ id: "a", qty: 1, variant: "Medium" }], [catalogItem("a", 5, ["Small", "Large"])]),
+      [],
+    );
+    const lines = restoreCart(
+      [{ id: "a", qty: 1, variant: "Large" }],
+      [catalogItem("a", 5, ["Small", "Large"])],
+    );
+    assert.equal(lines[0].variant, "Large");
   });
 
-  test("merges duplicate lines without exceeding shared inventory across variants", () => {
+  it("merges duplicate lines without exceeding shared stock across variants", () => {
     const lines = restoreCart([
       { id: "a", qty: 3, variant: "Small" },
       { id: "a", qty: 4, variant: "Small" },
       { id: "a", qty: 8, variant: "Large" },
     ], [catalogItem("a", 10, ["Small", "Large"])]);
-    expect(lines.map(({ variant, qty }) => ({ variant, qty }))).toEqual([
+    assert.deepEqual(lines.map(({ variant, qty }) => ({ variant, qty })), [
       { variant: "Small", qty: 7 },
       { variant: "Large", qty: 3 },
     ]);
   });
 
-  test("caps untracked inventory at the checkout limit", () => {
+  it("caps untracked inventory at the checkout limit", () => {
     const lines = restoreCart([
       { id: "a", qty: 90, variant: null },
       { id: "a", qty: 90, variant: null },
     ], [catalogItem("a", null)]);
-    expect(lines).toHaveLength(1);
-    expect(lines[0].qty).toBe(99);
+    assert.equal(lines.length, 1);
+    assert.equal(lines[0].qty, 99);
   });
 
-  test("does not restore mixed currencies in one order", () => {
+  it("does not restore mixed currencies in one order", () => {
     const lines = restoreCart([
       { id: "a", qty: 1, variant: null },
       { id: "b", qty: 1, variant: null },
     ], [catalogItem("a"), catalogItem("b", 8, [], "USD")]);
-    expect(lines.map((line) => line.id)).toEqual(["a"]);
+    assert.deepEqual(lines.map((line) => line.id), ["a"]);
   });
 
-  test("limits distinct cart lines and ignores non-array browser state", () => {
+  it("limits distinct cart lines and ignores non-array browser state", () => {
     const items = Array.from({ length: 55 }, (_, index) => catalogItem(`p${index}`));
     const saved = items.map((item) => ({ id: item.id, qty: 1, variant: null }));
-    expect(restoreCart(saved, items)).toHaveLength(50);
-    expect(restoreCart({ cart: saved }, items)).toEqual([]);
+    assert.equal(restoreCart(saved, items).length, 50);
+    assert.deepEqual(restoreCart({ cart: saved }, items), []);
   });
 });
