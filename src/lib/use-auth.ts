@@ -29,6 +29,7 @@ export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [roleLoading, setRoleLoading] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export function useAuth() {
       setUser(nextUser);
       // Drop old admin privileges synchronously at every user change.
       setIsAdmin(false);
+      setRoleLoading(Boolean(nextUser));
       setLoading(false);
       if (!nextUser) return;
 
@@ -59,7 +61,12 @@ export function useAuth() {
           .then(({ data, error }) => {
             // An older user-role response must never restore a previous
             // account's admin state after logout/account switching.
-            if (mounted && revision === currentRevision) setIsAdmin(!error && !!data);
+            if (mounted && revision === currentRevision) {
+              setIsAdmin(!error && !!data);
+              setRoleLoading(false);
+            }
+          }).catch(() => {
+            if (mounted && revision === currentRevision) setRoleLoading(false);
           });
       }, 0);
       timers.add(timer);
@@ -79,7 +86,10 @@ export function useAuth() {
       if (!receivedAuthEvent) applySession(data.session);
       else setLoading(false);
     }).catch(() => {
-      if (mounted) setLoading(false);
+      if (mounted) {
+        setRoleLoading(false);
+        setLoading(false);
+      }
     });
 
     return () => {
@@ -96,5 +106,5 @@ export function useAuth() {
     return result;
   };
 
-  return { session, user, isAdmin, loading, signOut };
+  return { session, user, isAdmin, roleLoading, loading, signOut };
 }
