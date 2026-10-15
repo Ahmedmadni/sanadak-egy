@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { sfx } from "@/lib/sanadak-sounds";
+import { BUSINESS_TIME_ZONE, bookingDays } from "@/lib/booking-dates";
 
 type Branch = Pick<Tables<"branches">, "id" | "name" | "address">;
 type Staff = Pick<Tables<"staff">, "id" | "name" | "role" | "specialty" | "branch_id">;
@@ -59,28 +60,6 @@ type BookingDialogProps = {
   onCustomerChange: (customer: Customer) => void;
   onClose: () => void;
 };
-
-const BUSINESS_TIME_ZONE = "Africa/Cairo";
-
-function cairoDateValue(date = new Date()) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: BUSINESS_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${value.year}-${value.month}-${value.day}`;
-}
-
-function bookingDays(count: number) {
-  const today = new Date(`${cairoDateValue()}T12:00:00Z`);
-  return Array.from({ length: count }, (_, index) => {
-    const date = new Date(today);
-    date.setUTCDate(today.getUTCDate() + index);
-    return date.toISOString().slice(0, 10);
-  });
-}
 
 function dateParts(value: string, lang: "ar" | "en") {
   const locale = lang === "ar" ? "ar-EG" : "en-EG";
