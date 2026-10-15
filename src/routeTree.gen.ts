@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ApiHealthRouteImport } from './routes/api.health'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as BookingsRouteImport } from './routes/bookings'
 import { Route as BusinessRouteImport } from './routes/business'
 import { Route as CafesRouteImport } from './routes/cafes'
@@ -46,6 +48,16 @@ const ApiHealthRoute = ApiHealthRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BookingsRoute = BookingsRouteImport.update({
@@ -124,6 +136,8 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/api/health': typeof ApiHealthRoute
   '/auth': typeof AuthRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/bookings': typeof BookingsRoute
   '/business': typeof BusinessRoute
   '/cafes': typeof CafesRoute
@@ -144,6 +158,8 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/api/health': typeof ApiHealthRoute
   '/auth': typeof AuthRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/bookings': typeof BookingsRoute
   '/business': typeof BusinessRoute
   '/cafes': typeof CafesRoute
@@ -165,6 +181,8 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/api/health': typeof ApiHealthRoute
   '/auth': typeof AuthRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/bookings': typeof BookingsRoute
   '/business': typeof BusinessRoute
   '/cafes': typeof CafesRoute
@@ -187,6 +205,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api/health'
     | '/auth'
+    | '/forgot-password'
+    | '/reset-password'
     | '/bookings'
     | '/business'
     | '/cafes'
@@ -207,6 +227,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api/health'
     | '/auth'
+    | '/forgot-password'
+    | '/reset-password'
     | '/bookings'
     | '/business'
     | '/cafes'
@@ -227,6 +249,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api/health'
     | '/auth'
+    | '/forgot-password'
+    | '/reset-password'
     | '/bookings'
     | '/business'
     | '/cafes'
@@ -248,6 +272,8 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   ApiHealthRoute: typeof ApiHealthRoute
   AuthRoute: typeof AuthRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   BookingsRoute: typeof BookingsRoute
   BusinessRoute: typeof BusinessRoute
   CafesRoute: typeof CafesRoute
@@ -292,6 +318,20 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bookings': {
@@ -400,6 +440,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   ApiHealthRoute: ApiHealthRoute,
   AuthRoute: AuthRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   BookingsRoute: BookingsRoute,
   BusinessRoute: BusinessRoute,
   CafesRoute: CafesRoute,
