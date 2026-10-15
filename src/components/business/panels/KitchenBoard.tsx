@@ -78,6 +78,7 @@ export function KitchenBoard({ tenant }: { tenant: TenantWithRole }) {
   const [rows, setRows] = useState<OrderRow[]>([]);
   const [items, setItems] = useState<ItemGroups>({});
   const [initialLoading, setInitialLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -132,6 +133,7 @@ export function KitchenBoard({ tenant }: { tenant: TenantWithRole }) {
       }, {});
       if (request !== requestId.current) return;
       setRows(orders);
+      setHasLoaded(true);
       setItems(grouped);
       setItemsError(fetchItemsError);
       setTruncated(orders.length === 150);
@@ -207,7 +209,7 @@ export function KitchenBoard({ tenant }: { tenant: TenantWithRole }) {
       <div className="mb-5 flex flex-wrap items-center gap-2 text-xs">
         <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background/60 px-3 py-2">
           <ChefHat className="h-4 w-4 text-[var(--emerald)]" />
-          {ar ? `${activeCount} طلب نشط` : `${activeCount} active orders`}
+          {hasLoaded ? (ar ? `${activeCount} طلب نشط` : `${activeCount} active orders`) : (ar ? "تحميل الطلبات…" : "Loading orders…")}
         </span>
         <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background/60 px-3 py-2 text-muted-foreground">
           <Clock3 className="h-4 w-4" />
@@ -301,7 +303,7 @@ export function KitchenBoard({ tenant }: { tenant: TenantWithRole }) {
                       {next && (
                         <button
                           type="button"
-                          disabled={savingId !== null || initialLoading || !!itemsError || !(items[order.id]?.length)}
+                          disabled={savingId !== null || initialLoading || !!error || !!itemsError || !(items[order.id]?.length)}
                           onClick={() => void advance(order)}
                           className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-brand px-3 text-xs font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                         >
