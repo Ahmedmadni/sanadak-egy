@@ -53,21 +53,22 @@ export function useAuth() {
       const timer = window.setTimeout(() => {
         timers.delete(timer);
         if (!mounted || revision !== currentRevision) return;
-        void supabase.from("user_roles")
-          .select("role")
-          .eq("user_id", nextUser.id)
-          .eq("role", "admin")
-          .maybeSingle()
-          .then(({ data, error }) => {
+        void (async () => {
+          try {
+            const { data, error } = await supabase.from("user_roles")
+              .select("role")
+              .eq("user_id", nextUser.id)
+              .eq("role", "admin")
+              .maybeSingle();
             // An older user-role response must never restore a previous
             // account's admin state after logout/account switching.
-            if (mounted && revision === currentRevision) {
-              setIsAdmin(!error && !!data);
-              setRoleLoading(false);
-            }
-          }).catch(() => {
+            if (mounted && revision === currentRevision) setIsAdmin(!error && !!data);
+          } catch {
+            // Network failures keep the privileged UI disabled.
+          } finally {
             if (mounted && revision === currentRevision) setRoleLoading(false);
-          });
+          }
+        })();
       }, 0);
       timers.add(timer);
     };
