@@ -136,6 +136,14 @@ function AuthPage() {
           </button>
         </form>
 
+        {mode === "login" && (
+          <div className="mt-4 text-center">
+            <Link to="/forgot-password" className="text-sm font-semibold text-[var(--emerald)] hover:underline">
+              {lang === "ar" ? "نسيت كلمة المرور؟" : "Forgot your password?"}
+            </Link>
+          </div>
+        )}
+
         <button onClick={() => setMode(mode === "login" ? "signup" : "login")} className={`mt-5 w-full text-center text-sm text-muted-foreground hover:text-foreground ${lang === "ar" ? "font-arabic" : ""}`}>
           {mode === "login"
             ? (lang === "ar" ? "ليس لديك حساب؟ إنشاء حساب" : "No account? Create one")
