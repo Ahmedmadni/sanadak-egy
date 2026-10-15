@@ -21,7 +21,7 @@ import {
   nextBookingStatuses,
   shiftCalendarDay,
 } from "@/lib/merchant-booking-calendar";
-import { EmptyState, PanelHeader, StatusPill } from "../ui";
+import { EmptyState, PanelHeader } from "../ui";
 import type { BookingRow, TenantWithRole } from "../types";
 
 type BookingHistory = Pick<
@@ -97,6 +97,10 @@ export function BookingsPanel({ tenant }: { tenant: TenantWithRole }) {
     const request = ++requestId.current;
     setLoading(true);
     setError("");
+    // Do not briefly expose a previous tenant's schedule while switching accounts.
+    setRows([]);
+    setHistoryByBooking({});
+    setTruncated(false);
 
     try {
       const { data, error: loadError } = await supabase
@@ -337,10 +341,9 @@ export function BookingsPanel({ tenant }: { tenant: TenantWithRole }) {
                     <span className={`break-words font-semibold ${ar ? "font-arabic" : ""}`}>
                       {booking.customer_name || (ar ? "عميل" : "Customer")}
                     </span>
-                    <StatusPill status={statusNames[booking.status as keyof typeof statusNames] || booking.status} map={{
-                      ...STATUS_MAP,
-                      [statusNames[booking.status as keyof typeof statusNames] || booking.status]: STATUS_MAP[booking.status],
-                    }} />
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_MAP[booking.status] ?? "bg-foreground/10 text-foreground/70"}`}>
+                      {statusNames[booking.status as keyof typeof statusNames] || booking.status}
+                    </span>
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                     <time dateTime={booking.slot_start}>{bookingTimeLabel(booking.slot_start, lang)}</time>
