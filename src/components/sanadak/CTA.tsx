@@ -4,7 +4,7 @@ import { Logo } from "./Logo";
 import { useSanadak } from "@/lib/sanadak-context";
 
 export function CTA() {
-  const { t, lang } = useSanadak();
+  const { t, lang, setMerchantOpen } = useSanadak();
   return (
     <section id="start" className="relative py-32 px-4">
       <motion.div
@@ -22,12 +22,16 @@ export function CTA() {
             {t("cta_final_sub")}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <a href="#" className={`bg-[var(--graphite)] text-[var(--background)] dark:bg-foreground dark:text-background px-6 h-12 rounded-full flex items-center gap-2 font-medium shadow-float ${lang === "ar" ? "font-arabic" : ""}`}>
-              {t("download_ios")} <ArrowRight className={`h-4 w-4 ${lang === "ar" ? "rotate-180" : ""}`} />
+            <a href="/#categories" className={`bg-[var(--graphite)] text-[var(--background)] dark:bg-foreground dark:text-background px-6 h-12 rounded-full flex items-center gap-2 font-medium shadow-float ${lang === "ar" ? "font-arabic" : ""}`}>
+              {t("cta_explore")} <ArrowRight className={`h-4 w-4 ${lang === "ar" ? "rotate-180" : ""}`} />
             </a>
-            <a href="#" className={`glass-panel px-6 h-12 rounded-full flex items-center gap-2 font-medium ${lang === "ar" ? "font-arabic" : ""}`}>
-              {t("download_android")} <ArrowRight className={`h-4 w-4 ${lang === "ar" ? "rotate-180" : ""}`} />
-            </a>
+            <button
+              type="button"
+              onClick={() => setMerchantOpen(true)}
+              className={`glass-panel px-6 h-12 rounded-full flex items-center gap-2 font-medium ${lang === "ar" ? "font-arabic" : ""}`}
+            >
+              {t("nav_merchant")} <ArrowRight className={`h-4 w-4 ${lang === "ar" ? "rotate-180" : ""}`} />
+            </button>
           </div>
         </div>
       </motion.div>
@@ -38,8 +42,6 @@ export function CTA() {
           <span>{t("footer_rights")}</span>
         </div>
         <div className="flex items-center gap-5">
-          <a href="#" className="hover:text-foreground">{t("privacy")}</a>
-          <a href="#" className="hover:text-foreground">{t("terms")}</a>
           <a href="tel:01120016502" className="hover:text-foreground">{t("contact")}</a>
         </div>
       </footer>
