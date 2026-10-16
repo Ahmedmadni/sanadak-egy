@@ -118,35 +118,39 @@ LEFT JOIN pg_attribute a ON a.attrelid = c.oid
                         AND NOT a.attisdropped
 ORDER BY req.phase, required_column;
 
--- 4. RPC signatures, SECURITY DEFINER and search_path checks.
--- Missing Gate 19 RPCs are expected BEFORE the rollout.
-WITH required(signature, phase) AS (
+-- 4. RPC names, actual signatures, SECURITY DEFINER and search_path.
+-- Resolve by namespace/name to avoid errors if a planned enum/type is absent.
+-- Overloaded RPCs appear in separate rows for review.
+WITH required(schema_name, function_name, phase) AS (
   VALUES
-    ('public.tenant_is_visible(uuid)', 'baseline'),
-    ('public.create_order(uuid,jsonb,text,text,text,text,text)', 'baseline'),
-    ('public.create_booking(uuid,uuid,timestamptz,text,text,uuid,uuid,text)', 'baseline'),
-    ('public.set_order_status(uuid,text,text)', 'existing-check'),
-    ('public.set_booking_status(uuid,text,text)', 'baseline'),
-    ('public.update_tenant_profile(uuid,text,text,text,text,text,text,text,text)', 'gate19a'),
-    ('public.admin_verify_tenant_payment(uuid)', 'gate19a'),
-    ('public.reject_tenant_onboarding(uuid,text)', 'gate19a'),
-    ('public.request_tenant_onboarding(text,text,uuid,text,text,text,text)', 'gate19c'),
-    ('private.has_role(uuid,public.app_role)', 'baseline'),
-    ('private.is_tenant_member(uuid,uuid,text)', 'baseline'),
-    ('public.search_tenants_v2(text,integer,integer,public.activity_category,text)', 'existing-check')
+    ('public', 'tenant_is_visible', 'baseline'),
+    ('public', 'create_order', 'baseline'),
+    ('public', 'create_booking', 'baseline'),
+    ('public', 'set_order_status', 'baseline'),
+    ('public', 'set_booking_status', 'baseline'),
+    ('public', 'search_tenants_v2', 'baseline'),
+    ('public', 'update_tenant_profile', 'gate19a'),
+    ('public', 'admin_verify_tenant_payment', 'gate19a'),
+    ('public', 'reject_tenant_onboarding', 'gate19a'),
+    ('public', 'request_tenant_onboarding', 'gate19c'),
+    ('private', 'has_role', 'baseline'),
+    ('private', 'is_tenant_member', 'baseline')
 )
 SELECT
   '04_functions' AS report,
   req.phase,
-  req.signature,
+  req.schema_name || '.' || req.function_name AS function_name,
   CASE WHEN p.oid IS NULL THEN 'MISSING' ELSE 'PRESENT' END AS status,
+  CASE WHEN p.oid IS NOT NULL THEN pg_get_function_identity_arguments(p.oid) END AS arguments,
   p.prosecdef AS security_definer,
   coalesce(array_to_string(p.proconfig, ','), '') AS function_settings,
   CASE WHEN p.oid IS NOT NULL THEN has_function_privilege('anon', p.oid, 'EXECUTE') END AS anon_execute,
   CASE WHEN p.oid IS NOT NULL THEN has_function_privilege('authenticated', p.oid, 'EXECUTE') END AS authenticated_execute
 FROM required req
-LEFT JOIN pg_proc p ON p.oid = to_regprocedure(req.signature)
-ORDER BY req.phase, req.signature;
+LEFT JOIN pg_namespace n ON n.nspname = req.schema_name
+LEFT JOIN pg_proc p ON p.pronamespace = n.oid
+                   AND p.proname = req.function_name
+ORDER BY req.phase, function_name, arguments;
 
 -- 5. Current policy names and roles; only security metadata, no user data.
 SELECT
