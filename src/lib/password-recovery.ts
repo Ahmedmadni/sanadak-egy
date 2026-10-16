@@ -35,3 +35,28 @@ export function isRecoveryCallbackUrl(search: string, hash: string): boolean {
     (fragment.get("type") === "recovery" && Boolean(fragment.get("access_token")))
   );
 }
+
+
+/**
+ * A current login session is never evidence that a password-recovery link was
+ * authenticated. Only a Supabase PASSWORD_RECOVERY event (or a successful
+ * verifyOtp response handled by the caller) may unlock the reset form.
+ */
+export function isVerifiedRecoveryAuthEvent(
+  event: string,
+  hasRecoveryCallback: boolean,
+  sessionUserId: string | null | undefined,
+): boolean {
+  return hasRecoveryCallback &&
+    event === "PASSWORD_RECOVERY" &&
+    typeof sessionUserId === "string" &&
+    sessionUserId.length > 0;
+}
+
+/** Prevent a post-verification account switch from updating another user. */
+export function isSameRecoveryUser(
+  verifiedUserId: string | null,
+  currentUserId: string | null | undefined,
+): boolean {
+  return !!verifiedUserId && verifiedUserId === currentUserId;
+}

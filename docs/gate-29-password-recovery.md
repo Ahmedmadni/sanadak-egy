@@ -33,3 +33,24 @@ No email, password, token or provider secret is embedded in source code. The app
 ## Launch gating
 
 Automated tests, lint, TypeScript and production builds do **not** prove email delivery, Auth Redirect URL allowlisting or real callback/session operation. Record a successful inbox-to-login smoke on the deployed environment before marking password recovery production-ready.
+
+
+## Gate 30: recovery-session authorization regression
+
+A normal signed-in session is **not** sufficient to change a password via the
+`/reset-password` page. Reset UI is unlocked **only** by one of the following:
+
+- Supabase's `PASSWORD_RECOVERY` auth event after a valid callback.
+- Successful `verifyOtp({ type: 'recovery', token_hash })` with a returned session.
+
+A `SIGNED_IN` or `INITIAL_SESSION` event, `getSession()` result or fake
+`?code=...` URL must never grant recovery access. The current user ID must
+still equal the recovered user when `updateUser({password})` is invoked.
+
+Additional operator-only smoke checks:
+1. Sign into account A, then visit `/reset-password?code=invalid`: verify the form stays locked.
+2. Sign into account A, then visit `/reset-password?token_hash=invalid&type=recovery`: verify it stays locked.
+3. With a valid reset email for account B, ensure only account B can be reset, even if account A was previously signed in.
+4. Verify real Supabase recovery links using both the default and (if applicable) customized template. If the redirect event occurs before the route's subscription, the UI should fail closed and offer a fresh email, not use a generic session to bypass verification.
+
+The browser-only checks cannot replace live Supabase Auth integration testing.
