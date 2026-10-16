@@ -24,7 +24,7 @@ describe("Gate 31 database preflight contract", () => {
     for (const expected of [
       "01_environment", "02_relations", "03_columns",
       "04_functions", "05_rls_policies", "06_storage_buckets",
-      "public.tenants", "tenant_documents", "catalog_items",
+      "tenants", "tenant_documents", "catalog_items",
       "storefront_tenants", "request_tenant_onboarding",
       "admin_verify_tenant_payment", "private", "pg_policies",
       "allowed_mime_types", "anon_insert",
