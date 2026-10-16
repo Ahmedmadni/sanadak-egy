@@ -1,9 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { CheckCircle2, KeyRound, Lock, LoaderCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSanadak } from "@/lib/sanadak-context";
-import { isRecoveryCallbackUrl, validateNewPassword } from "@/lib/password-recovery";
+import {
+  isRecoveryCallbackUrl,
+  isSameRecoveryUser,
+  isVerifiedRecoveryAuthEvent,
+  validateNewPassword,
+} from "@/lib/password-recovery";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({ meta: [{ title: "تعيين كلمة مرور جديدة | سندك" }] }),
@@ -21,39 +26,46 @@ function ResetPasswordPage() {
   const [confirmation, setConfirmation] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const verifiedRecoveryUserId = useRef<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    let verifiedRecoveryEvent = false;
     const callbackHint = isRecoveryCallbackUrl(window.location.search, window.location.hash);
     const query = new URLSearchParams(window.location.search);
     const tokenHash = query.get("type") === "recovery" ? query.get("token_hash") : null;
     const tokenHashFlow = Boolean(tokenHash);
-    let timeout: number | undefined;
 
-    // PASSWORD_RECOVERY is emitted by Supabase after it verifies a recovery
-    // link and installs a session. A URL marker alone is never authorization.
+    // IMPORTANT: A SIGNED_IN or INITIAL_SESSION event with an arbitrary URL
+    // query string is not proof that a recovery token was validated. Prior
+    // implementations could unlock this form using a pre-existing session.
+    const trustVerifiedUser = (userId: string) => {
+      if (!active) return;
+      verifiedRecoveryUserId.current = userId;
+      setFlow("ready");
+      // Remove recovery credentials from history as soon as verified.
+      window.history.replaceState(window.history.state, "", window.location.pathname);
+    };
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!active) return;
-      if (event === "PASSWORD_RECOVERY" && session?.user) {
-        verifiedRecoveryEvent = true;
-        setFlow("ready");
-      } else if (
-        callbackHint &&
-        !tokenHashFlow &&
-        session?.user &&
-        (event === "SIGNED_IN" || event === "INITIAL_SESSION")
-      ) {
-        setFlow("ready");
+      if (isVerifiedRecoveryAuthEvent(event, callbackHint, session?.user.id)) {
+        trustVerifiedUser(session!.user.id);
       } else if (event === "SIGNED_OUT") {
+        verifiedRecoveryUserId.current = null;
         setFlow((current) => current === "done" ? current : "invalid");
+      } else if (
+        verifiedRecoveryUserId.current &&
+        session?.user.id &&
+        !isSameRecoveryUser(verifiedRecoveryUserId.current, session.user.id)
+      ) {
+        // Do not allow switching accounts mid-reset.
+        verifiedRecoveryUserId.current = null;
+        setFlow("invalid");
       }
     });
 
-    // Custom Supabase email templates may send token_hash rather than a
-    // PKCE code or implicit fragment. The hash MUST be verified with Supabase,
-    // not merely checked for existence in the URL.
     if (tokenHashFlow) {
+      // For customized email templates, verify token_hash through Supabase.
+      // A previously signed-in user cannot authorize this path by themselves.
       void (async () => {
         try {
           if (!tokenHash || tokenHash.length > 4096) throw new Error("Invalid recovery token");
@@ -62,44 +74,44 @@ function ResetPasswordPage() {
             token_hash: tokenHash,
           });
           if (!active) return;
-          setFlow(!verifyError && data.session?.user ? "ready" : "invalid");
+          if (verifyError || !data.session?.user) throw new Error("Invalid recovery token");
+          trustVerifiedUser(data.session.user.id);
         } catch {
-          if (active) setFlow("invalid");
+          if (active) {
+            verifiedRecoveryUserId.current = null;
+            setFlow("invalid");
+          }
         } finally {
-          // Do not retain the single-use recovery token in browser history.
+          // Do not retain single-use recovery tokens in browser history.
           if (active) window.history.replaceState(window.history.state, "", window.location.pathname);
         }
       })();
+    } else if (!callbackHint) {
+      // Visiting the reset URL directly must never expose the update form.
+      setFlow("invalid");
     } else {
-      void supabase.auth.getSession().then(({ data, error: sessionError }) => {
-        if (!active || verifiedRecoveryEvent) return;
-        if (!sessionError && callbackHint && data.session?.user) {
-          setFlow("ready");
-        } else if (!callbackHint) {
-          setFlow("invalid");
-        } else {
-          // PKCE code exchange can complete after getSession() returns.
-          timeout = window.setTimeout(() => {
-            if (active && !verifiedRecoveryEvent) {
-              setFlow((current) => current === "ready" ? current : "invalid");
-            }
-          }, 4000);
-        }
-      }).catch(() => {
-        if (active) setFlow("invalid");
-      });
+      // Standard Supabase recovery redirects emit PASSWORD_RECOVERY after
+      // parsing an implicit or PKCE callback. Do NOT use getSession here:
+      // an unrelated pre-existing login session is not authorization.
+      const timeout = window.setTimeout(() => {
+        if (active && !verifiedRecoveryUserId.current) setFlow("invalid");
+      }, 8000);
+      return () => {
+        active = false;
+        window.clearTimeout(timeout);
+        subscription.unsubscribe();
+      };
     }
 
     return () => {
       active = false;
-      if (timeout !== undefined) window.clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, []);
 
   const savePassword = async (event: FormEvent) => {
     event.preventDefault();
-    if (flow !== "ready" || saving) return;
+    if (flow !== "ready" || saving || !verifiedRecoveryUserId.current) return;
     const problem = validateNewPassword(password, confirmation);
     if (problem) {
       setError(problem === "length"
@@ -112,11 +124,14 @@ function ResetPasswordPage() {
     try {
       // Supabase must have already verified the recovery link and session.
       const { data: auth, error: authError } = await supabase.auth.getUser();
-      if (authError || !auth.user) throw new Error("Recovery session is unavailable");
+      if (authError || !isSameRecoveryUser(verifiedRecoveryUserId.current, auth.user?.id)) {
+        throw new Error("Verified recovery session is unavailable or changed");
+      }
       const { error: updateError } = await supabase.auth.updateUser({ password });
       if (updateError) throw updateError;
       setPassword("");
       setConfirmation("");
+      verifiedRecoveryUserId.current = null;
       setFlow("done");
       // End the recovery session so a password reset is followed by a normal login.
       await supabase.auth.signOut();
