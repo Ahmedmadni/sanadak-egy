@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
+import { merchantRpcsRequired, withMerchantRpcFallback } from "@/lib/merchant-rpc-compat";
 import { PanelHeader } from "../ui";
 import { ImageUpload } from "../ImageUpload";
 import { allCategoryEntries, type TenantWithRole } from "../types";
@@ -21,12 +22,36 @@ export function ProfilePanel({ tenant, onUpdated }: { tenant: TenantWithRole; on
     e.preventDefault();
     setBusy(true);
     try {
-      const { error } = await supabase.from("tenants" as any).update({
-        name: form.name, description: form.description || null, area: form.area || null,
-        phone: form.phone || null, email: form.email || null,
-        image_url: form.image_url || null, cover_url: form.cover_url || null,
-        category: form.category,
-      }).eq("id", tenant.id);
+      const { error } = await withMerchantRpcFallback<null>(
+        "update_tenant_profile",
+        async () => {
+          // Gate 19A only permits tenant managers to update profile fields.
+          // Business category changes are reserved for a platform admin.
+          const { error } = await (supabase.rpc as any)("update_tenant_profile", {
+            _tenant: tenant.id,
+            _name: form.name,
+            _category: tenant.category,
+            _area: form.area || null,
+            _phone: form.phone || null,
+            _email: form.email || null,
+            _description: form.description || null,
+            _image_url: form.image_url || null,
+            _cover_url: form.cover_url || null,
+          });
+          return { data: null, error };
+        },
+        async () => {
+          const { error } = await supabase.from("tenants" as any).update({
+            name: form.name, description: form.description || null,
+            area: form.area || null, phone: form.phone || null,
+            email: form.email || null, image_url: form.image_url || null,
+            cover_url: form.cover_url || null,
+            category: tenant.category,
+          }).eq("id", tenant.id);
+          return { data: null, error };
+        },
+        { requireRpc: merchantRpcsRequired },
+      );
       if (error) throw error;
       sfx.success();
       toast.success(lang === "ar" ? "تم حفظ الملف الشخصي" : "Profile saved");
@@ -46,12 +71,18 @@ export function ProfilePanel({ tenant, onUpdated }: { tenant: TenantWithRole; on
       <form onSubmit={save} className="glass-card rounded-3xl p-6 grid grid-cols-2 gap-3 max-w-2xl">
         <input disabled={!canEdit} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
           placeholder={lang === "ar" ? "اسم النشاط" : "Business name"} className="col-span-2 h-11 rounded-xl border border-input bg-background px-4 text-sm disabled:opacity-60" />
-        <select disabled={!canEdit} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
+        <select disabled value={tenant.category}
+          aria-label={lang === "ar" ? "نوع النشاط (للعرض فقط)" : "Business category (read only)"}
           className="col-span-2 h-11 rounded-xl border border-input bg-background px-3 text-sm disabled:opacity-60">
           {allCategoryEntries().map(([value, cfg]) => (
             <option key={value} value={value}>{lang === "ar" ? cfg.labelAr : cfg.labelEn}</option>
           ))}
         </select>
+        <p className="col-span-2 -mt-1 text-xs text-muted-foreground">
+          {lang === "ar"
+            ? "تغيير نوع النشاط يحتاج موافقة إدارة المنصة."
+            : "Business category changes require platform administrator approval."}
+        </p>
         <input disabled={!canEdit} value={form.area} onChange={(e) => setForm({ ...form, area: e.target.value })}
           placeholder={lang === "ar" ? "المنطقة" : "Area"} className="h-11 rounded-xl border border-input bg-background px-4 text-sm disabled:opacity-60" />
         <input disabled={!canEdit} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
