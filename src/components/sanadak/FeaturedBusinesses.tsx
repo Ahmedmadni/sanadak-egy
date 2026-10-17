@@ -4,6 +4,7 @@ import { Store, MapPin, BadgeCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
+import { publicViewsRequired, queryPublicStorefront } from "@/lib/public-storefront";
 
 type Tenant = { id: string; slug: string; name: string; category: string; area: string | null; image_url: string | null; verified_at: string | null };
 
@@ -12,14 +13,24 @@ export function FeaturedBusinesses() {
   const [rows, setRows] = useState<Tenant[]>([]);
 
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("tenants" as any)
-        .select("id, slug, name, category, area, image_url, verified_at")
-        .order("verified_at", { ascending: false, nullsFirst: false })
-        .limit(8);
-      setRows((data as any) ?? []);
-    })();
+    let active = true;
+    void (async () => {
+      const result = await queryPublicStorefront<Tenant[]>(
+        "tenants",
+        async (table, legacy) => {
+          let query = supabase.from(table as "tenants")
+            .select("id, slug, name, category, area, image_url, verified_at")
+            .order("verified_at", { ascending: false, nullsFirst: false })
+            .limit(8);
+          if (legacy) query = query.eq("status", "active");
+          const { data, error } = await query;
+          return { data, error };
+        },
+        { requireView: publicViewsRequired },
+      );
+      if (active && !result.error) setRows(result.data ?? []);
+    })().catch(() => { /* Do not invent featured businesses after a failed read. */ });
+    return () => { active = false; };
   }, []);
 
   if (rows.length === 0) return null;
