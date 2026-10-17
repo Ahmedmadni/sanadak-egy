@@ -10,6 +10,7 @@ import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
 import { bookingHasMore, bookingTimeCairo, customerBookingCanCancel, type CustomerBookingFilter } from "@/lib/customer-booking-tracking";
 import { CustomerBookingHistory } from "@/components/sanadak/CustomerBookingHistory";
+import { publicViewsRequired, queryPublicStorefront } from "@/lib/public-storefront";
 
 export const Route = createFileRoute("/bookings")({
   head: () => ({ meta: [{ title: "حجوزاتي | سندك" }] }),
@@ -147,13 +148,43 @@ function CustomerBookingsPage() {
       const branchIds = [...new Set((bookings ?? []).flatMap((booking) => booking.branch_id ? [booking.branch_id] : []))];
       const [tenantsResult, itemsResult, branchesResult] = await Promise.all([
         tenantIds.length
-          ? supabase.from("tenants").select("id,name,slug").in("id", tenantIds)
+          ? queryPublicStorefront<Pick<Tables<"tenants">, "id" | "name" | "slug">[]>(
+              "tenants",
+              async (table, legacy) => {
+                let query = supabase.from(table as "tenants")
+                  .select("id,name,slug").in("id", tenantIds);
+                if (legacy) query = query.eq("status", "active");
+                const { data, error } = await query;
+                return { data, error };
+              },
+              { requireView: publicViewsRequired },
+            )
           : Promise.resolve({ data: [] as Pick<Tables<"tenants">, "id" | "name" | "slug">[] }),
         itemIds.length
-          ? supabase.from("catalog_items").select("id,name").in("id", itemIds)
+          ? queryPublicStorefront<Pick<Tables<"catalog_items">, "id" | "name">[]>(
+              "catalog",
+              async (table, legacy) => {
+                let query = supabase.from(table as "catalog_items")
+                  .select("id,name").in("id", itemIds);
+                if (legacy) query = query.eq("is_active", true);
+                const { data, error } = await query;
+                return { data, error };
+              },
+              { requireView: publicViewsRequired },
+            )
           : Promise.resolve({ data: [] as Pick<Tables<"catalog_items">, "id" | "name">[] }),
         branchIds.length
-          ? supabase.from("branches").select("id,name").in("id", branchIds)
+          ? queryPublicStorefront<Pick<Tables<"branches">, "id" | "name">[]>(
+              "branches",
+              async (table, legacy) => {
+                let query = supabase.from(table as "branches")
+                  .select("id,name").in("id", branchIds);
+                if (legacy) query = query.eq("is_active", true);
+                const { data, error } = await query;
+                return { data, error };
+              },
+              { requireView: publicViewsRequired },
+            )
           : Promise.resolve({ data: [] as Pick<Tables<"branches">, "id" | "name">[] }),
       ]);
       if (request !== requestId.current) return;
