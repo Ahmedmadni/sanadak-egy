@@ -113,7 +113,7 @@ export function BusinessLayout({
 
         <section className="min-w-0">
           {section === "overview" && <OverviewPanel tenant={tenant} />}
-          {section === "profile" && <ProfilePanel tenant={tenant} onUpdated={onRefresh} />}
+          {section === "profile" && <ProfilePanel key={tenant.id} tenant={tenant} onUpdated={onRefresh} />}
           {section === "branches" && <BranchesPanel tenant={tenant} />}
           {section === "staff" && <StaffPanel tenant={tenant} />}
           {section === "catalog" && <CatalogPanel tenant={tenant} />}

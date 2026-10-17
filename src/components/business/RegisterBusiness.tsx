@@ -8,6 +8,7 @@ import { sfx } from "@/lib/sanadak-sounds";
 import { allCategoryEntries, type PlanRow } from "./types";
 import { DocumentUpload } from "./DocumentUpload";
 import { configuredMerchantPayments, type MerchantPaymentMethod } from "@/lib/merchant-payment-config";
+import { merchantRpcsRequired, withMerchantRpcFallback } from "@/lib/merchant-rpc-compat";
 
 type RegistrationPlan = Pick<PlanRow, "id" | "code" | "name_ar" | "name_en" | "price_monthly" | "currency">;
 
@@ -66,19 +67,44 @@ export function RegisterBusiness({ userId, onCreated }: { userId: string; onCrea
       const plan = plans.find((p) => p.code === form.plan_code);
       if (!plan) throw new Error(lang === "ar" ? "اختر باقة اشتراك صالحة" : "Choose a valid subscription plan");
       const seed = crypto.randomUUID();
-      const { data, error } = await supabase.from("tenants").insert({
-        slug: slugify(form.name, seed),
-        name: form.name,
-        category: form.category,
-        area: form.area || null,
-        phone: form.phone || null,
-        description: form.description || null,
-        owner_id: userId,
-        plan_id: plan.id,
-        status: "pending",
-      }).select("id").single();
+      const slug = slugify(form.name, seed);
+      const { data: newTenantId, error } = await withMerchantRpcFallback<string>(
+        "request_tenant_onboarding",
+        async () => {
+          // Gate 19C inserts the validated pending tenant under the verified
+          // auth.uid(); the browser must not supply its own owner_id.
+          const { data, error } = await (supabase.rpc as any)("request_tenant_onboarding", {
+            _name: form.name,
+            _category: form.category,
+            _plan: plan.id,
+            _slug: slug,
+            _area: form.area || null,
+            _phone: form.phone || null,
+            _description: form.description || null,
+          });
+          return { data: data as string | null, error };
+        },
+        async () => {
+          // Legacy pre-Gate-19 compatibility only when the RPC is missing.
+          // Once tenant INSERT is revoked, never retry it on permission errors.
+          const { data, error } = await supabase.from("tenants").insert({
+            slug,
+            name: form.name,
+            category: form.category,
+            area: form.area || null,
+            phone: form.phone || null,
+            description: form.description || null,
+            owner_id: userId,
+            plan_id: plan.id,
+            status: "pending",
+          }).select("id").single();
+          return { data: data?.id ?? null, error };
+        },
+        { requireRpc: merchantRpcsRequired },
+      );
       if (error) throw error;
-      setTenantId(data.id);
+      if (!newTenantId) throw new Error(lang === "ar" ? "تعذر إنشاء طلب الانضمام" : "Could not create the onboarding request");
+      setTenantId(newTenantId);
       sfx.success();
       setStep(2);
     } catch (err) {
