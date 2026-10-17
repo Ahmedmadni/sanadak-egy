@@ -75,32 +75,16 @@ type SectionId =
 function AdminPage() {
   const { lang } = useSanadak();
   const navigate = useNavigate();
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading, roleLoading } = useAuth();
   const [section, setSection] = useState<SectionId>("overview");
   const [navOpen, setNavOpen] = useState(false);
-  const [claiming, setClaiming] = useState(false);
-  const [claimError, setClaimError] = useState<string | null>(null);
 
   useEffect(() => {
     if (loading) return;
     if (!user) navigate({ to: "/auth" });
   }, [user, loading, navigate]);
 
-  const claimFirstAdmin = async () => {
-    if (!user) return;
-    setClaiming(true);
-    setClaimError(null);
-    const { error } = await supabase.from("user_roles").insert({ user_id: user.id, role: "admin" });
-    if (error) {
-      setClaimError(error.message);
-      setClaiming(false);
-      return;
-    }
-    sfx.success();
-    window.location.reload();
-  };
-
-  if (loading) return <main className="min-h-screen grid place-items-center"><div className="text-sm text-muted-foreground">...</div></main>;
+  if (loading || roleLoading) return <main className="min-h-screen grid place-items-center"><div className="text-sm text-muted-foreground">...</div></main>;
   if (!user) return null;
 
   if (!isAdmin) {
@@ -118,24 +102,11 @@ function AdminPage() {
           </p>
           <p className="mt-3 text-xs text-muted-foreground" dir="ltr">User ID: {user.id}</p>
 
-          <button
-            onClick={claimFirstAdmin}
-            disabled={claiming}
-            className="mt-5 w-full h-11 rounded-full bg-gradient-brand text-primary-foreground text-sm font-medium shadow-glow inline-flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            <ShieldPlus className="h-4 w-4" />
-            {claiming
-              ? (lang === "ar" ? "جارٍ المحاولة..." : "Trying...")
-              : (lang === "ar" ? "المطالبة بصلاحية الأدمن الأول" : "Claim first admin")}
-          </button>
-          <p className={`mt-2 text-[11px] text-muted-foreground ${lang === "ar" ? "font-arabic" : ""}`}>
+          <p className="mt-3 text-xs text-muted-foreground">
             {lang === "ar"
-              ? "يعمل فقط إذا لم يوجد أي أدمن على المنصة بعد."
-              : "Only works if no admin exists on the platform yet."}
+              ? "لا يمكن اكتساب صلاحية مدير المنصة من هذه الصفحة. اطلب الصلاحية عبر مسؤول مفوّض."
+              : "Platform administrator access cannot be self-assigned. Contact an authorized administrator."}
           </p>
-          {claimError && (
-            <p className={`mt-2 text-xs text-destructive ${lang === "ar" ? "font-arabic" : ""}`} dir="auto">{claimError}</p>
-          )}
 
           <Link to="/" className="mt-5 inline-flex items-center gap-2 text-sm text-[var(--emerald)]"><ArrowLeft className="h-4 w-4" /> Home</Link>
         </div>
