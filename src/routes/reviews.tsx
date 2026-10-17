@@ -8,6 +8,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/use-auth";
 import { useSanadak } from "@/lib/sanadak-context";
 import { sfx } from "@/lib/sanadak-sounds";
+import { publicViewsRequired, queryPublicStorefront } from "@/lib/public-storefront";
 
 export const Route = createFileRoute("/reviews")({
   head: () => ({ meta: [{ title: "تقييماتي | سندك" }] }),
@@ -102,7 +103,13 @@ function CustomerReviewsPage() {
       }
 
       const [tenantsResult, reviewsResult] = await Promise.all([
-        supabase.from("tenants").select("id,name,slug").in("id", tenantIds).order("name"),
+        queryPublicStorefront<TenantSummary[]>("tenants", async (table, legacy) => {
+          let query = supabase.from(table as "tenants")
+            .select("id,name,slug").in("id", tenantIds).order("name");
+          if (legacy) query = query.eq("status", "active");
+          const { data, error } = await query;
+          return { data, error };
+        }, { requireView: publicViewsRequired }),
         supabase
           .from("reviews")
           .select("id,tenant_id,rating,body,is_approved,updated_at")

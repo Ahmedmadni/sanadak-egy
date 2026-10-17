@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Building2, MapPin, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSanadak } from "@/lib/sanadak-context";
+import { publicViewsRequired, queryPublicStorefront } from "@/lib/public-storefront";
 
 type TrustStats = { tenants: number | null; reviews: number | null };
 
@@ -17,13 +18,25 @@ export function LiveStats() {
         // The current public RLS policies define which merchants and reviews
         // visitors may count. Never invent a rating or a minimum tenant count.
         const [tenantResult, reviewResult] = await Promise.all([
-          supabase.from("tenants").select("id", { count: "exact", head: true }),
-          supabase.from("reviews").select("id", { count: "exact", head: true }).eq("is_approved", true),
+          queryPublicStorefront<number>("tenants", async (table, legacy) => {
+            let query = supabase.from(table as "tenants")
+              .select("id", { count: "exact", head: true });
+            if (legacy) query = query.eq("status", "active");
+            const { count, error } = await query;
+            return { data: count, error };
+          }, { requireView: publicViewsRequired }),
+          queryPublicStorefront<number>("reviews", async (table, legacy) => {
+            let query = supabase.from(table as "reviews")
+              .select("id", { count: "exact", head: true });
+            if (legacy) query = query.eq("is_approved", true);
+            const { count, error } = await query;
+            return { data: count, error };
+          }, { requireView: publicViewsRequired }),
         ]);
         if (!active) return;
         setStats({
-          tenants: tenantResult.error ? null : tenantResult.count,
-          reviews: reviewResult.error ? null : reviewResult.count,
+          tenants: tenantResult.error ? null : tenantResult.data,
+          reviews: reviewResult.error ? null : reviewResult.data,
         });
       } catch {
         if (active) setStats({ tenants: null, reviews: null });

@@ -18,6 +18,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { useSanadak } from "@/lib/sanadak-context";
 import { useAuth } from "@/lib/use-auth";
 import { sfx } from "@/lib/sanadak-sounds";
+import { publicViewsRequired, queryPublicStorefront } from "@/lib/public-storefront";
 import { categoryConfig } from "@/components/business/types";
 import { BookingDialog } from "@/components/sanadak/BookingDialog";
 import { StoreCartCheckout, type StoreOrderItem } from "@/components/sanadak/StoreCartCheckout";
@@ -63,6 +64,7 @@ function StorePage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [active, setActive] = useState<Item | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewBody, setReviewBody] = useState("");
@@ -70,45 +72,89 @@ function StorePage() {
   const Arrow = dir === "rtl" ? ArrowRight : ArrowLeft;
 
   useEffect(() => {
-    (async () => {
+    let activeRequest = true;
+    void (async () => {
       setLoading(true);
-      const { data: t } = await supabase.from("tenants").select("*").eq("slug", slug).maybeSingle();
-      if (t) {
-        setTenant(t);
-        const [{ data: i }, { data: r }, { data: b }, { data: s }] = await Promise.all([
-          supabase
-            .from("catalog_items")
-            .select("*")
-            .eq("tenant_id", t.id)
-            .eq("is_active", true)
-            .order("sort_order"),
-          supabase
-            .from("reviews")
-            .select("*")
-            .eq("tenant_id", t.id)
-            .eq("is_approved", true)
-            .order("created_at", { ascending: false })
-            .limit(10),
-          supabase
-            .from("branches")
-            .select("id,name,address")
-            .eq("tenant_id", t.id)
-            .eq("is_active", true)
-            .order("created_at"),
-          supabase
-            .from("staff")
-            .select("id,name,role,specialty,branch_id")
-            .eq("tenant_id", t.id)
-            .eq("is_active", true)
-            .order("created_at"),
+      setLoadError(false);
+      setTenant(null);
+      setItems([]);
+      setReviews([]);
+      setBranches([]);
+      setStaff([]);
+      try {
+        const result = await queryPublicStorefront<Tenant>(
+          "tenants",
+          async (table, legacy) => {
+            let query = supabase.from(table as "tenants")
+              .select("id,slug,name,category,area,phone,description,image_url,cover_url,verified_at")
+              .eq("slug", slug);
+            if (legacy) query = query.eq("status", "active");
+            const { data, error } = await query.maybeSingle();
+            return { data, error };
+          },
+          { requireView: publicViewsRequired },
+        );
+        if (!activeRequest) return;
+        if (result.error) throw result.error;
+        const t = result.data;
+        if (!t) return;
+        const [itemsResult, reviewsResult, branchesResult, staffResult] = await Promise.all([
+          queryPublicStorefront<Item[]>("catalog", async (table, legacy) => {
+            let query = supabase.from(table as "catalog_items")
+              .select("id,name,price,currency,image_url,stock,variants,description,duration_minutes")
+              .eq("tenant_id", t.id)
+              .order("sort_order");
+            if (legacy) query = query.eq("is_active", true);
+            const { data, error } = await query;
+            return { data, error };
+          }, { requireView: publicViewsRequired }),
+          queryPublicStorefront<Review[]>("reviews", async (table, legacy) => {
+            let query = supabase.from(table as "reviews")
+              .select("id,rating,body,created_at,verified_at")
+              .eq("tenant_id", t.id)
+              .order("created_at", { ascending: false })
+              .limit(10);
+            if (legacy) query = query.eq("is_approved", true);
+            const { data, error } = await query;
+            return { data, error };
+          }, { requireView: publicViewsRequired }),
+          queryPublicStorefront<Branch[]>("branches", async (table, legacy) => {
+            let query = supabase.from(table as "branches")
+              .select("id,name,address")
+              .eq("tenant_id", t.id)
+              .order("created_at");
+            if (legacy) query = query.eq("is_active", true);
+            const { data, error } = await query;
+            return { data, error };
+          }, { requireView: publicViewsRequired }),
+          queryPublicStorefront<Staff[]>("staff", async (table, legacy) => {
+            let query = supabase.from(table as "staff")
+              .select("id,name,role,specialty,branch_id")
+              .eq("tenant_id", t.id)
+              .order("created_at");
+            if (legacy) query = query.eq("is_active", true);
+            const { data, error } = await query;
+            return { data, error };
+          }, { requireView: publicViewsRequired }),
         ]);
-        setItems(i ?? []);
-        setReviews(r ?? []);
-        setBranches(b ?? []);
-        setStaff(s ?? []);
+        if (!activeRequest) return;
+        // Never partially show public business content after a permission,
+        // view dependency or server error. Real empty results are valid.
+        if (itemsResult.error || reviewsResult.error || branchesResult.error || staffResult.error) {
+          throw itemsResult.error ?? reviewsResult.error ?? branchesResult.error ?? staffResult.error;
+        }
+        setTenant(t);
+        setItems(itemsResult.data ?? []);
+        setReviews(reviewsResult.data ?? []);
+        setBranches(branchesResult.data ?? []);
+        setStaff(staffResult.data ?? []);
+      } catch {
+        if (activeRequest) setLoadError(true);
+      } finally {
+        if (activeRequest) setLoading(false);
       }
-      setLoading(false);
     })();
+    return () => { activeRequest = false; };
   }, [slug]);
 
   if (loading)
@@ -117,6 +163,24 @@ function StorePage() {
         <div className="text-sm text-muted-foreground">...</div>
       </main>
     );
+
+  if (loadError) {
+    return (
+      <main className="min-h-screen grid place-items-center px-4 pt-24">
+        <div role="alert" className="glass-card rounded-3xl p-8 max-w-md text-center">
+          <Store className="h-10 w-10 mx-auto text-muted-foreground" />
+          <p className="mt-3 text-sm text-muted-foreground">
+            {lang === "ar"
+              ? "تعذر تحميل بيانات النشاط حاليًا. حاول مرة أخرى لاحقًا."
+              : "This business could not be loaded right now. Please try again later."}
+          </p>
+          <Link to="/search" search={{ q: "" }} className="mt-5 inline-flex text-sm text-[var(--emerald)]">
+            {lang === "ar" ? "العودة للبحث" : "Back to search"}
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   if (!tenant) {
     return (
