@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/use-auth";
 import { useSanadak } from "@/lib/sanadak-context";
 import { canShowMoreOrders, CUSTOMER_ORDER_STATUS_LABELS, readableOrderMoney } from "@/lib/customer-order-receipt";
 import { CustomerOrderDetails } from "@/components/sanadak/CustomerOrderDetails";
+import { publicViewsRequired, queryPublicStorefront } from "@/lib/public-storefront";
 
 export const Route = createFileRoute("/orders")({
   head: () => ({ meta: [{ title: "طلباتي | سندك" }] }),
@@ -80,7 +81,17 @@ function CustomerOrdersPage() {
       if (orderError) throw orderError;
       const tenantsIds = [...new Set((orders ?? []).map((order) => order.tenant_id))];
       const { data: tenants, error: tenantError } = tenantsIds.length
-        ? await supabase.from("tenants").select("id,name,slug").in("id", tenantsIds)
+        ? await queryPublicStorefront<Pick<Tables<"tenants">, "id" | "name" | "slug">[]>(
+            "tenants",
+            async (table, legacy) => {
+              let query = supabase.from(table as "tenants")
+                .select("id,name,slug").in("id", tenantsIds);
+              if (legacy) query = query.eq("status", "active");
+              const { data, error } = await query;
+              return { data, error };
+            },
+            { requireView: publicViewsRequired },
+          )
         : { data: [] as Pick<Tables<"tenants">, "id" | "name" | "slug">[], error: null };
       if (request !== requestId.current) return;
       // Orders stay readable even if the business was subsequently hidden.
