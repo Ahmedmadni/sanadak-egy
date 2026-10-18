@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -175,7 +175,7 @@ export type Database = {
           changed_by?: string | null
           changed_by_name?: string | null
           created_at?: string
-          id?: number
+          id?: never
           previous_status: string
           status: string
           tenant_id: string
@@ -185,7 +185,7 @@ export type Database = {
           changed_by?: string | null
           changed_by_name?: string | null
           created_at?: string
-          id?: number
+          id?: never
           previous_status?: string
           status?: string
           tenant_id?: string
@@ -210,9 +210,9 @@ export type Database = {
       bookings: {
         Row: {
           branch_id: string | null
+          cancellation_reason: string | null
           cancelled_at: string | null
           cancelled_by: string | null
-          cancellation_reason: string | null
           created_at: string
           customer_id: string | null
           customer_name: string | null
@@ -230,9 +230,9 @@ export type Database = {
         }
         Insert: {
           branch_id?: string | null
+          cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
-          cancellation_reason?: string | null
           created_at?: string
           customer_id?: string | null
           customer_name?: string | null
@@ -250,9 +250,9 @@ export type Database = {
         }
         Update: {
           branch_id?: string | null
+          cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
-          cancellation_reason?: string | null
           created_at?: string
           customer_id?: string | null
           customer_name?: string | null
@@ -530,7 +530,7 @@ export type Database = {
           changed_by?: string | null
           changed_by_name?: string | null
           created_at?: string
-          id?: number
+          id?: never
           order_id: string
           previous_status: string
           status: string
@@ -540,7 +540,7 @@ export type Database = {
           changed_by?: string | null
           changed_by_name?: string | null
           created_at?: string
-          id?: number
+          id?: never
           order_id?: string
           previous_status?: string
           status?: string
@@ -1228,18 +1228,6 @@ export type Database = {
           status: string
         }[]
       }
-      set_booking_status: {
-        Args: {
-          _booking: string
-          _cancellation_reason?: string
-          _status: string
-        }
-        Returns: {
-          booking_id: string
-          cancelled_at: string | null
-          status: string
-        }[]
-      }
       create_order: {
         Args: {
           _customer_address?: string
@@ -1258,10 +1246,7 @@ export type Database = {
           total: number
         }[]
       }
-      delete_own_review: {
-        Args: { _review: string }
-        Returns: boolean
-      }
+      delete_own_review: { Args: { _review: string }; Returns: boolean }
       get_booking_availability: {
         Args: {
           _branch?: string
@@ -1307,25 +1292,37 @@ export type Database = {
       }
       search_tenants_v2: {
         Args: {
-          _query?: string | null
-          _category?: string | null
-          _area?: string | null
-          _verified_only?: boolean
-          _sort?: string
+          _area?: string
+          _category?: string
           _limit?: number
           _offset?: number
+          _query?: string
           _service?: string
+          _sort?: string
+          _verified_only?: boolean
         }
         Returns: {
-          id: string
-          slug: string
-          name: string
+          area: string
           category: string
-          area: string | null
-          description: string | null
-          image_url: string | null
-          verified_at: string | null
+          description: string
+          id: string
+          image_url: string
+          name: string
+          slug: string
           total_count: number
+          verified_at: string
+        }[]
+      }
+      set_booking_status: {
+        Args: {
+          _booking: string
+          _cancellation_reason?: string
+          _status: string
+        }
+        Returns: {
+          booking_id: string
+          cancelled_at: string
+          status: string
         }[]
       }
       set_order_status: {
@@ -1341,7 +1338,7 @@ export type Database = {
         Returns: undefined
       }
       submit_review: {
-        Args: { _body?: string | null; _rating: number; _tenant: string }
+        Args: { _body?: string; _rating: number; _tenant: string }
         Returns: {
           is_approved: boolean
           review_id: string

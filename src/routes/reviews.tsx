@@ -250,7 +250,7 @@ function ReviewEditor({
     const { data, error } = await supabase.rpc("submit_review", {
       _tenant: tenant.id,
       _rating: rating,
-      _body: body.trim() || null,
+      _body: body.trim() || undefined,
     });
     setSaving(false);
 

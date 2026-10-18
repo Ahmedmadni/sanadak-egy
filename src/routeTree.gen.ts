@@ -11,23 +11,23 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as ApiHealthRouteImport } from './routes/api.health'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as BookingsRouteImport } from './routes/bookings'
 import { Route as BusinessRouteImport } from './routes/business'
 import { Route as CafesRouteImport } from './routes/cafes'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as HallsRouteImport } from './routes/halls'
 import { Route as MedicalRouteImport } from './routes/medical'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as PharmacyRouteImport } from './routes/pharmacy'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RestaurantsRouteImport } from './routes/restaurants'
 import { Route as ReviewsRouteImport } from './routes/reviews'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ShopsRouteImport } from './routes/shops'
 import { Route as SuperRouteImport } from './routes/super'
+import { Route as ApiHealthRouteImport } from './routes/api.health'
 import { Route as StoreSlugRouteImport } from './routes/store.$slug'
 
 const IndexRoute = IndexRouteImport.update({
@@ -40,24 +40,9 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiHealthRoute = ApiHealthRouteImport.update({
-  id: '/api/health',
-  path: '/api/health',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BookingsRoute = BookingsRouteImport.update({
@@ -73,6 +58,11 @@ const BusinessRoute = BusinessRouteImport.update({
 const CafesRoute = CafesRouteImport.update({
   id: '/cafes',
   path: '/cafes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HallsRoute = HallsRouteImport.update({
@@ -100,6 +90,11 @@ const PharmacyRoute = PharmacyRouteImport.update({
   path: '/pharmacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RestaurantsRoute = RestaurantsRouteImport.update({
   id: '/restaurants',
   path: '/restaurants',
@@ -125,6 +120,11 @@ const SuperRoute = SuperRouteImport.update({
   path: '/super',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StoreSlugRoute = StoreSlugRouteImport.update({
   id: '/store/$slug',
   path: '/store/$slug',
@@ -134,68 +134,68 @@ const StoreSlugRoute = StoreSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/api/health': typeof ApiHealthRoute
   '/auth': typeof AuthRoute
-  '/forgot-password': typeof ForgotPasswordRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/bookings': typeof BookingsRoute
   '/business': typeof BusinessRoute
   '/cafes': typeof CafesRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/halls': typeof HallsRoute
   '/medical': typeof MedicalRoute
   '/notifications': typeof NotificationsRoute
   '/orders': typeof OrdersRoute
   '/pharmacy': typeof PharmacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/restaurants': typeof RestaurantsRoute
   '/reviews': typeof ReviewsRoute
   '/search': typeof SearchRoute
   '/shops': typeof ShopsRoute
   '/super': typeof SuperRoute
+  '/api/health': typeof ApiHealthRoute
   '/store/$slug': typeof StoreSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/api/health': typeof ApiHealthRoute
   '/auth': typeof AuthRoute
-  '/forgot-password': typeof ForgotPasswordRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/bookings': typeof BookingsRoute
   '/business': typeof BusinessRoute
   '/cafes': typeof CafesRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/halls': typeof HallsRoute
   '/medical': typeof MedicalRoute
   '/notifications': typeof NotificationsRoute
   '/orders': typeof OrdersRoute
   '/pharmacy': typeof PharmacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/restaurants': typeof RestaurantsRoute
   '/reviews': typeof ReviewsRoute
   '/search': typeof SearchRoute
   '/shops': typeof ShopsRoute
   '/super': typeof SuperRoute
+  '/api/health': typeof ApiHealthRoute
   '/store/$slug': typeof StoreSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/api/health': typeof ApiHealthRoute
   '/auth': typeof AuthRoute
-  '/forgot-password': typeof ForgotPasswordRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/bookings': typeof BookingsRoute
   '/business': typeof BusinessRoute
   '/cafes': typeof CafesRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/halls': typeof HallsRoute
   '/medical': typeof MedicalRoute
   '/notifications': typeof NotificationsRoute
   '/orders': typeof OrdersRoute
   '/pharmacy': typeof PharmacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/restaurants': typeof RestaurantsRoute
   '/reviews': typeof ReviewsRoute
   '/search': typeof SearchRoute
   '/shops': typeof ShopsRoute
   '/super': typeof SuperRoute
+  '/api/health': typeof ApiHealthRoute
   '/store/$slug': typeof StoreSlugRoute
 }
 export interface FileRouteTypes {
@@ -203,90 +203,90 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
-    | '/api/health'
     | '/auth'
-    | '/forgot-password'
-    | '/reset-password'
     | '/bookings'
     | '/business'
     | '/cafes'
+    | '/forgot-password'
     | '/halls'
     | '/medical'
     | '/notifications'
     | '/orders'
     | '/pharmacy'
+    | '/reset-password'
     | '/restaurants'
     | '/reviews'
     | '/search'
     | '/shops'
     | '/super'
+    | '/api/health'
     | '/store/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
-    | '/api/health'
     | '/auth'
-    | '/forgot-password'
-    | '/reset-password'
     | '/bookings'
     | '/business'
     | '/cafes'
+    | '/forgot-password'
     | '/halls'
     | '/medical'
     | '/notifications'
     | '/orders'
     | '/pharmacy'
+    | '/reset-password'
     | '/restaurants'
     | '/reviews'
     | '/search'
     | '/shops'
     | '/super'
+    | '/api/health'
     | '/store/$slug'
   id:
     | '__root__'
     | '/'
     | '/admin'
-    | '/api/health'
     | '/auth'
-    | '/forgot-password'
-    | '/reset-password'
     | '/bookings'
     | '/business'
     | '/cafes'
+    | '/forgot-password'
     | '/halls'
     | '/medical'
     | '/notifications'
     | '/orders'
     | '/pharmacy'
+    | '/reset-password'
     | '/restaurants'
     | '/reviews'
     | '/search'
     | '/shops'
     | '/super'
+    | '/api/health'
     | '/store/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
-  ApiHealthRoute: typeof ApiHealthRoute
   AuthRoute: typeof AuthRoute
-  ForgotPasswordRoute: typeof ForgotPasswordRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
   BookingsRoute: typeof BookingsRoute
   BusinessRoute: typeof BusinessRoute
   CafesRoute: typeof CafesRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   HallsRoute: typeof HallsRoute
   MedicalRoute: typeof MedicalRoute
   NotificationsRoute: typeof NotificationsRoute
   OrdersRoute: typeof OrdersRoute
   PharmacyRoute: typeof PharmacyRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   RestaurantsRoute: typeof RestaurantsRoute
   ReviewsRoute: typeof ReviewsRoute
   SearchRoute: typeof SearchRoute
   ShopsRoute: typeof ShopsRoute
   SuperRoute: typeof SuperRoute
+  ApiHealthRoute: typeof ApiHealthRoute
   StoreSlugRoute: typeof StoreSlugRoute
 }
 
@@ -306,32 +306,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/health': {
-      id: '/api/health'
-      path: '/api/health'
-      fullPath: '/api/health'
-      preLoaderRoute: typeof ApiHealthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth': {
       id: '/auth'
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forgot-password': {
-      id: '/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bookings': {
@@ -353,6 +332,13 @@ declare module '@tanstack/react-router' {
       path: '/cafes'
       fullPath: '/cafes'
       preLoaderRoute: typeof CafesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/halls': {
@@ -390,6 +376,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PharmacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/restaurants': {
       id: '/restaurants'
       path: '/restaurants'
@@ -425,6 +418,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuperRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/store/$slug': {
       id: '/store/$slug'
       path: '/store/$slug'
@@ -438,25 +438,35 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
-  ApiHealthRoute: ApiHealthRoute,
   AuthRoute: AuthRoute,
-  ForgotPasswordRoute: ForgotPasswordRoute,
-  ResetPasswordRoute: ResetPasswordRoute,
   BookingsRoute: BookingsRoute,
   BusinessRoute: BusinessRoute,
   CafesRoute: CafesRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   HallsRoute: HallsRoute,
   MedicalRoute: MedicalRoute,
   NotificationsRoute: NotificationsRoute,
   OrdersRoute: OrdersRoute,
   PharmacyRoute: PharmacyRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   RestaurantsRoute: RestaurantsRoute,
   ReviewsRoute: ReviewsRoute,
   SearchRoute: SearchRoute,
   ShopsRoute: ShopsRoute,
   SuperRoute: SuperRoute,
+  ApiHealthRoute: ApiHealthRoute,
   StoreSlugRoute: StoreSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

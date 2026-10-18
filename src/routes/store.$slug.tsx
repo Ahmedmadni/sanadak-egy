@@ -213,7 +213,7 @@ function StorePage() {
     const { error } = await supabase.rpc("submit_review", {
       _tenant: tenant.id,
       _rating: reviewRating,
-      _body: reviewBody.trim() || null,
+      _body: reviewBody.trim() || undefined,
     });
     setSubmittingReview(false);
     if (error) {

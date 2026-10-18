@@ -97,9 +97,9 @@ function SearchPage() {
     setTotal(0);
     void (async () => {
       const { data, error: searchError } = await supabase.rpc("search_tenants_v2", {
-        _query: q.trim() || null,
-        _category: category || null,
-        _area: area.trim() || null,
+        _query: q.trim() || undefined,
+        _category: category || undefined,
+        _area: area.trim() || undefined,
         _service: service,
         _verified_only: verified === "1",
         _sort: sort,
