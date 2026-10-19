@@ -1,17 +1,6 @@
-
--- =========================================================
--- Bootstrap the first platform admin.
---
--- The "admin" role can only ever be granted by an existing admin
--- (see "Admins insert roles" policy on public.user_roles), which means
--- nobody could ever become the first admin through the app itself.
--- This migration grants the admin role to the platform owner's account
--- (matched by email) if that account already exists. It is safe to
--- re-run: it's a no-op if the account doesn't exist yet, or if the
--- role was already granted.
--- =========================================================
-INSERT INTO public.user_roles (user_id, role)
-SELECT u.id, 'admin'::app_role
-FROM auth.users u
-WHERE u.email = 'elmadnim@gmail.com'
-ON CONFLICT (user_id, role) DO NOTHING;
+-- STAGING ONLY: the historical migration grants admin to a named
+-- production-owner email account if it exists. Do not copy that identity
+-- mapping into the isolated staging baseline. No-op by design.
+-- Set up synthetic staging-only test admin later through an approved,
+-- auditable procedure after staging Auth and authorization are verified.
+SELECT 1 AS staging_historical_admin_bootstrap_skipped;
