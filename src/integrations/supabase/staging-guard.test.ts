@@ -1,30 +1,31 @@
-import { describe, expect, test } from "bun:test";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { assertStagingSupabaseUrl } from "./staging-guard";
 
 const production = "lkkxrdxdlkovphjlrcak";
 const staging = "abcdefghijklmnopqrst";
 
 describe("Staging project isolation guard", () => {
-  test("accepts only a matching isolated HTTPS Supabase project", () => {
-    expect(() => assertStagingSupabaseUrl(`https://${staging}.supabase.co`, staging)).not.toThrow();
-    expect(() => assertStagingSupabaseUrl(`https://${staging}.supabase.co/`, staging)).not.toThrow();
+  it("accepts only a matching isolated HTTPS Supabase project", () => {
+    assert.doesNotThrow(() => assertStagingSupabaseUrl(`https://${staging}.supabase.co`, staging));
+    assert.doesNotThrow(() => assertStagingSupabaseUrl(`https://${staging}.supabase.co/`, staging));
   });
-  test("refuses the real production URL even if configured as staging", () => {
-    expect(() => assertStagingSupabaseUrl(`https://${production}.supabase.co`, production)).toThrow();
-    expect(() => assertStagingSupabaseUrl(`https://${production}.supabase.co`, staging)).toThrow();
+  it("refuses the real production URL even if configured as staging", () => {
+    assert.throws(() => assertStagingSupabaseUrl(`https://${production}.supabase.co`, production));
+    assert.throws(() => assertStagingSupabaseUrl(`https://${production}.supabase.co`, staging));
   });
-  test("refuses mismatched/absent or invalid project references", () => {
-    expect(() => assertStagingSupabaseUrl(`https://${staging}.supabase.co`, undefined)).toThrow();
-    expect(() => assertStagingSupabaseUrl(`https://${staging}.supabase.co`, "missing")).toThrow();
-    expect(() => assertStagingSupabaseUrl(`https://${staging}.supabase.co`, "zyxwvutsrqponmlkjihg")).toThrow();
+  it("refuses mismatched/absent or invalid project references", () => {
+    assert.throws(() => assertStagingSupabaseUrl(`https://${staging}.supabase.co`, undefined));
+    assert.throws(() => assertStagingSupabaseUrl(`https://${staging}.supabase.co`, "missing"));
+    assert.throws(() => assertStagingSupabaseUrl(`https://${staging}.supabase.co`, "zyxwvutsrqponmlkjihg"));
   });
-  test("rejects insecure and deceptive URLs and embedded credentials", () => {
+  it("rejects insecure and deceptive URLs and embedded credentials", () => {
     for (const url of [
       `http://${staging}.supabase.co`,
       `https://${staging}.supabase.co.evil.example`,
       `https://${staging}.supabase.co@evil.example`,
       `https://${staging}.supabase.co:443/abc`,
       `https://${staging}.supabase.co/?foo=bar`,
-    ]) expect(() => assertStagingSupabaseUrl(url, staging)).toThrow();
+    ]) assert.throws(() => assertStagingSupabaseUrl(url, staging));
   });
 });
