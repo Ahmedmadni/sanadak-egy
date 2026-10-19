@@ -1,1 +1,4 @@
-project_id = "lkkxrdxdlkovphjlrcak"
+# STAGING ONLY — fail-closed placeholder. Replace with the independently verified
+# Staging Supabase project reference before running any CLI migrations.
+# NEVER use the production project ref in this branch.
+project_id = "STAGING_REF_UNVERIFIED_DO_NOT_RUN"
