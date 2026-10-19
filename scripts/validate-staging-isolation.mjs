@@ -38,6 +38,15 @@ for (const file of [
   assert.match(source, /assertStagingSupabaseUrl\(/,
     `Staging guard call missing from ${file}`);
 }
+// The September reconciliation historically reintroduced an unsafe first-admin
+// policy even when the July bootstrap migration was neutralized.
+const reconciler = read("supabase/migrations/20260906090000_reconcile_live_schema.sql");
+assert.match(reconciler, /STAGING ONLY/);
+assert.match(reconciler, /DROP POLICY IF EXISTS "First admin bootstrap"/);
+assert.doesNotMatch(reconciler,
+  /CREATE\\s+POLICY\\s+"First admin bootstrap"/i,
+  "Pending reconciliation must never re-open self-service admin claims");
+
 const guard = read("src/integrations/supabase/staging-guard.ts");
 assert.match(guard, /PRODUCTION_PROJECT_REF = "lkkxrdxdlkovphjlrcak"/,
   "Staging guard does not recognize production ref");
