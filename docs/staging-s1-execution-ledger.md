@@ -96,6 +96,36 @@ generated `STAGING ONLY` holding app; GitHub branch source is ready but is
 - CI validates staged source independently; no merge into production
   `main` is intended.
 
+## 2026-10-19 follow-up: code safeguards, database still blocked
+
+The latest Lovable read-only staging preflight was rejected **before
+execution** by the free-plan MCP database action limit (reported
+approximately 40 minutes until retry at the time). No additional baseline
+SQL was executed after #13. The migration ledger remains **13/30**.
+
+The **pending** `20260906090000_reconcile_live_schema.sql` (#15) was
+hardened on Staging branch only: it no longer recreates the insecure
+`"First admin bootstrap"` RLS policy. Its Git blob SHA has been updated
+in the integrity manifest. The earlier `20260906090100` cleanup remains.
+This is code preparation only: **neither #14 nor #15 has executed**.
+
+Staging CI now checks:
+- `scripts/validate-staging-isolation.mjs`: production ref blocked in
+  Staging config and client pathways; admin bootstrap policy not reintroduced
+  by the #15 reconciler.
+- `scripts/verify-staging-migration-ledger.mjs`: exact Git blob SHA for all
+  30 SQL files and correct execution boundary.
+- `scripts/prepare-next-staging-migration.mjs --check`: only the single
+  next pending file (#14) can be prepared. Running without `--check`
+  **prints** a transaction-wrapped SQL script with a verified Staging-only
+  database-server guard and expected schema preconditions; it does not
+  connect to a database, perform migrations or update this ledger. Only
+  an operator-approved Staging database action may execute the output.
+
+Do not change the manifest execution count from 13 to 14 solely because
+a SQL generation, CI run or review succeeds. It changes only after the
+Staging database action returns success and read-only verification passes.
+
 ## Next approved work when Lovable limits permit
 
 1. Verify Staging project and its public Supabase project ref/URL from its
