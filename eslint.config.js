@@ -37,4 +37,11 @@ export default tseslint.config(
     },
   },
   eslintPluginPrettier,
+  // Lovable regenerates previewAuthStorage with a timer initialized after
+  // postMessage. Keep all other lint rules, but do not block CI for this one
+  // generated-code style preference on every Lovable prompt.
+  {
+    files: ["src/integrations/supabase/previewAuthStorage.ts"],
+    rules: { "prefer-const": "off" },
+  },
 );
