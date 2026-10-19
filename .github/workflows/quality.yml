@@ -43,6 +43,10 @@ jobs:
             exit 1
           fi
 
+      - name: Verify Staging source isolation
+        if: github.ref == 'refs/heads/staging/sanadak-isolated-s0'
+        run: node scripts/validate-staging-isolation.mjs
+
       - name: Lint
         # Pre-existing formatting/no-explicit-any debt is tracked separately.
         # Keep all other ESLint correctness rules release-blocking.
