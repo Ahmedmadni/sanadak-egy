@@ -6,7 +6,7 @@
   "source_commit": "41f04a8f272eb35f519e604e5fef25916bc35c46",
   "baseline_completed": 13,
   "baseline_total": 30,
-  "notes": "Based on Lovable transaction-success results, not migration registry. Do not replay applied files, run supabase db push, or count pending files as installed. Next file is #14.",
+  "notes": "Based on Lovable transaction-success results, not migration registry. Do not replay applied files, run supabase db push, or count pending files as installed. Next file is #14. Staging-only hardening: pending #15 reconciler no longer recreates first-admin self-claim policy.",
   "files": [
     {
       "order": 1,
@@ -95,7 +95,7 @@
     {
       "order": 15,
       "file": "20260906090000_reconcile_live_schema.sql",
-      "git_blob_sha": "42b9bededca644ffd60a6fa36e8be0562490f0a1",
+      "git_blob_sha": "facd52e1d700ba268e86c18147bd6e055bcb3f05",
       "state": "pending"
     },
     {
