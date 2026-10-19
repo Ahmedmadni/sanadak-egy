@@ -1,0 +1,192 @@
+{
+  "schema": 1,
+  "environment": "Sanadak independent staging only",
+  "project_id": "a5ba6f1c-a324-4761-a604-2936a1f8f5cf",
+  "source_branch": "staging/sanadak-isolated-s0",
+  "source_commit": "41f04a8f272eb35f519e604e5fef25916bc35c46",
+  "baseline_completed": 13,
+  "baseline_total": 30,
+  "notes": "Based on Lovable transaction-success results, not migration registry. Do not replay applied files, run supabase db push, or count pending files as installed. Next file is #14.",
+  "files": [
+    {
+      "order": 1,
+      "file": "20260528092343_2c036d49-5ea1-46da-9314-50f57f6f2fe5.sql",
+      "git_blob_sha": "8a438064a819674063eff1f86f130256c45ad248",
+      "state": "applied-manually"
+    },
+    {
+      "order": 2,
+      "file": "20260528092355_ca99ad4e-141c-48fc-9ebb-70aca2d2cace.sql",
+      "git_blob_sha": "792fb44126291873754d68b02cf289920bdfaaf5",
+      "state": "applied-manually"
+    },
+    {
+      "order": 3,
+      "file": "20260621042038_9b60d4e8-fc5a-4eb8-9324-daabadc10e65.sql",
+      "git_blob_sha": "bd948a15701950a46d2eb5c2f734df0d76a0abdf",
+      "state": "applied-manually"
+    },
+    {
+      "order": 4,
+      "file": "20260622042211_f12b3c85-279c-4860-a4ed-49e6c110338d.sql",
+      "git_blob_sha": "abee0d8b635740e207168dd79225b2bc7c325d7c",
+      "state": "applied-manually"
+    },
+    {
+      "order": 5,
+      "file": "20260701171755_b6f2f829-17dd-488c-a6ff-3b2e82965791.sql",
+      "git_blob_sha": "2a33efdf619029ea37a355ca0cd1a0c2ee0964db",
+      "state": "applied-manually"
+    },
+    {
+      "order": 6,
+      "file": "20260701184446_fcf96731-4573-4597-8383-8179fbe1a8d0.sql",
+      "git_blob_sha": "718506b6e3117fa98e22435cecd1f1ed2e68586b",
+      "state": "applied-manually"
+    },
+    {
+      "order": 7,
+      "file": "20260705050433_aa5f95a2-57ab-4a78-897f-712922552c4d.sql",
+      "git_blob_sha": "6b290fc1c57d43c9a1314926f002f87400ee159f",
+      "state": "applied-manually"
+    },
+    {
+      "order": 8,
+      "file": "20260707081859_8cba916d-4baa-4e09-9768-fbb520a669f6.sql",
+      "git_blob_sha": "5d43165bee5afc1008e20bce798ff46e1379da7c",
+      "state": "applied-manually"
+    },
+    {
+      "order": 9,
+      "file": "20260707081958_f5f37bd1-5a4e-4d24-8687-d5fcd3b8930b.sql",
+      "git_blob_sha": "f48876aa2f67fa26447bee416bcb71cc851f4043",
+      "state": "applied-manually"
+    },
+    {
+      "order": 10,
+      "file": "20260707225627_8374b495-552c-42cb-a3a5-108a529856cc.sql",
+      "git_blob_sha": "a33354701090940e7b2ca70123c8405b866bd8ea",
+      "state": "applied-manually"
+    },
+    {
+      "order": 11,
+      "file": "20260711215914_f07cbe77-950b-472b-84cf-cfb44028e2b2.sql",
+      "git_blob_sha": "899c6563b35355ce1bf42c44f5326e53317345fb",
+      "state": "applied-manually"
+    },
+    {
+      "order": 12,
+      "file": "20260713043610_3a9a95e5-4d83-4c25-8d7d-c0fc38db3e99.sql",
+      "git_blob_sha": "8f274c7e1786b05d79a458a7ffcac4945cfa2a04",
+      "state": "applied-manually"
+    },
+    {
+      "order": 13,
+      "file": "20260713044233_fe8078a7-8bfe-4333-a1de-28c3da0d384b.sql",
+      "git_blob_sha": "8f274c7e1786b05d79a458a7ffcac4945cfa2a04",
+      "state": "applied-manually"
+    },
+    {
+      "order": 14,
+      "file": "20260728045306_be350871-ac57-46a4-8d5b-75556305157b.sql",
+      "git_blob_sha": "76d5a1088edd069b6dacab7449d7d24943bcca16",
+      "state": "pending"
+    },
+    {
+      "order": 15,
+      "file": "20260906090000_reconcile_live_schema.sql",
+      "git_blob_sha": "42b9bededca644ffd60a6fa36e8be0562490f0a1",
+      "state": "pending"
+    },
+    {
+      "order": 16,
+      "file": "20260906090100_remove_unsafe_first_admin_bootstrap.sql",
+      "git_blob_sha": "cd85cf9a4b0f510166d9124332cb6b4b9702a4eb",
+      "state": "pending"
+    },
+    {
+      "order": 17,
+      "file": "20260906100000_create_atomic_order_rpc.sql",
+      "git_blob_sha": "32e142ed0243b5b39a7e32a55d15e6238ecfa9b8",
+      "state": "pending"
+    },
+    {
+      "order": 18,
+      "file": "20260909132000_close_direct_order_inserts.sql",
+      "git_blob_sha": "d5b484d283893d17df259c31a563746a07337301",
+      "state": "pending"
+    },
+    {
+      "order": 19,
+      "file": "20260909133000_create_atomic_booking_rpc.sql",
+      "git_blob_sha": "72924fdf0db4f6305be8e75c8bda286500d66860",
+      "state": "pending"
+    },
+    {
+      "order": 20,
+      "file": "20260909140000_close_direct_booking_inserts.sql",
+      "git_blob_sha": "c73f5e5da05f2eee17adffe5601d34fa5bf3b5fa",
+      "state": "pending"
+    },
+    {
+      "order": 21,
+      "file": "20260918050000_reconcile_subscription_lifecycle.sql",
+      "git_blob_sha": "7753c5686f252df0cf1c5b36da3c656b5d9f8d90",
+      "state": "pending"
+    },
+    {
+      "order": 22,
+      "file": "20260919010000_booking_availability_rpc.sql",
+      "git_blob_sha": "a774a3f640318f04bc460d49b2b34ee6714411be",
+      "state": "pending"
+    },
+    {
+      "order": 23,
+      "file": "20260919090000_inventory_reservation.sql",
+      "git_blob_sha": "197acb361c9b84794a37bf95ab609af6f9c8b08b",
+      "state": "pending"
+    },
+    {
+      "order": 24,
+      "file": "20260921100000_7ce47217-10a6-4d70-a31a-0f7aa63e90ba.sql",
+      "git_blob_sha": "105483bbd5e4e93f66bc1b14a489bd6ccf6e40fa",
+      "state": "pending"
+    },
+    {
+      "order": 25,
+      "file": "20260922100000_9b6c99c0-4db0-4a74-a8c7-93b6db19cf54.sql",
+      "git_blob_sha": "033427bccb57a0e64ba4c7ab55a5b001a1ec841e",
+      "state": "pending"
+    },
+    {
+      "order": 26,
+      "file": "20260923100000_5ba81269-d64b-4dd5-85f7-a2405ed986ad.sql",
+      "git_blob_sha": "0845ab95db745121b0a9ba622ad5572c8a39036c",
+      "state": "pending"
+    },
+    {
+      "order": 27,
+      "file": "20260924090000_booking_status_lifecycle.sql",
+      "git_blob_sha": "b1e2616991819c1238863027a4548b0a95c8950f",
+      "state": "pending"
+    },
+    {
+      "order": 28,
+      "file": "20260925090000_transaction_status_notifications.sql",
+      "git_blob_sha": "eeb689e1a3beb38782f8cd60e372e3fa6ccd8d42",
+      "state": "pending"
+    },
+    {
+      "order": 29,
+      "file": "20260925093000_transaction_status_history.sql",
+      "git_blob_sha": "e5c2b0b3a6f2e4308fc3db30df600f5767f79f7b",
+      "state": "pending"
+    },
+    {
+      "order": 30,
+      "file": "20260928090000_transaction_status_history_actor.sql",
+      "git_blob_sha": "ac705bfd7dcb22a7410ff3b8600661e0a700f51a",
+      "state": "pending"
+    }
+  ]
+}
