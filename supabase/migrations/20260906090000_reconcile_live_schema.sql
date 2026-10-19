@@ -395,16 +395,11 @@ CREATE POLICY "Users create own pending tenant"
   ON public.tenants FOR INSERT TO authenticated
   WITH CHECK (owner_id = auth.uid() AND status = 'pending');
 
+-- STAGING ONLY: the historical live reconciliation reintroduced an unsafe
+-- self-service first-admin role policy. Do not create it in isolated Staging.
+-- Keep this DROP defense-in-depth in case an older schema already had it.
+-- Synthetic test admin bootstrap must use a separately reviewed procedure.
 DROP POLICY IF EXISTS "First admin bootstrap" ON public.user_roles;
-CREATE POLICY "First admin bootstrap"
-  ON public.user_roles FOR INSERT TO authenticated
-  WITH CHECK (
-    role = 'admin'::public.app_role
-    AND user_id = auth.uid()
-    AND NOT EXISTS (
-      SELECT 1 FROM public.user_roles WHERE role = 'admin'::public.app_role
-    )
-  );
 
 -- =========================================================
 -- 8. Restore storage buckets and tenant-scoped object policies
