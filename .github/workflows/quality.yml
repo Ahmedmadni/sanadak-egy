@@ -47,6 +47,10 @@ jobs:
         if: github.ref == 'refs/heads/staging/sanadak-isolated-s0'
         run: node scripts/validate-staging-isolation.mjs
 
+      - name: Verify manually executed Staging migration ledger
+        if: github.ref == 'refs/heads/staging/sanadak-isolated-s0'
+        run: node scripts/verify-staging-migration-ledger.mjs
+
       - name: Lint
         # Pre-existing formatting/no-explicit-any debt is tracked separately.
         # Keep all other ESLint correctness rules release-blocking.
