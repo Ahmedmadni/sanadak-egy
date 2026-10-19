@@ -45,6 +45,14 @@ After #13 the SQL action limit prevented another verification query. **Treat
 the later state as applied based on individual successful transactions, not
 a completed independent full schema audit.**
 
+**Version-locked manifest:** [`supabase/verification/staging-baseline-ledger.json`](../supabase/verification/staging-baseline-ledger.json) now pins
+the Git blob SHA of all 30 Staging SQL files, with `applied-manually`
+for #1–13 and `pending` for #14–30. GitHub Actions runs
+`scripts/verify-staging-migration-ledger.mjs` and rejects changes to any
+recorded migration until an explicitly reviewed ledger update. This check
+validates repository file integrity only, not whether the database contains
+the claimed migration effects.
+
 **CRITICAL MIGRATION STATE:** executed via direct Lovable SQL query action,
 not through Supabase migration CLI. The
 `supabase_migrations.schema_migrations` registry was absent during
