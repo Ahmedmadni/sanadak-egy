@@ -41,7 +41,8 @@ for(const name of [
  assert.match(src,/assertStagingSupabaseUrl\(/,`Missing exact Staging backend guard: ${name}`);
 }
 const guard=readFileSync("src/integrations/supabase/staging-guard.ts","utf8");
-assert.match(guard,/VERIFIED_STAGING_PROJECT_REF = "wnakrxkosofufxfqacrx"/);
+assert.match(guard,/EXPECTED_STAGING_SUPABASE_REF = "wnakrxkosofufxfqacrx"/);
+assert.match(guard,/PRODUCTION_PROJECT_REF = "lkkxrdxdlkovphjlrcak"/);
 const root=readFileSync("src/routes/__root.tsx","utf8");
 assert.match(root,/STAGING ONLY/, "Staging page must be visibly labelled");
 assert.match(root,/noindex, nofollow, noarchive/,
