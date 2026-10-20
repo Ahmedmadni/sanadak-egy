@@ -6,12 +6,19 @@
 - **Production Lovable project, read-only/no writes:** `73945807-c2ad-410a-884c-2e061f1feaf2`.
 - **Production Supabase ref, forbidden target:** `lkkxrdxdlkovphjlrcak`.
 - **Staging branch:** `staging/sanadak-isolated-s0`, separate from GitHub `main`.
-- Staging database identity was verified by its independently observed
-  PostgreSQL server address and expected schema. The production server
-  address differs; the Staging Supabase project ref and public URL
-  **still require an independently inspectable verification**.
-- `supabase/config.toml` is a deliberately unusable Staging sentinel.
-  **Never run** `supabase link`, `supabase db push` or automatic migrations.
+- Staging backend identity **fully verified** directly from its Lovable
+  `supabase/config.toml` and private project environment: Supabase ref
+  `wnakrxkosofufxfqacrx`, HTTPS URL of the same project in server/browser
+  env. Neither source matches production ref `lkkxrdxdlkovphjlrcak`.
+  PostgreSQL server IP also differs between Staging and production.
+- In the GitHub **branch**, `supabase/config.toml` deliberately still contains
+  a nonfunctional safety sentinel. This is intentional despite the now-verified
+  ref: **never run** `supabase link`, `supabase db push` or automatic
+  migrations because the first 17 migrations ran manually and the registry
+  was not populated. The Lovable project's own config has the real ref.
+- Browser/server/auth clients on the Staging GitHub branch now strictly
+  pin `wnakrxkosofufxfqacrx` and preserve Lovable Cloud's opaque
+  `sb_publishable_*` key fetch adapter without embedding key values.
 - There are no real Auth users in Staging. No production data copied.
   No Gate 19 migrations applied.
 
