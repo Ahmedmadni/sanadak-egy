@@ -42,6 +42,10 @@ for(const name of [
 }
 const guard=readFileSync("src/integrations/supabase/staging-guard.ts","utf8");
 assert.match(guard,/VERIFIED_STAGING_PROJECT_REF = "wnakrxkosofufxfqacrx"/);
+const root=readFileSync("src/routes/__root.tsx","utf8");
+assert.match(root,/STAGING ONLY/, "Staging page must be visibly labelled");
+assert.match(root,/noindex, nofollow, noarchive/,
+  "Staging pages must not be indexed by search engines");
 const whatsApp=readFileSync("src/lib/whatsapp.ts","utf8");
 assert.match(whatsApp,/MERCHANT_PHONE = "STAGING_DISABLED"/);
 assert.doesNotMatch(whatsApp,/https:\/\/wa\.me\/\$\{MERCHANT_PHONE\}/,
