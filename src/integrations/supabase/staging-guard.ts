@@ -21,10 +21,7 @@ export function assertStagingSupabaseUrl(
   if (configuredRef && configuredRef !== EXPECTED_STAGING_SUPABASE_REF) {
     throw new Error("Supabase project ref does not match the approved Staging backend");
   }
-  if (
-    EXPECTED_STAGING_SUPABASE_REF === PRODUCTION_PROJECT_REF ||
-    url.toLowerCase().includes(PRODUCTION_PROJECT_REF)
-  ) {
+  if (url.toLowerCase().includes(PRODUCTION_PROJECT_REF)) {
     throw new Error("Staging cannot connect to production Supabase");
   }
   if (
