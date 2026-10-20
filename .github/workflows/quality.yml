@@ -55,6 +55,10 @@ jobs:
         if: github.ref == 'refs/heads/staging/sanadak-isolated-s0'
         run: node scripts/prepare-next-staging-migration.mjs --check
 
+      - name: Verify selective Staging frontend import manifest
+        if: github.ref == 'refs/heads/staging/sanadak-isolated-s0'
+        run: node scripts/validate-staging-import-manifest.mjs
+
       - name: Lint
         # Pre-existing formatting/no-explicit-any debt is tracked separately.
         # Keep all other ESLint correctness rules release-blocking.
