@@ -1,4 +1,7 @@
-# STAGING ONLY — fail-closed placeholder. Replace with the independently verified
-# Staging Supabase project reference before running any CLI migrations.
-# NEVER use the production project ref in this branch.
+# STAGING GITHUB BRANCH SAFETY SENTINEL.
+# The actual independent Lovable Staging Supabase ref is now verified as
+# wnakrxkosofufxfqacrx and is present only in the Staging runtime/project
+# environment (not in this CLI target config). Avoid an accidental `db push`
+# because the first 17 migrations were manually applied without the normal
+# schema_migrations registry. Never link/push migrations automatically.
 project_id = "STAGING_REF_UNVERIFIED_DO_NOT_RUN"
