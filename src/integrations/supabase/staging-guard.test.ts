@@ -18,8 +18,10 @@ describe("Staging project isolation guard", () => {
     const unrelated = "abcdefghijklmnopqrst";
     assert.throws(() => assertStagingSupabaseUrl(`https://${unrelated}.supabase.co`, unrelated));
   });
-  it("refuses mismatched/absent or invalid project references", () => {
-    assert.throws(() => assertStagingSupabaseUrl(`https://${staging}.supabase.co`, undefined));
+  it("refuses mismatched or invalid project references", () => {
+    // Lovable Cloud may not emit VITE_SUPABASE_PROJECT_ID in browser builds.
+    // The verified Staging ref is pinned in staging-guard, so absent env is safe.
+    assert.doesNotThrow(() => assertStagingSupabaseUrl(`https://${staging}.supabase.co`, undefined));
     assert.throws(() => assertStagingSupabaseUrl(`https://${staging}.supabase.co`, "missing"));
     assert.throws(() => assertStagingSupabaseUrl(`https://${staging}.supabase.co`, "zyxwvutsrqponmlkjihg"));
   });
