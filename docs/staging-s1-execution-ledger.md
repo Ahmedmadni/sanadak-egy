@@ -98,6 +98,29 @@ independently verified Staging runtime environment variables.
 Lovable agent's plan is paused for approval; do not silently approve
 a tool action on the user's behalf. **No source import has occurred.**
 
+## Staging-only order read-only check and UI source findings
+
+A later read-only query on the verified Staging project confirmed:
+- `public.create_order(uuid,jsonb,text,text,text,text,text)` exists;
+  `anon` and `authenticated` have EXECUTE permission.
+- Both roles still have direct INSERT table grants on `orders` and
+  `order_items` before #18. These grants alone are not proof that
+  any particular row passes RLS.
+- `public.create_booking(uuid,uuid,timestamptz,text,text,uuid,uuid,text)`
+  does **not yet** exist (planned #19).
+- Zero Auth users; no self-claim admin policy; migration registry absent.
+  No actual browser checkout test was performed.
+
+Staging-only code checks confirm modern `/store/:slug` uses
+`StoreCartCheckout` / `BookingDialog` with their authoritative RPCs,
+but the global `CartSheet` is a **separate WhatsApp-only** flow.
+The branch now shows an honest WhatsApp draft notice and preserves the
+cart instead of claiming a submitted order and clearing it.
+
+See `supabase/verification/staging-s1-order-rpc-readonly.sql` and
+[`staging-s1-frontend-import-and-order-smoke.md`](./staging-s1-frontend-import-and-order-smoke.md)
+for the remaining browser verification and source-copy approval gates.
+
 ## Next steps in order
 
 1. Obtain an independently verifiable Staging Supabase project ref and
