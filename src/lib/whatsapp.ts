@@ -1,8 +1,8 @@
-// WhatsApp booking helper — opens wa.me with a localized order message
-// Uses the master merchant number 01120016502 (Egypt) for all bookings.
-
-export const MERCHANT_PHONE = "201120016502"; // intl format for wa.me
-export const MERCHANT_LOCAL = "01120016502";
+// STAGING ONLY: allow a local WhatsApp message preview but NEVER open
+// external messaging links, including the live platform contact number.
+// Keep this safeguard on the Staging branch; production main is unchanged.
+export const MERCHANT_PHONE = "STAGING_DISABLED";
+export const MERCHANT_LOCAL = "STAGING_ONLY";
 
 let counter = 0;
 function pad(n: number, w: number) {
@@ -84,8 +84,8 @@ export function buildWaMessage(o: WaOrder, lang: "ar" | "en" = "ar") {
   return parts.join("\n");
 }
 
-export function openWhatsApp(o: WaOrder, lang: "ar" | "en" = "ar") {
-  const text = encodeURIComponent(buildWaMessage(o, lang));
-  const url = `https://wa.me/${MERCHANT_PHONE}?text=${text}`;
-  window.open(url, "_blank", "noopener,noreferrer");
+export function openWhatsApp(_o: WaOrder, _lang: "ar" | "en" = "ar"): boolean {
+  // Do not forward synthetic Staging customer/order data to real third parties.
+  // The caller must handle false with a clear "messaging disabled" notice.
+  return false;
 }
