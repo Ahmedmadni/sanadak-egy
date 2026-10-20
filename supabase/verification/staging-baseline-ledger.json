@@ -4,9 +4,9 @@
   "project_id": "a5ba6f1c-a324-4761-a604-2936a1f8f5cf",
   "source_branch": "staging/sanadak-isolated-s0",
   "source_commit": "41f04a8f272eb35f519e604e5fef25916bc35c46",
-  "baseline_completed": 13,
+  "baseline_completed": 17,
   "baseline_total": 30,
-  "notes": "Based on Lovable transaction-success results, not migration registry. Do not replay applied files, run supabase db push, or count pending files as installed. Next file is #14. Staging-only hardening: pending #15 reconciler no longer recreates first-admin self-claim policy.",
+  "notes": "Lovable Staging project SQL action reported transaction success for migrations #1–17; Staging-only #6, #12, #13, #14 were safe no-ops preventing historical platform admin bootstrap. Verified staging server/zero Auth users/no unsafe admin RLS following #15. No registry backfill; never replay applied SQL. #18 (legacy direct order INSERT revocation) is blocked until the real Staging frontend order RPC journey is verified. No Gate19 migration installed.",
   "files": [
     {
       "order": 1,
@@ -90,25 +90,25 @@
       "order": 14,
       "file": "20260728045306_be350871-ac57-46a4-8d5b-75556305157b.sql",
       "git_blob_sha": "76d5a1088edd069b6dacab7449d7d24943bcca16",
-      "state": "pending"
+      "state": "applied-manually"
     },
     {
       "order": 15,
       "file": "20260906090000_reconcile_live_schema.sql",
       "git_blob_sha": "facd52e1d700ba268e86c18147bd6e055bcb3f05",
-      "state": "pending"
+      "state": "applied-manually"
     },
     {
       "order": 16,
       "file": "20260906090100_remove_unsafe_first_admin_bootstrap.sql",
       "git_blob_sha": "cd85cf9a4b0f510166d9124332cb6b4b9702a4eb",
-      "state": "pending"
+      "state": "applied-manually"
     },
     {
       "order": 17,
       "file": "20260906100000_create_atomic_order_rpc.sql",
       "git_blob_sha": "32e142ed0243b5b39a7e32a55d15e6238ecfa9b8",
-      "state": "pending"
+      "state": "applied-manually"
     },
     {
       "order": 18,
@@ -188,5 +188,7 @@
       "git_blob_sha": "ac705bfd7dcb22a7410ff3b8600661e0a700f51a",
       "state": "pending"
     }
-  ]
+  ],
+  "frontend_order_rpc_verified": false,
+  "frontend_booking_rpc_verified": false
 }
