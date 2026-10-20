@@ -57,7 +57,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Sanadak-سندك" },
+      { title: "Sanadak Staging — سندك (اختبار)" },
+      { name: "robots", content: "noindex, nofollow, noarchive" },
       { name: "description", content: "سندك كل ما تحتاجه في مكان واحد" },
       { name: "author", content: "Sanadak" },
       { property: "og:title", content: "Sanadak-سندك" },
@@ -87,6 +88,13 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="ar" dir="rtl">
       <head><HeadContent /></head>
       <body>
+        <div
+          role="status"
+          aria-label="بيئة اختبار سندك"
+          className="sticky top-0 z-[9999] border-b border-amber-500/40 bg-amber-950 px-4 py-2 text-center text-xs font-bold tracking-wide text-amber-100"
+        >
+          بيئة اختبار فقط — STAGING ONLY — لا تستخدم بيانات عملاء حقيقية
+        </div>
         {children}
         <Scripts />
       </body>
