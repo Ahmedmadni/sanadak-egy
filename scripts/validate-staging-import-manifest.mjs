@@ -17,7 +17,8 @@ for (const entry of manifest.import_files){
  seen.add(p);
  assert.ok(p.startsWith("src/") || [
    ".prettierignore",".prettierrc","bun.lock","bunfig.toml","components.json",
-   "eslint.config.js","package.json","tsconfig.json","vite.config.ts"
+   "eslint.config.js","package.json","tsconfig.json","vite.config.ts",
+   "public/favicon.ico","public/sanadak-bg.mp4"
  ].includes(p), `Unexpected file in Staging copy: ${p}`);
  assert.ok(!p.includes(".env") && !p.startsWith("supabase/") &&
   !p.startsWith("docs/") && !p.startsWith("scripts/") &&
