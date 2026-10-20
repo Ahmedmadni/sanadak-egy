@@ -19,7 +19,7 @@ export function CartSheet() {
     const lines = cart.map((i) =>
       `${i.name}${i.variant ? ` (${i.variant})` : ""}${i.store ? ` — ${i.store}` : ""} × ${i.qty} = ${(i.price * i.qty).toLocaleString()} ${t("sar")}`
     );
-    openWhatsApp({
+    const opened = openWhatsApp({
       type: "order",
       serial,
       customer,
@@ -27,6 +27,14 @@ export function CartSheet() {
       total: `${total.toLocaleString()} ${t("sar")}`,
       totalLabel: t("total"),
     }, lang);
+    if (!opened) {
+      toast.info(
+        lang === "ar"
+          ? "بيئة اختبار سندك: إرسال واتساب الخارجي متوقف لحماية بيانات الاختبار. سلتك محفوظة."
+          : "Sanadak Staging: external WhatsApp messages are disabled. Your cart is preserved.",
+      );
+      return;
+    }
     // wa.me only pre-fills a message. We have no proof the user pressed Send,
     // and no authoritative Sanadak order was created in the database.
     // Preserve the cart so it is not silently lost on popup blocking/cancel.
