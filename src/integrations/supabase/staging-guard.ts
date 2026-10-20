@@ -22,12 +22,12 @@ export function assertStagingSupabaseUrl(
     throw new Error("Staging Supabase project reference is missing or invalid");
   }
 
-  if (projectRef !== VERIFIED_STAGING_PROJECT_REF) {
-    throw new Error("Staging Supabase project reference differs from the independently verified environment");
-  }
-
   if (projectRef === PRODUCTION_PROJECT_REF || url.toLowerCase().includes(PRODUCTION_PROJECT_REF)) {
     throw new Error("Staging cannot connect to the production Supabase project");
+  }
+
+  if (projectRef !== VERIFIED_STAGING_PROJECT_REF) {
+    throw new Error("Staging Supabase project reference differs from the independently verified environment");
   }
 
   if (parsed.protocol !== "https:" ||
