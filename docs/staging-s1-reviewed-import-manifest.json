@@ -1,0 +1,721 @@
+{
+  "schema": 1,
+  "purpose": "read-only reviewed source-copy manifest for existing Sanadak Staging Lovable project; no direct writes/migrations",
+  "source_repo": "Ahmedmadni/sanadak-egy",
+  "source_branch": "staging/sanadak-isolated-s0",
+  "source_commit": "3b5de27c9887af7fefaf769171aab0ab761eb158",
+  "destination_lovable_project": "a5ba6f1c-a324-4761-a604-2936a1f8f5cf",
+  "destination_supabase_ref": "wnakrxkosofufxfqacrx",
+  "production_supabase_ref_FORBIDDEN": "lkkxrdxdlkovphjlrcak",
+  "import_files": [
+    {
+      "path": ".prettierignore",
+      "git_blob_sha": "be49b2655e2222e8a688f616a5c13500298801a0"
+    },
+    {
+      "path": ".prettierrc",
+      "git_blob_sha": "90abee2393e79dff7ec36856c94f662a263f0107"
+    },
+    {
+      "path": "bun.lock",
+      "git_blob_sha": "640a709b26372d885c483d8235be3f131388d8e0"
+    },
+    {
+      "path": "bunfig.toml",
+      "git_blob_sha": "a85c15869852cfb983d95855ad5573dd5e29401b"
+    },
+    {
+      "path": "components.json",
+      "git_blob_sha": "f0817a84e832a693e7a79a911efe0b081bd97e06"
+    },
+    {
+      "path": "eslint.config.js",
+      "git_blob_sha": "4dcef7b79bbddef4ca5a88b00967d7245f6ce279"
+    },
+    {
+      "path": "package.json",
+      "git_blob_sha": "d43fe2af7792e7e1d4a73179fb3eb623b9dce570"
+    },
+    {
+      "path": "src/assets/sanadak-icon.png",
+      "git_blob_sha": "95d5d0bc89777b98696aefcf6a47b9f6b740e65d"
+    },
+    {
+      "path": "src/assets/sanadak-logo-dark.png",
+      "git_blob_sha": "d09708bfe31678ae03320ddfc8044792755df3be"
+    },
+    {
+      "path": "src/assets/sanadak-logo-light.png",
+      "git_blob_sha": "90fd3e9390075fe11b5d0f51168adf9c7b971d84"
+    },
+    {
+      "path": "src/assets/sanadak-logo.png",
+      "git_blob_sha": "f9e198b5f08d73f41751e3af31c9fc2699c49997"
+    },
+    {
+      "path": "src/components/business/BusinessLayout.tsx",
+      "git_blob_sha": "1b0c2d65f7832615999c7c56c306d906c19e988a"
+    },
+    {
+      "path": "src/components/business/DocumentUpload.tsx",
+      "git_blob_sha": "0b2ec8083d432ddfe88d53d907602749a017d084"
+    },
+    {
+      "path": "src/components/business/ImageUpload.tsx",
+      "git_blob_sha": "cf94ac7a59b45f71d6804bc03b91eefd25dc0762"
+    },
+    {
+      "path": "src/components/business/RegisterBusiness.tsx",
+      "git_blob_sha": "60d9c14c45f7c37bfca77ce2e1164e383b782329"
+    },
+    {
+      "path": "src/components/business/panels/AiStudioPanel.tsx",
+      "git_blob_sha": "fc1f0449cedd7f877b96667ab947f6c6dce31b14"
+    },
+    {
+      "path": "src/components/business/panels/BillingPanel.tsx",
+      "git_blob_sha": "a87002ff856785bb676aae63aa1484fd729e4fe3"
+    },
+    {
+      "path": "src/components/business/panels/BookingsPanel.tsx",
+      "git_blob_sha": "2a2be0b2550f192374c5c6e2f0e5d3c57c41c054"
+    },
+    {
+      "path": "src/components/business/panels/BranchesPanel.tsx",
+      "git_blob_sha": "39972e1749123ba008a3f4a1f38dbff6d215ae4f"
+    },
+    {
+      "path": "src/components/business/panels/CatalogPanel.tsx",
+      "git_blob_sha": "9cc813ca77106a6c6b8789a0f2e0f95115689386"
+    },
+    {
+      "path": "src/components/business/panels/KitchenBoard.tsx",
+      "git_blob_sha": "5418e6b129f25a97eaf4df2bf442d1c610c1b333"
+    },
+    {
+      "path": "src/components/business/panels/NotificationsPanel.tsx",
+      "git_blob_sha": "e1d78830e3653f4bdfec0d91fd2d436ccdd7d172"
+    },
+    {
+      "path": "src/components/business/panels/OrdersPanel.tsx",
+      "git_blob_sha": "0f79a7902bc4317a040a03aacd495916b10f4708"
+    },
+    {
+      "path": "src/components/business/panels/OverviewPanel.tsx",
+      "git_blob_sha": "169658375171303867223d211348705bf0f7a8be"
+    },
+    {
+      "path": "src/components/business/panels/ProfilePanel.tsx",
+      "git_blob_sha": "3af3634b748ba22f2315fd6cd787e3112187a1fd"
+    },
+    {
+      "path": "src/components/business/panels/ReviewsPanel.tsx",
+      "git_blob_sha": "900c532b613fef91a4e2bbe3f097062f324edc9e"
+    },
+    {
+      "path": "src/components/business/panels/StaffPanel.tsx",
+      "git_blob_sha": "0ba96c7f3a426a2fe00b34590571aa2e7bffcd02"
+    },
+    {
+      "path": "src/components/business/types.ts",
+      "git_blob_sha": "e605144794407618103cceec791e498829339b4c"
+    },
+    {
+      "path": "src/components/business/ui.tsx",
+      "git_blob_sha": "fd59a98ee8424992437598cf23ae635cb2694e79"
+    },
+    {
+      "path": "src/components/sanadak/AssistantWidget.tsx",
+      "git_blob_sha": "a966f6fa5da8ddca4298803c60441ea13439b6be"
+    },
+    {
+      "path": "src/components/sanadak/BookingDialog.tsx",
+      "git_blob_sha": "a9bb16408c7c5d94c36bcd5df4d24d9d21347a83"
+    },
+    {
+      "path": "src/components/sanadak/CTA.tsx",
+      "git_blob_sha": "fa5d572611f93f3ae36551863c0ecc13efd01777"
+    },
+    {
+      "path": "src/components/sanadak/CartSheet.tsx",
+      "git_blob_sha": "6856fab6dfbf0f6447e20b47b8bd2457b356579e"
+    },
+    {
+      "path": "src/components/sanadak/CategoriesShowcase.tsx",
+      "git_blob_sha": "161f15a4ac0147a6c5b67f261a9201ba97537af7"
+    },
+    {
+      "path": "src/components/sanadak/CategoryPage.tsx",
+      "git_blob_sha": "efb4a08dd96691798959bc2e59613e01cd4ee4f5"
+    },
+    {
+      "path": "src/components/sanadak/CustomerBookingHistory.tsx",
+      "git_blob_sha": "b307b7c9ce51e4efaacecfbdbea91d32a72bc9ce"
+    },
+    {
+      "path": "src/components/sanadak/CustomerOrderDetails.tsx",
+      "git_blob_sha": "fe70ad636f7a766b560ed9a7f1de27705ce6787c"
+    },
+    {
+      "path": "src/components/sanadak/FeaturedBusinesses.tsx",
+      "git_blob_sha": "221cc714565f5b36572c1e73cba67ccab6fcc6b8"
+    },
+    {
+      "path": "src/components/sanadak/Hero.tsx",
+      "git_blob_sha": "1fe947acf23b46fbbb417a6fdbff0342f492a8cb"
+    },
+    {
+      "path": "src/components/sanadak/HeroCategoryRail.tsx",
+      "git_blob_sha": "8bf80e302b78992abeb474de937b43c422ac27c9"
+    },
+    {
+      "path": "src/components/sanadak/HeroSearch.tsx",
+      "git_blob_sha": "427e851d45cd6c37d2b6c36b44ff9937b7471a3c"
+    },
+    {
+      "path": "src/components/sanadak/HomeCategories.tsx",
+      "git_blob_sha": "9565229b3630f14fd84c7e525831515a770956e1"
+    },
+    {
+      "path": "src/components/sanadak/LiveStats.tsx",
+      "git_blob_sha": "57e76eee07e678b64e43fe902291364389cd5244"
+    },
+    {
+      "path": "src/components/sanadak/Logo.tsx",
+      "git_blob_sha": "61de2ab327bc7d8b72064f7977936b30563b438d"
+    },
+    {
+      "path": "src/components/sanadak/MerchantDialog.tsx",
+      "git_blob_sha": "0e60940041f3e5b94cbbecf87152001cf40986df"
+    },
+    {
+      "path": "src/components/sanadak/MerchantSection.tsx",
+      "git_blob_sha": "d47d0837018cb45d257f696ce92957e3c9ce6a77"
+    },
+    {
+      "path": "src/components/sanadak/Nav.tsx",
+      "git_blob_sha": "febeadcff9f1133eb1e8ba8eda86ee8ea4f7987d"
+    },
+    {
+      "path": "src/components/sanadak/StoreCartCheckout.tsx",
+      "git_blob_sha": "a23850b77a104abb2648cf0012029111e417b205"
+    },
+    {
+      "path": "src/components/ui/accordion.tsx",
+      "git_blob_sha": "16ee9004561ab0de3cc53789d5265cba511c8570"
+    },
+    {
+      "path": "src/components/ui/alert-dialog.tsx",
+      "git_blob_sha": "072a66562e9d94e33ccaf32d27c8efe3a52e7c32"
+    },
+    {
+      "path": "src/components/ui/alert.tsx",
+      "git_blob_sha": "cd0a0627702e492c3f02607dbc77025999c5ed13"
+    },
+    {
+      "path": "src/components/ui/aspect-ratio.tsx",
+      "git_blob_sha": "c9e6f4bf9e1c01d6d7022b53e68438e61746c86c"
+    },
+    {
+      "path": "src/components/ui/avatar.tsx",
+      "git_blob_sha": "7904926b9d89e90f6e9a3a9dad2abeed5af99c2e"
+    },
+    {
+      "path": "src/components/ui/badge.tsx",
+      "git_blob_sha": "3aabd17e73034f71efdd2f301f8a81ab8cdae23c"
+    },
+    {
+      "path": "src/components/ui/breadcrumb.tsx",
+      "git_blob_sha": "94eb6291a6f26846562a63438b3c49595e9bff25"
+    },
+    {
+      "path": "src/components/ui/button.tsx",
+      "git_blob_sha": "bc3bc9f6bbefc3155d1f4d053ff58f9b8662edbe"
+    },
+    {
+      "path": "src/components/ui/calendar.tsx",
+      "git_blob_sha": "781f8853f2a4044c305cc862f832a2b01d41d3d7"
+    },
+    {
+      "path": "src/components/ui/card.tsx",
+      "git_blob_sha": "d886b020243248cee648b14274a763b325a3bc55"
+    },
+    {
+      "path": "src/components/ui/carousel.tsx",
+      "git_blob_sha": "5dd7455702b2fb2c9561dd3b1ed700210ef3be3d"
+    },
+    {
+      "path": "src/components/ui/chart.tsx",
+      "git_blob_sha": "f27e7ca5343ccc102441afeb45ef946e1d504944"
+    },
+    {
+      "path": "src/components/ui/checkbox.tsx",
+      "git_blob_sha": "f01d47c865e9ce28610b16bfa4021a88beebec3e"
+    },
+    {
+      "path": "src/components/ui/collapsible.tsx",
+      "git_blob_sha": "cb003d17563549c97d3d349477c0aa073b2244aa"
+    },
+    {
+      "path": "src/components/ui/command.tsx",
+      "git_blob_sha": "dc859d7281e5b4fef5a2b71ea30459e0745003a8"
+    },
+    {
+      "path": "src/components/ui/context-menu.tsx",
+      "git_blob_sha": "bad5ecec471b1fffa49c1f23a43f4d69ebb4edb3"
+    },
+    {
+      "path": "src/components/ui/dialog.tsx",
+      "git_blob_sha": "8ed559e3d6f2ab5f0d0287f56c63fbcd48a47b87"
+    },
+    {
+      "path": "src/components/ui/drawer.tsx",
+      "git_blob_sha": "33533cc7600c40d506a3d308d16ef25f95af3e9d"
+    },
+    {
+      "path": "src/components/ui/dropdown-menu.tsx",
+      "git_blob_sha": "f11da936afd13d3036831b96e8d36f62bf2b81de"
+    },
+    {
+      "path": "src/components/ui/form.tsx",
+      "git_blob_sha": "4d15828dac1306f42581c2aa2aa45d04c65522db"
+    },
+    {
+      "path": "src/components/ui/hover-card.tsx",
+      "git_blob_sha": "36f3b7976293638d6c1eef6c426847107dbf766f"
+    },
+    {
+      "path": "src/components/ui/input-otp.tsx",
+      "git_blob_sha": "95d1f4c303a394a313c79f27184456bef5d99ae5"
+    },
+    {
+      "path": "src/components/ui/input.tsx",
+      "git_blob_sha": "7db524115c08e80b10d5282d1bb504b06b238d17"
+    },
+    {
+      "path": "src/components/ui/label.tsx",
+      "git_blob_sha": "392197c3b43d69a9b426d49dec06d32ff53ea8d4"
+    },
+    {
+      "path": "src/components/ui/menubar.tsx",
+      "git_blob_sha": "5c9eb98d5eaca6f6da74f71e73893c739da6cb3e"
+    },
+    {
+      "path": "src/components/ui/navigation-menu.tsx",
+      "git_blob_sha": "94b2ecc95158b20a18bd986d1313558a128c480f"
+    },
+    {
+      "path": "src/components/ui/pagination.tsx",
+      "git_blob_sha": "f8cd41fbaad75c338aec493b5c750b65f95845c5"
+    },
+    {
+      "path": "src/components/ui/popover.tsx",
+      "git_blob_sha": "dc78a209bbda251914e8ee4633c303ba55a59d2c"
+    },
+    {
+      "path": "src/components/ui/progress.tsx",
+      "git_blob_sha": "1741cd2f42b7b3c7edcabee07c06e8750556f5ed"
+    },
+    {
+      "path": "src/components/ui/radio-group.tsx",
+      "git_blob_sha": "38a1a6629d76c4a6f445eb85aa8c6d485b9c064a"
+    },
+    {
+      "path": "src/components/ui/resizable.tsx",
+      "git_blob_sha": "02e9460e72e5e0afa5f71264f0fcd4a16d021aea"
+    },
+    {
+      "path": "src/components/ui/scroll-area.tsx",
+      "git_blob_sha": "69febe58466d6309bdfc74bdca456c7aac448f79"
+    },
+    {
+      "path": "src/components/ui/select.tsx",
+      "git_blob_sha": "3fdfc929eb90d4f33e2591e94cdfb2278d1b5c38"
+    },
+    {
+      "path": "src/components/ui/separator.tsx",
+      "git_blob_sha": "5f5966c41731e846b2bc97de315471ea605ffe86"
+    },
+    {
+      "path": "src/components/ui/sheet.tsx",
+      "git_blob_sha": "0aedeb766169d085f3b4bb72e80eac6fe552b971"
+    },
+    {
+      "path": "src/components/ui/sidebar.tsx",
+      "git_blob_sha": "3922680246adfbcdc91110f779eea0b291222a54"
+    },
+    {
+      "path": "src/components/ui/skeleton.tsx",
+      "git_blob_sha": "6d9a616758e39fcbc07480484a308ffb9d9fba5d"
+    },
+    {
+      "path": "src/components/ui/slider.tsx",
+      "git_blob_sha": "e56622ad7eec5f4e98dc870f745c2e066c66f10e"
+    },
+    {
+      "path": "src/components/ui/sonner.tsx",
+      "git_blob_sha": "7a214692adeeea9cfe4acd8659b1b7e0fd4f756f"
+    },
+    {
+      "path": "src/components/ui/switch.tsx",
+      "git_blob_sha": "6338184e11d92961b4dfd06f151ce5ada7dd838c"
+    },
+    {
+      "path": "src/components/ui/table.tsx",
+      "git_blob_sha": "49d2d5c7c3e9d2d43fb2a2e423c751ec77da4279"
+    },
+    {
+      "path": "src/components/ui/tabs.tsx",
+      "git_blob_sha": "6047b50eb6db8395f79c666e488d71881155d97e"
+    },
+    {
+      "path": "src/components/ui/textarea.tsx",
+      "git_blob_sha": "29330b61811cf9aaac31a94f981728f898229bd5"
+    },
+    {
+      "path": "src/components/ui/toggle-group.tsx",
+      "git_blob_sha": "d2c9f8ee385d50f14ca51f63db9cad9b92accd47"
+    },
+    {
+      "path": "src/components/ui/toggle.tsx",
+      "git_blob_sha": "9d146b6a1051516735339895093cbcbcfeb9a3e8"
+    },
+    {
+      "path": "src/components/ui/tooltip.tsx",
+      "git_blob_sha": "07e55fafdcf32ee9a57164a07c89422e61c6ac2e"
+    },
+    {
+      "path": "src/hooks/use-mobile.tsx",
+      "git_blob_sha": "502fd323934501eab408a396a9ae4a07c0ae3560"
+    },
+    {
+      "path": "src/integrations/lovable/index.ts",
+      "git_blob_sha": "b677d4215f672d932d41908c83a3c294554636ad"
+    },
+    {
+      "path": "src/integrations/supabase/auth-attacher.ts",
+      "git_blob_sha": "5bc57b798847727bc6af008e343d85fa9be1c3fb"
+    },
+    {
+      "path": "src/integrations/supabase/auth-middleware.ts",
+      "git_blob_sha": "1600da2c5ec7365ed89e5e3b08569a4ab080708f"
+    },
+    {
+      "path": "src/integrations/supabase/client.server.ts",
+      "git_blob_sha": "94e5ed5edbf6af4b1cf41f73c40bf9ca399962c4"
+    },
+    {
+      "path": "src/integrations/supabase/client.ts",
+      "git_blob_sha": "df7ee77df1af656cbacd171396620a2378cc0e01"
+    },
+    {
+      "path": "src/integrations/supabase/staging-guard.test.ts",
+      "git_blob_sha": "f92199361b24b7d9c1d61b54ed86b9243d679bf0"
+    },
+    {
+      "path": "src/integrations/supabase/staging-guard.ts",
+      "git_blob_sha": "609094ab91b830dfd73feed4fe244fa0ecb352a9"
+    },
+    {
+      "path": "src/integrations/supabase/types.ts",
+      "git_blob_sha": "7b79e908564f32181587db37cba3ef24fede762d"
+    },
+    {
+      "path": "src/lib/auth-redirect.test.ts",
+      "git_blob_sha": "5ce9a214d78c95051d7b9ded53643db49781c975"
+    },
+    {
+      "path": "src/lib/auth-redirect.ts",
+      "git_blob_sha": "419553d9d56f296792d544ff24a66198b54b7423"
+    },
+    {
+      "path": "src/lib/booking-calendar.test.ts",
+      "git_blob_sha": "56eb63b6ccadec170b70c061991b8841008fbe23"
+    },
+    {
+      "path": "src/lib/booking-calendar.ts",
+      "git_blob_sha": "af599c7c827c4225d8b8631cba0a31e80b565775"
+    },
+    {
+      "path": "src/lib/booking-dates.test.ts",
+      "git_blob_sha": "61d754874532cf3bdcc3e15d1252e0681a0fde46"
+    },
+    {
+      "path": "src/lib/booking-dates.ts",
+      "git_blob_sha": "221d126090e475bbd20b9cf66d86259ae409806f"
+    },
+    {
+      "path": "src/lib/customer-booking-tracking.test.ts",
+      "git_blob_sha": "2b13324a1389c8d8de886582d2ec28186641d033"
+    },
+    {
+      "path": "src/lib/customer-booking-tracking.ts",
+      "git_blob_sha": "48bef4b46d0a3b5fb189465571f351355d075ed7"
+    },
+    {
+      "path": "src/lib/customer-order-receipt.test.ts",
+      "git_blob_sha": "4bfe5024868a74ac0d8851e63d23706fbe6e1316"
+    },
+    {
+      "path": "src/lib/customer-order-receipt.ts",
+      "git_blob_sha": "d05bfc0c65048ab80fd6b842d59ca446f70bdcc4"
+    },
+    {
+      "path": "src/lib/db-preflight-contract.test.ts",
+      "git_blob_sha": "40175f7d88504759476164c7c53193306e638e81"
+    },
+    {
+      "path": "src/lib/error-capture.ts",
+      "git_blob_sha": "171c9b5800c5b17efc0598eae4c760b3778021e6"
+    },
+    {
+      "path": "src/lib/error-page.ts",
+      "git_blob_sha": "725235ce7bdf496daf2d870148978939f4f40a9b"
+    },
+    {
+      "path": "src/lib/kitchen-board.test.ts",
+      "git_blob_sha": "712ca6b27c9828a9782f2443d8eaa2873078f7c5"
+    },
+    {
+      "path": "src/lib/kitchen-board.ts",
+      "git_blob_sha": "9309960c6959c83deb7d17094cc4a78941ed8536"
+    },
+    {
+      "path": "src/lib/merchant-booking-calendar.test.ts",
+      "git_blob_sha": "aef07461fd853ca06ff68ec0f400d3f0de5503fa"
+    },
+    {
+      "path": "src/lib/merchant-booking-calendar.ts",
+      "git_blob_sha": "a3ebe5de9debc6440bcd9a76b65ccfcf8080b355"
+    },
+    {
+      "path": "src/lib/merchant-order-filter.test.ts",
+      "git_blob_sha": "1246bc7b66944cf4e4168649e71f7a055ac27701"
+    },
+    {
+      "path": "src/lib/merchant-order-filter.ts",
+      "git_blob_sha": "353a7aef5655ba26c8ae24814b539580280f4db9"
+    },
+    {
+      "path": "src/lib/merchant-payment-config.test.ts",
+      "git_blob_sha": "bd6865d2768278f2fd5d4d427e51e6c06166eb21"
+    },
+    {
+      "path": "src/lib/merchant-payment-config.ts",
+      "git_blob_sha": "a73a2fffdac856bcb15b7ec87fcec1d31f80c84a"
+    },
+    {
+      "path": "src/lib/merchant-rpc-compat.test.ts",
+      "git_blob_sha": "5ac3a28c73785a166bbb4a5ead02cc7342a33c2f"
+    },
+    {
+      "path": "src/lib/merchant-rpc-compat.ts",
+      "git_blob_sha": "11138cfb2ce2a79ef21ca4ecc3f7a7799232c463"
+    },
+    {
+      "path": "src/lib/password-recovery.test.ts",
+      "git_blob_sha": "d8bcc4e191c4405b0772852de3b0c213adf9df8c"
+    },
+    {
+      "path": "src/lib/password-recovery.ts",
+      "git_blob_sha": "9ea25cab81f3bf239e76e55b737c1d0d3ddadf06"
+    },
+    {
+      "path": "src/lib/public-storefront.test.ts",
+      "git_blob_sha": "9ec7c615dc471ed416a7972c961601859b149c79"
+    },
+    {
+      "path": "src/lib/public-storefront.ts",
+      "git_blob_sha": "1f1ee652c2d0132346400d7575981fb522375d37"
+    },
+    {
+      "path": "src/lib/sanadak-context.tsx",
+      "git_blob_sha": "a902b7545a31724686ee21d1d512ea557a32a485"
+    },
+    {
+      "path": "src/lib/sanadak-sounds.ts",
+      "git_blob_sha": "05e96364e908ed3b4f768223c781b95cbd65a888"
+    },
+    {
+      "path": "src/lib/staging-order-contract.test.ts",
+      "git_blob_sha": "2ffbc77ca64a3d58fe9d5e98d40afcc57295f2eb"
+    },
+    {
+      "path": "src/lib/store-cart.test.ts",
+      "git_blob_sha": "1cefd12565657af170b5de23f97203e9aea471be"
+    },
+    {
+      "path": "src/lib/store-cart.ts",
+      "git_blob_sha": "78f545d807019673a0719423f6377e94e1082326"
+    },
+    {
+      "path": "src/lib/use-activity-types.ts",
+      "git_blob_sha": "3ea694ee81a977aac6305d1b7fe47a743a70a9ce"
+    },
+    {
+      "path": "src/lib/use-auth.ts",
+      "git_blob_sha": "d782a9500c6cde54b8836f0daae8f1bf64a4bbdc"
+    },
+    {
+      "path": "src/lib/use-my-tenants.ts",
+      "git_blob_sha": "5828da1b61e4e63e4d2f1972fd6e8bb2fceb4432"
+    },
+    {
+      "path": "src/lib/use-storage-upload.ts",
+      "git_blob_sha": "b22e3afe9d19a6ed3f9a190f7ac6d2328122417a"
+    },
+    {
+      "path": "src/lib/utils.ts",
+      "git_blob_sha": "a5ef193506d07d0459fec4f187af08283094d7c8"
+    },
+    {
+      "path": "src/lib/whatsapp.ts",
+      "git_blob_sha": "2f19dd14cd99c121cb1e2ccc813fbb71d72833d2"
+    },
+    {
+      "path": "src/routeTree.gen.ts",
+      "git_blob_sha": "49de486dcc7577e91e334e1a78edba7865d7b8d4"
+    },
+    {
+      "path": "src/router.tsx",
+      "git_blob_sha": "3423d598036579e62f42faec438f868b4bb0bb17"
+    },
+    {
+      "path": "src/routes/__root.tsx",
+      "git_blob_sha": "006918440f8da700e82259e47150f7e3d15eb72a"
+    },
+    {
+      "path": "src/routes/admin.tsx",
+      "git_blob_sha": "ec4e8b0580626d8bb68279ef3ee24417c0d30b19"
+    },
+    {
+      "path": "src/routes/api.health.ts",
+      "git_blob_sha": "4aa34fad0a78cf33a549016d9ee94d222192fd9d"
+    },
+    {
+      "path": "src/routes/auth.tsx",
+      "git_blob_sha": "5c33c94462cefb79e6abbb0ba670cd6362f34424"
+    },
+    {
+      "path": "src/routes/bookings.tsx",
+      "git_blob_sha": "dcf8189519176243f6aa599caf804e9f6b8241f1"
+    },
+    {
+      "path": "src/routes/business.tsx",
+      "git_blob_sha": "654812b66e473b9e1f5a4ded5f53ab7e04f5440e"
+    },
+    {
+      "path": "src/routes/cafes.tsx",
+      "git_blob_sha": "0687f5b40e0c106a6917b93c73efc54255ebf2fe"
+    },
+    {
+      "path": "src/routes/forgot-password.tsx",
+      "git_blob_sha": "842eba2516a0b5d777a6154842a989922538a944"
+    },
+    {
+      "path": "src/routes/halls.tsx",
+      "git_blob_sha": "5772bb058342f5a9851d0e9d19411cefb3404d10"
+    },
+    {
+      "path": "src/routes/index.tsx",
+      "git_blob_sha": "301bd6b4a959900883d69c4763ed1e6d6cb2a34a"
+    },
+    {
+      "path": "src/routes/medical.tsx",
+      "git_blob_sha": "1407b4ef809aa64092b2b2089d54c6669fe5d30c"
+    },
+    {
+      "path": "src/routes/notifications.tsx",
+      "git_blob_sha": "716d64a231b85fddc7f09bf2abe30c1872b75b72"
+    },
+    {
+      "path": "src/routes/orders.tsx",
+      "git_blob_sha": "2b59ed0a1d542cb6c9535246212bd7678bab7a38"
+    },
+    {
+      "path": "src/routes/pharmacy.tsx",
+      "git_blob_sha": "0cc0062b608cdfb923ce11ac66b9314e560acf26"
+    },
+    {
+      "path": "src/routes/reset-password.tsx",
+      "git_blob_sha": "03dce210650f772599ee4b5b4d68bd3ed433a189"
+    },
+    {
+      "path": "src/routes/restaurants.tsx",
+      "git_blob_sha": "ca5b0ee4598b18c174f0f1815239f26705e44a6d"
+    },
+    {
+      "path": "src/routes/reviews.tsx",
+      "git_blob_sha": "56cc00e8cc23eed32c9af74330011724034982ba"
+    },
+    {
+      "path": "src/routes/search.tsx",
+      "git_blob_sha": "606cd461fc054fa0a9ec1746d9539773c0065e5a"
+    },
+    {
+      "path": "src/routes/shops.tsx",
+      "git_blob_sha": "f09cfd9319d5f00674d98d4ece42b817c461ded3"
+    },
+    {
+      "path": "src/routes/store.$slug.tsx",
+      "git_blob_sha": "a9f832f3282e3dbaff570d5073f869d51d67f771"
+    },
+    {
+      "path": "src/routes/super.tsx",
+      "git_blob_sha": "91045f23ab4c9fe33381e01d44ed747efdd5e633"
+    },
+    {
+      "path": "src/server.ts",
+      "git_blob_sha": "4a17bea733e0c87654d09145464a4e53341a69d2"
+    },
+    {
+      "path": "src/start.ts",
+      "git_blob_sha": "c73bcaf7c04a045cfb04806978edc79c526ba383"
+    },
+    {
+      "path": "src/styles.css",
+      "git_blob_sha": "4838769135cddf0b15a0c689eb67176307bd48a4"
+    },
+    {
+      "path": "tsconfig.json",
+      "git_blob_sha": "533d40171d4cbc61370abbffca39ba9256ad5927"
+    },
+    {
+      "path": "vite.config.ts",
+      "git_blob_sha": "6c77de3d4d90dd49f736213f5870fb79351df699"
+    }
+  ],
+  "preserve_existing_staging_files": [
+    ".env",
+    "supabase/config.toml",
+    "src/integrations/supabase/previewAuthStorage.ts",
+    "public/robots.txt",
+    ".lovable/plan.md"
+  ],
+  "optional_binary_assets_requires_review": [
+    "public/favicon.ico",
+    "public/sanadak-bg.mp4"
+  ],
+  "exclude_from_auto_import": [
+    ".env*",
+    "supabase/migrations/**",
+    "supabase/verification/**",
+    "supabase/config.toml",
+    ".github/**",
+    "docs/**",
+    "scripts/**",
+    "wrangler.jsonc",
+    "package-lock.json",
+    "CLAUDE.md"
+  ],
+  "mandatory_conditions": [
+    "No production Lovable project or GitHub main changes",
+    "No automatic or manual SQL migrations during code transfer",
+    "Runtime Supabase ref must remain wnakrxkosofufxfqacrx",
+    "Only import after explicit per-project import approval and read-only diff review",
+    "App currently has only 17 of 30 baseline migrations",
+    "Confirm code contains current Lovable Cloud opaque-key fetch compatibility and the pinned staging-guard",
+    "Keep staging unpublished and do not send external WhatsApp, emails, webhooks, or payments"
+  ],
+  "source_copy_executed": false
+}
