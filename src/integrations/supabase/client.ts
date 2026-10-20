@@ -50,8 +50,8 @@ function createSupabaseFetch(supabaseUrl: string, supabaseKey: string): typeof f
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
-  const SUPABASE_URL = import.meta.env['VITE_SUPABASE_URL'] || process.env['SUPABASE_URL'];
-  const SUPABASE_PUBLISHABLE_KEY = import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] || process.env['SUPABASE_PUBLISHABLE_KEY'];
+  const SUPABASE_URL = import.meta.env['VITE_SUPABASE_URL'] || (typeof process !== 'undefined' ? process.env['SUPABASE_URL'] : undefined);
+  const SUPABASE_PUBLISHABLE_KEY = import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] || (typeof process !== 'undefined' ? process.env['SUPABASE_PUBLISHABLE_KEY'] : undefined);
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [
@@ -63,7 +63,7 @@ function createSupabaseClient() {
     throw new Error(message);
   }
 
-  assertStagingSupabaseUrl(SUPABASE_URL, import.meta.env['VITE_SUPABASE_PROJECT_ID'] || process.env['SUPABASE_PROJECT_ID']);
+  assertStagingSupabaseUrl(SUPABASE_URL, import.meta.env['VITE_SUPABASE_PROJECT_ID'] || (typeof process !== 'undefined' ? process.env['SUPABASE_PROJECT_ID'] : undefined));
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     global: {
