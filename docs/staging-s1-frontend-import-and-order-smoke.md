@@ -17,9 +17,11 @@ this public staging branch**, examination of every source file, then a
 Its plan awaits human approval, not an automatic assistant decision.
 
 Before any copy, check:
-1. The Lovable project ID is the **Staging** ID above. Confirm Staging
-   Supabase ref/public URL from the Staging settings and that both differ from
-   production. Do not guess project ref from the Lovable project UUID.
+1. The Lovable project ID is the **Staging** ID above.
+   Supabase ref `wnakrxkosofufxfqacrx` and its public URL were
+   independently verified from the Staging project's real Lovable
+   `supabase/config.toml` and browser/server env. Confirm again at import
+   time: they must differ from production. Do not derive refs from project UUIDs.
 2. Read-only inspect the branch commit, source tree, `package.json`,
    `src/integrations/supabase/**`, and all auth/server routes.
 3. Exclude `.env`, `.env.*`, private credentials and keys, Git metadata,
@@ -32,8 +34,12 @@ Before any copy, check:
    or mark their history applied when copying project source. The original
    Lovable Staging project's own database and secrets remain authoritative.
 5. Preserve `assertStagingSupabaseUrl` guards in browser, server and
-   authenticated middleware. Fail closed if actual Staging URL and ref
-   cannot be configured accurately; never disable the guards to make UI work.
+   authenticated middleware, **strictly pinned to**
+   `wnakrxkosofufxfqacrx`. Important: Lovable Cloud generated clients
+   use `createSupabaseFetch` to handle opaque `sb_publishable_*`
+   tokens. GitHub's Staging branch now includes those same client adapters,
+   merged with the strict Staging guard. Do not copy older generated clients
+   that remove this adapter, and never disable guards to make UI work.
 6. Confirm the project stays **unpublished**, with test email/payment/
    webhooks disabled until authorized. Do not link/sync GitHub `main`.
 7. Produce diff/review report, list of files to copy, and confirm explicit
