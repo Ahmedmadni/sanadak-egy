@@ -24,7 +24,10 @@ Before any copy, check:
    `src/integrations/supabase/**`, and all auth/server routes.
 3. Exclude `.env`, `.env.*`, private credentials and keys, Git metadata,
    `supabase/config.toml`, auto-generated environment settings, storage
-   secrets, and any production Supabase reference or auth users.
+   secrets, and any production backend **connection** setting or auth users.
+   The known production ref appears inside the intentional
+   `PRODUCTION_PROJECT_REF` denylist constant in `staging-guard.ts`;
+   **retain that constant and its guard**. It must never be used as a URL.
 4. Treat `supabase/migrations/**` as **reference only**. Do not execute them
    or mark their history applied when copying project source. The original
    Lovable Staging project's own database and secrets remain authoritative.
