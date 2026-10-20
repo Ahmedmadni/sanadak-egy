@@ -3,7 +3,7 @@
   "purpose": "read-only reviewed source-copy manifest for existing Sanadak Staging Lovable project; no direct writes/migrations",
   "source_repo": "Ahmedmadni/sanadak-egy",
   "source_branch": "staging/sanadak-isolated-s0",
-  "source_commit": "3b5de27c9887af7fefaf769171aab0ab761eb158",
+  "source_commit": "6f2522f49491b2c4b2e294a8bdae457634237a99",
   "destination_lovable_project": "a5ba6f1c-a324-4761-a604-2936a1f8f5cf",
   "destination_supabase_ref": "wnakrxkosofufxfqacrx",
   "production_supabase_ref_FORBIDDEN": "lkkxrdxdlkovphjlrcak",
@@ -582,7 +582,7 @@
     },
     {
       "path": "src/routes/__root.tsx",
-      "git_blob_sha": "006918440f8da700e82259e47150f7e3d15eb72a"
+      "git_blob_sha": "8b953b85011f50f9572de8dd7630b04370d29725"
     },
     {
       "path": "src/routes/admin.tsx",
@@ -715,7 +715,8 @@
     "Only import after explicit per-project import approval and read-only diff review",
     "App currently has only 17 of 30 baseline migrations",
     "Confirm code contains current Lovable Cloud opaque-key fetch compatibility and the pinned staging-guard",
-    "Keep staging unpublished and do not send external WhatsApp, emails, webhooks, or payments"
+    "Keep staging unpublished and do not send external WhatsApp, emails, webhooks, or payments",
+    "A visible STAGING ONLY status ribbon must render on every route; noindex/noarchive must be set at root"
   ],
   "source_copy_executed": false
 }
