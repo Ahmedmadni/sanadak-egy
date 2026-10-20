@@ -14,7 +14,7 @@ assert.ok(next, "No pending Staging baseline migration");
 assert.equal(next.order, ledger.baseline_completed + 1);
 assert.equal(next.state, "pending");
 assert.equal(ledger.project_id, "a5ba6f1c-a324-4761-a604-2936a1f8f5cf");
-assert.equal(ledger.baseline_completed, 13, "Review and update execution ledger before preparing next SQL");
+assert.equal(ledger.baseline_completed, 17, "Review and update execution ledger before preparing next SQL");
 const source = readFileSync(join(root, next.file));
 const digest = createHash("sha1").update(`blob ${source.length}\0`).update(source).digest("hex");
 assert.equal(digest, next.git_blob_sha, "The next migration has changed: STOP and review");
@@ -42,9 +42,20 @@ const guard = `DO $staging_guard$ BEGIN
   END IF;
 END $staging_guard$;`;
 
+const requiresOrderVerified = next.file.includes("close_direct_order_inserts");
+const requiresBookingVerified = next.file.includes("close_direct_booking_inserts");
+const frontendGateBlocked = (requiresOrderVerified && !ledger.frontend_order_rpc_verified) ||
+  (requiresBookingVerified && !ledger.frontend_booking_rpc_verified);
+
 if (process.argv.includes("--check")) {
-  console.log(`Ready to prepare Staging-only migration #${next.order}: ${next.file}; SQL blob hash verified`);
+  if (frontendGateBlocked) {
+    console.log(`BLOCKED (safe): Staging migration #${next.order} / ${next.file} needs verified browser RPC journey before revoking legacy INSERT; SQL hash verified`);
+  } else {
+    console.log(`Ready to prepare Staging-only migration #${next.order}: ${next.file}; SQL blob hash verified`);
+  }
 } else {
+  assert.equal(frontendGateBlocked, false,
+    "Blocked: verify the real Staging frontend RPC journey before closing legacy INSERT permissions");
   // stdout is a reviewable SQL artifact, never executed by this script.
   process.stdout.write(
     `-- SANADAK STAGING ONLY; DO NOT RUN ON PRODUCTION.\n` +
