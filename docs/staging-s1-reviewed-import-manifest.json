@@ -3,7 +3,7 @@
   "purpose": "read-only reviewed source-copy manifest for existing Sanadak Staging Lovable project; no direct writes/migrations",
   "source_repo": "Ahmedmadni/sanadak-egy",
   "source_branch": "staging/sanadak-isolated-s0",
-  "source_commit": "02444fb6afe4640be84c1a1a4215bdb2796f9feb",
+  "source_commit": "e6a10b3adf0dd2b2c05f39d86fa2047dc41149df",
   "destination_lovable_project": "a5ba6f1c-a324-4761-a604-2936a1f8f5cf",
   "destination_supabase_ref": "wnakrxkosofufxfqacrx",
   "production_supabase_ref_FORBIDDEN": "lkkxrdxdlkovphjlrcak",
@@ -37,6 +37,14 @@
       "git_blob_sha": "d43fe2af7792e7e1d4a73179fb3eb623b9dce570"
     },
     {
+      "path": "public/favicon.ico",
+      "git_blob_sha": "0606303ae6c9ea31eb54d26ae7dcddfe5373c662"
+    },
+    {
+      "path": "public/sanadak-bg.mp4",
+      "git_blob_sha": "77ba5dfe0ab7194727d0e7d4f0695d5de4d116fd"
+    },
+    {
       "path": "src/assets/sanadak-icon.png",
       "git_blob_sha": "95d5d0bc89777b98696aefcf6a47b9f6b740e65d"
     },
@@ -63,10 +71,6 @@
     {
       "path": "src/components/business/ImageUpload.tsx",
       "git_blob_sha": "cf94ac7a59b45f71d6804bc03b91eefd25dc0762"
-    },
-    {
-      "path": "src/components/business/RegisterBusiness.tsx",
-      "git_blob_sha": "60d9c14c45f7c37bfca77ce2e1164e383b782329"
     },
     {
       "path": "src/components/business/panels/AiStudioPanel.tsx",
@@ -117,6 +121,10 @@
       "git_blob_sha": "0ba96c7f3a426a2fe00b34590571aa2e7bffcd02"
     },
     {
+      "path": "src/components/business/RegisterBusiness.tsx",
+      "git_blob_sha": "60d9c14c45f7c37bfca77ce2e1164e383b782329"
+    },
+    {
       "path": "src/components/business/types.ts",
       "git_blob_sha": "e605144794407618103cceec791e498829339b4c"
     },
@@ -133,10 +141,6 @@
       "git_blob_sha": "a9bb16408c7c5d94c36bcd5df4d24d9d21347a83"
     },
     {
-      "path": "src/components/sanadak/CTA.tsx",
-      "git_blob_sha": "fa5d572611f93f3ae36551863c0ecc13efd01777"
-    },
-    {
       "path": "src/components/sanadak/CartSheet.tsx",
       "git_blob_sha": "6856fab6dfbf0f6447e20b47b8bd2457b356579e"
     },
@@ -147,6 +151,10 @@
     {
       "path": "src/components/sanadak/CategoryPage.tsx",
       "git_blob_sha": "efb4a08dd96691798959bc2e59613e01cd4ee4f5"
+    },
+    {
+      "path": "src/components/sanadak/CTA.tsx",
+      "git_blob_sha": "fa5d572611f93f3ae36551863c0ecc13efd01777"
     },
     {
       "path": "src/components/sanadak/CustomerBookingHistory.tsx",
@@ -573,10 +581,6 @@
       "git_blob_sha": "2f19dd14cd99c121cb1e2ccc813fbb71d72833d2"
     },
     {
-      "path": "src/routeTree.gen.ts",
-      "git_blob_sha": "49de486dcc7577e91e334e1a78edba7865d7b8d4"
-    },
-    {
       "path": "src/router.tsx",
       "git_blob_sha": "3423d598036579e62f42faec438f868b4bb0bb17"
     },
@@ -663,6 +667,10 @@
     {
       "path": "src/routes/super.tsx",
       "git_blob_sha": "91045f23ab4c9fe33381e01d44ed747efdd5e633"
+    },
+    {
+      "path": "src/routeTree.gen.ts",
+      "git_blob_sha": "49de486dcc7577e91e334e1a78edba7865d7b8d4"
     },
     {
       "path": "src/server.ts",
