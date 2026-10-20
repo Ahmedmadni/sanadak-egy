@@ -14,10 +14,12 @@ assert.equal(ledger.project_id, "a5ba6f1c-a324-4761-a604-2936a1f8f5cf");
 assert.equal(ledger.source_branch, "staging/sanadak-isolated-s0");
 assert.equal(ledger.baseline_total, files.length);
 assert.equal(ledger.baseline_total, 30);
-assert.equal(ledger.baseline_completed, 13);
+assert.equal(ledger.baseline_completed, 17);
 assert.equal(ledger.files.length, files.length);
 assert.deepEqual(ledger.files.map((m) => m.file), files);
-assert.equal(ledger.files[ledger.baseline_completed].file, "20260728045306_be350871-ac57-46a4-8d5b-75556305157b.sql");
+assert.equal(ledger.files[ledger.baseline_completed].file, "20260909132000_close_direct_order_inserts.sql");
+assert.equal(ledger.frontend_order_rpc_verified, false);
+assert.equal(ledger.frontend_booking_rpc_verified, false);
 
 for (const [i, item] of ledger.files.entries()) {
   assert.equal(item.order, i + 1);
