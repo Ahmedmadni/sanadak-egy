@@ -6,7 +6,7 @@ import { openWhatsApp, generateSerial } from "@/lib/whatsapp";
 import { sfx } from "@/lib/sanadak-sounds";
 
 export function CartSheet() {
-  const { cartOpen, setCartOpen, cart, removeFromCart, clearCart, bookings, cancelBooking, t, lang, dir, customer, setCustomer } = useSanadak();
+  const { cartOpen, setCartOpen, cart, removeFromCart, bookings, cancelBooking, t, lang, dir, customer, setCustomer } = useSanadak();
   const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
 
   const checkout = () => {
@@ -27,10 +27,15 @@ export function CartSheet() {
       total: `${total.toLocaleString()} ${t("sar")}`,
       totalLabel: t("total"),
     }, lang);
-    sfx.success();
-    toast.success(`${t("submitted")} · ${serial}`);
-    clearCart();
-    setCartOpen(false);
+    // wa.me only pre-fills a message. We have no proof the user pressed Send,
+    // and no authoritative Sanadak order was created in the database.
+    // Preserve the cart so it is not silently lost on popup blocking/cancel.
+    sfx.tap();
+    toast.info(
+      lang === "ar"
+        ? "راجع الرسالة واضغط إرسال داخل واتساب. هذه السلة لا تُنشئ طلبًا داخل سندك."
+        : "Review and send the message in WhatsApp. This cart does not create an in-app order.",
+    );
   };
 
   return (
@@ -110,11 +115,16 @@ export function CartSheet() {
               <span>{t("total")}</span>
               <span>{total.toLocaleString()} {t("sar")}</span>
             </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {lang === "ar"
+                ? "سيتم فتح رسالة واتساب فقط؛ لن يتم تسجيل الطلب داخل حسابك على سندك. يجب الضغط على إرسال في واتساب."
+                : "This only opens a WhatsApp draft; it does not save an order in your Sanadak account. You must press Send in WhatsApp."}
+            </p>
             <button
               onClick={checkout}
               className={`w-full bg-[#25D366] text-white h-12 rounded-full font-medium shadow-glow hover:scale-[1.01] transition flex items-center justify-center gap-2 ${lang === "ar" ? "font-arabic" : ""}`}
             >
-              <MessageCircle className="h-4 w-4" /> {t("checkout")}
+              <MessageCircle className="h-4 w-4" /> {lang === "ar" ? "المتابعة عبر واتساب" : "Continue in WhatsApp"}
             </button>
           </div>
         )}
