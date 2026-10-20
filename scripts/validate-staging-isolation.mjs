@@ -48,10 +48,12 @@ assert.doesNotMatch(reconciler,
   "Pending reconciliation must never re-open self-service admin claims");
 
 const guard = read("src/integrations/supabase/staging-guard.ts");
-assert.match(guard, /VERIFIED_STAGING_PROJECT_REF = "wnakrxkosofufxfqacrx"/,
+assert.match(guard, /EXPECTED_STAGING_SUPABASE_REF = "wnakrxkosofufxfqacrx"/,
   "Runtime Staging backend does not match the independently verified ref");
-assert.match(guard, /projectRef !== VERIFIED_STAGING_PROJECT_REF/,
-  "Staging runtime no longer requires the exact verified backend");
+assert.match(guard, /configuredRef && configuredRef !== EXPECTED_STAGING_SUPABASE_REF/,
+  "Staging runtime must reject any mismatched configured project ID");
+assert.match(guard, /parsed\.hostname\.toLowerCase\(\) !==/,
+  "Staging must pin its actual HTTPS hostname to the audited backend");
 
 assert.match(guard, /PRODUCTION_PROJECT_REF = "lkkxrdxdlkovphjlrcak"/,
   "Staging guard does not recognize production ref");
