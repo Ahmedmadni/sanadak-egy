@@ -3,7 +3,7 @@
   "purpose": "read-only reviewed source-copy manifest for existing Sanadak Staging Lovable project; no direct writes/migrations",
   "source_repo": "Ahmedmadni/sanadak-egy",
   "source_branch": "staging/sanadak-isolated-s0",
-  "source_commit": "6f2522f49491b2c4b2e294a8bdae457634237a99",
+  "source_commit": "2ca1d9e8fa8a44d82fa8ba0048e2d0c3e9f05715",
   "destination_lovable_project": "a5ba6f1c-a324-4761-a604-2936a1f8f5cf",
   "destination_supabase_ref": "wnakrxkosofufxfqacrx",
   "production_supabase_ref_FORBIDDEN": "lkkxrdxdlkovphjlrcak",
@@ -410,11 +410,11 @@
     },
     {
       "path": "src/integrations/supabase/staging-guard.test.ts",
-      "git_blob_sha": "f92199361b24b7d9c1d61b54ed86b9243d679bf0"
+      "git_blob_sha": "ec10fa1df1a6ba06b558070a1ab7cca9b1491a27"
     },
     {
       "path": "src/integrations/supabase/staging-guard.ts",
-      "git_blob_sha": "609094ab91b830dfd73feed4fe244fa0ecb352a9"
+      "git_blob_sha": "9ddd3f81b2560f76cc0189d5ccd105481d6f2c34"
     },
     {
       "path": "src/integrations/supabase/types.ts",
