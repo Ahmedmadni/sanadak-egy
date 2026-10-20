@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
+import { MERCHANT_PHONE, openWhatsApp } from "./whatsapp";
 
 // S1 code-contract smoke checks. They are NOT browser/RLS integration tests.
 const source = (path: string) => readFileSync(path, "utf8");
@@ -27,6 +28,16 @@ describe("staging order/booking client contracts", () => {
     assert.match(booking, /_tenant:\s*tenantId/);
     assert.match(booking, /_slot_start:\s*slotAt/);
     assert.doesNotMatch(booking, /\.from\(["']bookings["']\)\.insert\(/);
+  });
+
+  it("never sends synthetic Staging orders through a real WhatsApp destination", () => {
+    assert.equal(MERCHANT_PHONE, "STAGING_DISABLED");
+    assert.equal(openWhatsApp({
+      type: "order", serial: "SND-TEST", lines: ["Synthetic test"],
+    }), false);
+    const cart = source("src/components/sanadak/CartSheet.tsx");
+    assert.match(cart, /if \(!opened\)/);
+    assert.match(cart, /external WhatsApp messages are disabled/);
   });
 
   it("identifies the legacy global WhatsApp cart as non-authoritative", () => {
