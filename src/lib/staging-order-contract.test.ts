@@ -34,6 +34,10 @@ describe("staging order/booking client contracts", () => {
     const cart = source("src/components/sanadak/CartSheet.tsx");
     assert.match(root, /<CartSheet\s*\/>/);
     assert.match(cart, /openWhatsApp\(/);
+    assert.match(cart, /Continue in WhatsApp/);
+    assert.match(cart, /toast\.info\(/);
+    assert.doesNotMatch(cart, /clearCart\(\)/);
+    assert.doesNotMatch(cart, /toast\.success\(/);
     assert.doesNotMatch(cart, /supabase\.rpc\(["']create_order["']/);
   });
 });
