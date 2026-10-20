@@ -1,10 +1,10 @@
-// Staging-only fail-closed protection. This file must never be merged to
-// production main without deliberately removing the staging-only guard.
+// SANADAK STAGING ONLY. Never merge this pin into production.
+// This expected project ref was independently checked against this exact
+// project's supabase/config.toml AND its VITE_SUPABASE_URL in Lovable Staging.
+// Keep supabase/config.toml in this GitHub branch as a fail-closed CLI sentinel:
+// manual migration history is not registered; do NOT enable automatic db push.
+export const EXPECTED_STAGING_SUPABASE_REF = "wnakrxkosofufxfqacrx";
 const PRODUCTION_PROJECT_REF = "lkkxrdxdlkovphjlrcak";
-// Independently verified in the Lovable Staging config.toml and its
-// frontend/server project ID and URL environment settings.
-const VERIFIED_STAGING_PROJECT_REF = "wnakrxkosofufxfqacrx";
-const SUPABASE_REF_PATTERN = /^[a-z0-9]{20}$/;
 
 export function assertStagingSupabaseUrl(
   url: string,
@@ -17,23 +17,22 @@ export function assertStagingSupabaseUrl(
     throw new Error("Staging Supabase URL is invalid");
   }
 
-  const projectRef = configuredProjectRef?.trim().toLowerCase();
-  if (!projectRef || !SUPABASE_REF_PATTERN.test(projectRef)) {
-    throw new Error("Staging Supabase project reference is missing or invalid");
+  const configuredRef = configuredProjectRef?.trim().toLowerCase();
+  if (configuredRef && configuredRef !== EXPECTED_STAGING_SUPABASE_REF) {
+    throw new Error("Supabase project ref does not match the approved Staging backend");
   }
-
-  if (projectRef === PRODUCTION_PROJECT_REF || url.toLowerCase().includes(PRODUCTION_PROJECT_REF)) {
-    throw new Error("Staging cannot connect to the production Supabase project");
+  if (
+    EXPECTED_STAGING_SUPABASE_REF === PRODUCTION_PROJECT_REF ||
+    url.toLowerCase().includes(PRODUCTION_PROJECT_REF)
+  ) {
+    throw new Error("Staging cannot connect to production Supabase");
   }
-
-  if (projectRef !== VERIFIED_STAGING_PROJECT_REF) {
-    throw new Error("Staging Supabase project reference differs from the independently verified environment");
-  }
-
-  if (parsed.protocol !== "https:" ||
-      parsed.hostname.toLowerCase() !== `${projectRef}.supabase.co` ||
-      parsed.username || parsed.password || parsed.port || parsed.pathname !== "/" ||
-      parsed.search || parsed.hash) {
-    throw new Error("Staging Supabase URL does not match its isolated project reference");
+  if (
+    parsed.protocol !== "https:" ||
+    parsed.hostname.toLowerCase() !== `${EXPECTED_STAGING_SUPABASE_REF}.supabase.co` ||
+    parsed.username || parsed.password || parsed.port ||
+    parsed.pathname !== "/" || parsed.search || parsed.hash
+  ) {
+    throw new Error("Staging Supabase URL does not match the verified project");
   }
 }
