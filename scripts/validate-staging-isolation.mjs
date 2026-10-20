@@ -44,10 +44,15 @@ const reconciler = read("supabase/migrations/20260906090000_reconcile_live_schem
 assert.match(reconciler, /STAGING ONLY/);
 assert.match(reconciler, /DROP POLICY IF EXISTS "First admin bootstrap"/);
 assert.doesNotMatch(reconciler,
-  /CREATE\\s+POLICY\\s+"First admin bootstrap"/i,
+  /CREATE\s+POLICY\s+"First admin bootstrap"/i,
   "Pending reconciliation must never re-open self-service admin claims");
 
 const guard = read("src/integrations/supabase/staging-guard.ts");
+assert.match(guard, /VERIFIED_STAGING_PROJECT_REF = "wnakrxkosofufxfqacrx"/,
+  "Runtime Staging backend does not match the independently verified ref");
+assert.match(guard, /projectRef !== VERIFIED_STAGING_PROJECT_REF/,
+  "Staging runtime no longer requires the exact verified backend");
+
 assert.match(guard, /PRODUCTION_PROJECT_REF = "lkkxrdxdlkovphjlrcak"/,
   "Staging guard does not recognize production ref");
 assert.match(guard, /parsed\.hostname\.toLowerCase\(\)/,
